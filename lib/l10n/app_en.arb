@@ -1,0 +1,17 @@
+{
+  "@@locale": "en",
+  "appTitle": "SmartHealth",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "offlineBannerMessage": "You're offline · showing saved data",
+  "@offlineBannerMessage": {
+    "description": "Persistent banner when device has no connectivity"
+  },
+  "homeWelcome": "Welcome to SmartHealth",
+  "splashLoading": "Loading…",
+  "navHome": "Home",
+  "navSearch": "Search",
+  "navEmergency": "Emergency",
+  "navProfile": "Profile"
+}

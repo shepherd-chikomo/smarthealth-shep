@@ -1,0 +1,11 @@
+{
+  "@@locale": "sn",
+  "appTitle": "SmartHealth",
+  "offlineBannerMessage": "Hamusi painternet · tichiratidza data yakachengetwa",
+  "homeWelcome": "Mauya kuSmartHealth",
+  "splashLoading": "Kuri kurodha…",
+  "navHome": "Kumba",
+  "navSearch": "Tsvaga",
+  "navEmergency": "Dzimba",
+  "navProfile": "Profile"
+}

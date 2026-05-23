@@ -1,0 +1,11 @@
+{
+  "@@locale": "sw",
+  "appTitle": "SmartHealth",
+  "offlineBannerMessage": "Huna mtandao · tunaonyesha data iliyohifadhiwa",
+  "homeWelcome": "Karibu SmartHealth",
+  "splashLoading": "Inapakia…",
+  "navHome": "Nyumbani",
+  "navSearch": "Tafuta",
+  "navEmergency": "Dharura",
+  "navProfile": "Wasifu"
+}

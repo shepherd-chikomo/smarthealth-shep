@@ -1,0 +1,11 @@
+{
+  "@@locale": "pt",
+  "appTitle": "SmartHealth",
+  "offlineBannerMessage": "Está offline · a mostrar dados guardados",
+  "homeWelcome": "Bem-vindo ao SmartHealth",
+  "splashLoading": "A carregar…",
+  "navHome": "Início",
+  "navSearch": "Pesquisar",
+  "navEmergency": "Emergência",
+  "navProfile": "Perfil"
+}
