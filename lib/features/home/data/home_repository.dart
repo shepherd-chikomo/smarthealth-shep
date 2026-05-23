@@ -25,7 +25,7 @@ class HomeRepository {
   HomeRepository({
     ProviderRepository? providerRepository,
     Connectivity? connectivity,
-  })  : _providers = providerRepository ?? ProviderRepository(),
+  })  : _providers = providerRepository ?? ProviderRepository.defaults(),
         _connectivity = connectivity ?? Connectivity();
 
   final ProviderRepository _providers;

@@ -1,11 +1,12 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/provider_profile/provider_profile_utils.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
 
 class ProviderProfileCard extends StatelessWidget {
   const ProviderProfileCard({super.key, required this.provider});
@@ -29,24 +30,27 @@ class ProviderProfileCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor:
-                      HomeDashboardColors.primary.withValues(alpha: 0.12),
-                  backgroundImage: provider.imageUrl != null &&
-                          provider.imageUrl!.isNotEmpty
-                      ? CachedNetworkImageProvider(provider.imageUrl!)
-                      : null,
-                  child: provider.imageUrl == null || provider.imageUrl!.isEmpty
-                      ? Text(
-                          providerInitials(provider.name),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: HomeDashboardColors.primary,
-                          ),
-                        )
-                      : null,
+                ClipOval(
+                  child: SmartImage(
+                    source: provider.imageUrl ??
+                        AppAssets.providerPortraitFor(provider.id),
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    error: CircleAvatar(
+                      radius: 32,
+                      backgroundColor:
+                          HomeDashboardColors.primary.withValues(alpha: 0.12),
+                      child: Text(
+                        providerInitials(provider.name),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: HomeDashboardColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

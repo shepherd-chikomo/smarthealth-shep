@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
+import 'package:smarthealth_shep/data/categories.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_bloc.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
@@ -12,19 +13,13 @@ import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.da
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
+import 'package:smarthealth_shep/shared/widgets/category_icon.dart';
 import 'package:smarthealth_shep/shared/widgets/provider_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const categoryFilters = <({String id, String labelKey})>[
-    (id: 'near_me', labelKey: 'nearMe'),
-    (id: 'general', labelKey: 'generalPractice'),
-    (id: 'pediatrics', labelKey: 'pediatrics'),
-    (id: 'dental', labelKey: 'dental'),
-    (id: 'cardiology', labelKey: 'cardiology'),
-    (id: 'more', labelKey: 'more'),
-  ];
+  static final categoryFilters = categories;
 
   @override
   Widget build(BuildContext context) {
@@ -346,6 +341,18 @@ class _CategoryChipsRow extends StatelessWidget {
   final String? selectedId;
   final Map<String, String> labels;
 
+  String _labelFor(AppCategory item) {
+    return switch (item.labelKey) {
+      'nearMe' => labels['nearMe'] ?? item.labelKey,
+      'generalPractice' => labels['generalPractice'] ?? item.labelKey,
+      'pediatrics' => labels['pediatrics'] ?? item.labelKey,
+      'dental' => labels['dental'] ?? item.labelKey,
+      'cardiology' => labels['cardiology'] ?? item.labelKey,
+      'more' => labels['more'] ?? item.labelKey,
+      _ => item.labelKey,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -356,7 +363,7 @@ class _CategoryChipsRow extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final item = HomeScreen.categoryFilters[index];
-          final label = labels[item.labelKey] ?? item.labelKey;
+          final label = _labelFor(item);
           final selected = (selectedId ?? 'near_me') == item.id;
 
           return Semantics(
@@ -364,6 +371,13 @@ class _CategoryChipsRow extends StatelessWidget {
             selected: selected,
             label: label,
             child: FilterChip(
+              avatar: CategoryIcon(
+                assetPath: item.iconAsset,
+                size: 16,
+                color: selected
+                    ? HomeDashboardColors.primary
+                    : HomeDashboardColors.textSecondary,
+              ),
               label: Text(label),
               selected: selected,
               showCheckmark: false,

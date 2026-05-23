@@ -1,10 +1,11 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
 
 /// Reusable nearby-facility card for the home dashboard and search results.
 class ProviderCard extends StatelessWidget {
@@ -23,6 +24,8 @@ class ProviderCard extends StatelessWidget {
     final distance = provider.distanceKm != null
         ? l10n.homeDistanceKm(provider.distanceKm!)
         : null;
+    final imageSource =
+        provider.imageUrl ?? AppAssets.providerPortraitFor(provider.id);
 
     return Semantics(
       button: onTap != null,
@@ -43,7 +46,7 @@ class ProviderCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _Thumbnail(imageUrl: provider.imageUrl),
+                _Thumbnail(imageSource: imageSource),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -95,7 +98,7 @@ class ProviderCard extends StatelessWidget {
                         children: [
                           if (distance != null) ...[
                             const Icon(
-                              Symbols.near_me,
+                              Icons.near_me_outlined,
                               size: 14,
                               color: HomeDashboardColors.textSecondary,
                             ),
@@ -159,15 +162,19 @@ class _MdpczBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Symbols.verified,
-              size: 14,
-              color: HomeDashboardColors.secondary,
+            SvgPicture.asset(
+              AppAssets.verifiedBadge,
+              width: 14,
+              height: 14,
+              colorFilter: const ColorFilter.mode(
+                HomeDashboardColors.secondary,
+                BlendMode.srcIn,
+              ),
             ),
             const SizedBox(width: 2),
-            Text(
+            const Text(
               'MDPCZ',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: HomeDashboardColors.secondary,
@@ -181,54 +188,46 @@ class _MdpczBadge extends StatelessWidget {
 }
 
 class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({this.imageUrl});
+  const _Thumbnail({this.imageSource});
 
-  final String? imageUrl;
+  final String? imageSource;
 
   static const double size = 72;
 
   @override
   Widget build(BuildContext context) {
-    final placeholder = Container(
+    return SmartImage(
+      source: imageSource,
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: HomeDashboardColors.background,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(
-        Symbols.local_hospital,
-        color: HomeDashboardColors.primary,
-        size: 32,
-      ),
-    );
-
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      return placeholder;
-    }
-
-    return ClipRRect(
+      fit: BoxFit.cover,
       borderRadius: BorderRadius.circular(12),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl!,
+      memCacheWidth: 144,
+      memCacheHeight: 144,
+      placeholder: Container(
         width: size,
         height: size,
-        fit: BoxFit.cover,
-        memCacheWidth: 144,
-        memCacheHeight: 144,
-        placeholder: (context, url) => Container(
-          width: size,
-          height: size,
-          color: HomeDashboardColors.skeleton,
-          child: const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+        color: HomeDashboardColors.skeleton,
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        errorWidget: (context, url, error) => placeholder,
+      ),
+      error: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: HomeDashboardColors.background,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.local_hospital_outlined,
+          color: HomeDashboardColors.primary,
+          size: 32,
+        ),
       ),
     );
   }

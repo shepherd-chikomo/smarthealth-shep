@@ -1,12 +1,15 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:smarthealth_shep/shared/data/mock_data.dart';
-import 'package:smarthealth_shep/shared/models/emergency_service_model.dart';
+import 'package:smarthealth_shep/features/emergency/data/emergency_hub_repository.dart';
+import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
 
-final emergencyRepositoryProvider = Provider<EmergencyRepository>(
-  (ref) => EmergencyRepository(),
-);
-
+/// Legacy wrapper — delegates to [EmergencyHubRepository].
 class EmergencyRepository {
-  Future<List<EmergencyServiceModel>> getServices() async =>
-      MockData.emergencyServices;
+  EmergencyRepository({EmergencyHubRepository? hubRepository})
+      : _hub = hubRepository ?? EmergencyHubRepository();
+
+  final EmergencyHubRepository _hub;
+
+  Future<List<EmergencyService>> getServices() async {
+    final data = await _hub.loadHub();
+    return data.services;
+  }
 }

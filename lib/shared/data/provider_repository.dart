@@ -1,34 +1,228 @@
+import 'dart:developer' as developer;
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
+import 'package:smarthealth_shep/core/network/api_service.dart';
+import 'package:smarthealth_shep/core/network/dio_client.dart';
+import 'package:smarthealth_shep/core/sync/sync_providers.dart';
+import 'package:smarthealth_shep/core/utils/haversine.dart';
+import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
 import 'package:smarthealth_shep/shared/data/mock_data.dart';
 import 'package:smarthealth_shep/shared/data/provider_detail_catalog.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_service.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/models/provider_query_result.dart';
+import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
 
-final providerRepositoryProvider = Provider<ProviderRepository>(
-  (ref) => ProviderRepository(),
-);
+const _logName = 'ProviderRepository';
 
-/// Local-first provider directory (mock-backed until API is wired).
+final providerRepositoryProvider = Provider<ProviderRepository>((ref) {
+  final dio = ref.watch(dioProvider);
+  return ProviderRepository(
+    dao: ProviderDao(),
+    api: ApiService(dio),
+    syncService: ref.watch(syncServiceProvider),
+  );
+});
+
+/// Offline-first provider directory backed by SQLite and remote API.
 class ProviderRepository {
+  ProviderRepository({
+    required ProviderDao dao,
+    required ApiService api,
+    required SyncService syncService,
+    this.seedMockDataOnEmpty = true,
+  })  : _dao = dao,
+        _api = api,
+        _syncService = syncService;
+
+  /// Default wiring for callers outside Riverpod (e.g. legacy repositories).
+  factory ProviderRepository.defaults({SyncService? syncService}) {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
+    return ProviderRepository(
+      dao: ProviderDao(),
+      api: ApiService(dio),
+      syncService: syncService ?? SyncService.instance ?? SyncService.forBackground(),
+    );
+  }
+
+  final ProviderDao _dao;
+  final ApiService _api;
+  final SyncService _syncService;
+
+  /// Seeds mock catalog into SQLite when the local store is empty (dev fallback).
+  final bool seedMockDataOnEmpty;
+
+  // ---------------------------------------------------------------------------
+  // Offline-first API
+  // ---------------------------------------------------------------------------
+
+  Future<ProvidersQueryResult> getNearbyProviders({
+    required double lat,
+    required double lon,
+    required double radiusKm,
+  }) async {
+    await _ensureSeeded();
+
+    try {
+      final lastSync = await _dao.getLastSync();
+      developer.log(
+        'Fetching nearby providers from API (since=$lastSync)',
+        name: _logName,
+      );
+
+      final remote = await _api.fetchNearbyProviders(
+        lat: lat,
+        lon: lon,
+        radiusKm: radiusKm,
+        since: lastSync,
+      );
+
+      await _dao.upsertProviders(remote);
+      await _dao.setLastSync(DateTime.now().toUtc());
+
+      final withDistance = remote
+          .where((p) => p.latitude != null && p.longitude != null)
+          .map((p) {
+        final distance = p.distanceKm ??
+            _distanceFrom(lat, lon, p.latitude!, p.longitude!);
+        return p.copyWith(distanceKm: distance);
+      }).where((p) => (p.distanceKm ?? double.infinity) <= radiusKm).toList()
+        ..sort(
+          (a, b) => (a.distanceKm ?? double.infinity)
+              .compareTo(b.distanceKm ?? double.infinity),
+        );
+
+      return ProvidersQueryResult(providers: withDistance, isOffline: false);
+    } on NetworkException catch (error, stackTrace) {
+      developer.log(
+        'Network unavailable — falling back to local nearby query',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      final local = await _dao.getNearby(lat, lon, radiusKm);
+      if (local.isEmpty) {
+        throw NetworkException(
+          'No network and no cached providers available.',
+          cause: error,
+        );
+      }
+      return ProvidersQueryResult(providers: local, isOffline: true);
+    }
+  }
+
+  Future<ProvidersQueryResult> searchProviders(
+    ProviderSearchFilter filter,
+  ) async {
+    await _ensureSeeded();
+
+    final local = await _dao.search(filter);
+    developer.log(
+      'Returning ${local.length} local search results',
+      name: _logName,
+    );
+
+    _syncService.schedule(
+      'provider-search:${filter.hashCode}',
+      () => _backgroundSearch(filter),
+    );
+
+    return ProvidersQueryResult(providers: local, isOffline: true);
+  }
+
+  Future<ProviderDetailQueryResult?> getProviderById(String id) async {
+    await _ensureSeeded();
+
+    final local = await _dao.getById(id);
+    final stale = await _dao.isStale(id);
+
+    if (local != null && !stale) {
+      return ProviderDetailQueryResult(
+        provider: local,
+        isOffline: true,
+        fromCache: true,
+      );
+    }
+
+    try {
+      developer.log('Fetching provider $id from API', name: _logName);
+      final remote = await _api.getProviderById(id);
+      if (remote == null) {
+        return local != null
+            ? ProviderDetailQueryResult(
+                provider: local,
+                isOffline: true,
+                fromCache: true,
+              )
+            : null;
+      }
+
+      await _dao.upsertProvider(remote);
+      return ProviderDetailQueryResult(
+        provider: remote,
+        isOffline: false,
+        fromCache: false,
+      );
+    } on NetworkException catch (error, stackTrace) {
+      developer.log(
+        'Network unavailable — returning cached provider $id',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      if (local != null) {
+        return ProviderDetailQueryResult(
+          provider: local,
+          isOffline: true,
+          fromCache: true,
+        );
+      }
+      return null;
+    }
+  }
+
+  /// Delta sync against the remote API; safe to call from background jobs.
+  Future<void> syncProviders() => _performDeltaSync();
+
+  void scheduleBackgroundSync() {
+    _syncService.schedule('provider-sync', syncProviders);
+  }
+
+  /// Triggers a full delta sync cycle (pull-to-refresh).
+  Future<void> refreshFromServer() => _syncService.syncPullToRefresh();
+
+  // ---------------------------------------------------------------------------
+  // Legacy helpers (mock / Hive callers)
+  // ---------------------------------------------------------------------------
+
   Future<List<ProviderModel>> getProviders({String? categoryId}) async {
-    final all = MockData.providers;
-    if (categoryId == null) return all;
-    return all.where((p) => p.categoryId == categoryId).toList();
+    await _ensureSeeded();
+    final local = await _dao.getAll(categoryId: categoryId);
+    if (local.isNotEmpty) return local;
+    return _mockProviders(categoryId: categoryId);
   }
 
   Future<ProviderModel?> getById(String id) async {
-    for (final provider in MockData.providers) {
-      if (provider.id == id) return provider;
-    }
-    return null;
+    final result = await getProviderById(id);
+    return result?.provider;
   }
 
-  /// Simulated API fetch returning full profile detail.
   Future<ProviderModel?> getDetailById(String id) async {
-    await Future<void>.delayed(const Duration(milliseconds: 450));
-    return getDetailByIdLocal(id);
+    final result = await getProviderById(id);
+    if (result == null) return null;
+    return ProviderDetailCatalog.enrich(result.provider);
   }
 
-  /// Immediate local lookup (mock catalog / future SQLite).
   ProviderModel? getDetailByIdLocal(String id) {
     for (final provider in MockData.providers) {
       if (provider.id == id) {
@@ -36,5 +230,80 @@ class ProviderRepository {
       }
     }
     return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private
+  // ---------------------------------------------------------------------------
+
+  Future<void> _performDeltaSync() async {
+    await _ensureSeeded();
+
+    final since = await _dao.getLastSync();
+    developer.log(
+      'Starting provider delta sync (since=$since)',
+      name: _logName,
+    );
+
+    try {
+      final payload = await _api.syncProviders(since: since);
+      await _dao.upsertProviders(payload.updated);
+      await _dao.deleteProviders(payload.deletedIds);
+      await _dao.setLastSync(payload.syncedAt);
+
+      developer.log(
+        'Provider sync complete: ${payload.updated.length} updated, '
+        '${payload.deletedIds.length} deleted',
+        name: _logName,
+      );
+    } on NetworkException catch (error, stackTrace) {
+      developer.log(
+        'Provider sync failed',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> _backgroundSearch(ProviderSearchFilter filter) async {
+    try {
+      final since = await _dao.getLastSync();
+      final remote = await _api.searchProviders(filter, since: since);
+      await _dao.upsertProviders(remote);
+      await _dao.setLastSync(DateTime.now().toUtc());
+      developer.log(
+        'Background search cached ${remote.length} providers',
+        name: _logName,
+      );
+    } on NetworkException catch (error, stackTrace) {
+      developer.log(
+        'Background search skipped (offline)',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _ensureSeeded() async {
+    if (!seedMockDataOnEmpty) return;
+
+    final existing = await _dao.getAll();
+    if (existing.isNotEmpty) return;
+
+    developer.log('Seeding local provider cache from mock data', name: _logName);
+    await _dao.upsertProviders(MockData.providers);
+  }
+
+  List<ProviderModel> _mockProviders({String? categoryId}) {
+    final all = MockData.providers;
+    if (categoryId == null) return all;
+    return all.where((p) => p.categoryId == categoryId).toList();
+  }
+
+  double _distanceFrom(double lat, double lon, double pLat, double pLon) {
+    return haversineDistanceKm(lat, lon, pLat, pLon);
   }
 }

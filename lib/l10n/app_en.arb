@@ -96,5 +96,31 @@
   },
   "profileGoBack": "Go back",
   "profileErrorTitle": "Could not load profile",
-  "profileErrorGeneric": "Something went wrong while loading this profile."
+  "profileErrorGeneric": "Something went wrong while loading this profile.",
+  "emergencyWarningBanner": "For life-threatening emergencies, call 999/994 directly",
+  "emergencyNearestDistance": "Nearest · {distance} km",
+  "@emergencyNearestDistance": {
+    "placeholders": {
+      "distance": {
+        "type": "double",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "emergencyNearbyFacilities": "Nearby 24hr Emergency Facilities",
+  "emergencyCall": "CALL",
+  "emergencyDirections": "Directions",
+  "emergencyCallNow": "CALL NOW",
+  "emergencyShowDirections": "Show Directions",
+  "emergencyNearestProvider": "Nearest provider",
+  "emergencyOfflineReady": "Offline · emergency numbers ready",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingGetStarted": "Get started",
+  "onboardingFindDoctorsTitle": "Find trusted doctors near you",
+  "onboardingFindDoctorsBody": "Discover verified providers across Zimbabwe with maps, filters, and offline access.",
+  "onboardingBookAppointmentsTitle": "Book appointments instantly",
+  "onboardingBookAppointmentsBody": "Choose a time, confirm in seconds, and keep every visit organised in one place.",
+  "onboardingEmergencyHelpTitle": "Emergency help, one tap away",
+  "onboardingEmergencyHelpBody": "Reach ambulance, police, fire, and rescue numbers even when you're offline."
 }

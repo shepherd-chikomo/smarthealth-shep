@@ -18,7 +18,7 @@ class SearchRepository {
     HomeRepository? homeRepository,
     ProviderRepository? providerRepository,
   })  : _homeRepository = homeRepository ?? HomeRepository(),
-        _providerRepository = providerRepository ?? ProviderRepository();
+        _providerRepository = providerRepository ?? ProviderRepository.defaults();
 
   final HomeRepository _homeRepository;
   final ProviderRepository _providerRepository;

@@ -23,7 +23,7 @@ class ProviderProfileRepository {
     ProviderRepository? providerRepository,
     Connectivity? connectivity,
   })  : _homeRepository = homeRepository ?? HomeRepository(),
-        _providerRepository = providerRepository ?? ProviderRepository(),
+        _providerRepository = providerRepository ?? ProviderRepository.defaults(),
         _connectivity = connectivity ?? Connectivity();
 
   final HomeRepository _homeRepository;

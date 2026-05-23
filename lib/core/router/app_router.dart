@@ -1,14 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smarthealth_shep/features/appointments/appointments_placeholder.dart';
+import 'package:smarthealth_shep/features/booking/booking_flow_host.dart';
 import 'package:smarthealth_shep/features/design_system/design_system_demo_screen.dart';
 import 'package:smarthealth_shep/features/emergency/emergency_screen.dart';
+import 'package:smarthealth_shep/features/family/screens/family_members_screen.dart';
+import 'package:smarthealth_shep/features/emergency/emergency_service_detail_screen.dart';
+import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
 import 'package:smarthealth_shep/features/home/home_screen.dart';
 import 'package:smarthealth_shep/features/profile/settings_screen.dart';
 import 'package:smarthealth_shep/features/provider_profile/provider_profile_screen.dart';
 import 'package:smarthealth_shep/features/search/directory_results_screen.dart';
 import 'package:smarthealth_shep/features/search/models/search_criteria.dart';
 import 'package:smarthealth_shep/features/search/search_screen.dart';
+import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/features/splash/splash_screen.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell.dart';
 
@@ -19,6 +24,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/design-demo',
@@ -32,10 +41,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/booking/:providerId',
+        builder: (context, state) {
+          final providerId = state.pathParameters['providerId']!;
+          return BookingFlowHost(providerId: providerId);
+        },
+      ),
+      GoRoute(
+        path: '/family',
+        builder: (context, state) => const FamilyMembersScreen(),
+      ),
+      GoRoute(
         path: '/search/results',
         builder: (context, state) {
           final criteria = state.extra! as SearchCriteria;
           return DirectoryResultsScreen(criteria: criteria);
+        },
+      ),
+      GoRoute(
+        path: '/emergency/service/:id',
+        builder: (context, state) {
+          final service = state.extra! as EmergencyService;
+          return EmergencyServiceDetailScreen(service: service);
         },
       ),
       StatefulShellRoute.indexedStack(

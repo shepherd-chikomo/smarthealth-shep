@@ -1,3 +1,4 @@
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/shared/models/category_model.dart';
 import 'package:smarthealth_shep/shared/models/emergency_service_model.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
@@ -19,7 +20,7 @@ abstract final class MockData {
   static const providers = <ProviderModel>[
     ProviderModel(
       id: 'p1',
-      name: 'Dr. Tafadzwa Moyo',
+      name: 'Dr. Tendai Moyo',
       categoryId: 'general',
       specialty: 'General Practice',
       specialtyId: 'general_practice',
@@ -30,13 +31,14 @@ abstract final class MockData {
       longitude: 31.0335,
       distanceKm: 1.2,
       hours: 'Open until 5:00 PM',
+      imageUrl: AppAssets.doctorTendai,
       isVerified: true,
       conditions: ['diabetes', 'hypertension', 'malaria'],
       ageGroups: ['adult', 'senior'],
     ),
     ProviderModel(
       id: 'p2',
-      name: 'Dr. Rudo Chikwanha',
+      name: 'Dr. Rumbidzai Chiweshe',
       categoryId: 'pediatrics',
       specialty: 'Pediatrics',
       specialtyId: 'pediatrics',
@@ -47,13 +49,15 @@ abstract final class MockData {
       longitude: 31.0522,
       distanceKm: 2.8,
       hours: 'Open until 4:30 PM',
+      imageUrl: AppAssets.doctorRumbidzai,
+      heroImageUrl: AppAssets.hospitalAvenues,
       isVerified: true,
       conditions: ['asthma', 'pregnancy'],
       ageGroups: ['infant', 'child', 'teen'],
     ),
     ProviderModel(
       id: 'p3',
-      name: 'Dr. Blessing Ndlovu',
+      name: 'Dr. Farai Nyathi',
       categoryId: 'dental',
       specialty: 'Dentistry',
       specialtyId: 'dentistry',
@@ -64,13 +68,14 @@ abstract final class MockData {
       longitude: 31.0450,
       distanceKm: 3.5,
       hours: 'Open until 6:00 PM',
+      imageUrl: AppAssets.doctorFarai,
       isVerified: false,
       conditions: [],
       ageGroups: ['child', 'teen', 'adult'],
     ),
     ProviderModel(
       id: 'p4',
-      name: 'Dr. Nyasha Mutasa',
+      name: 'Dr. Kudzai Mhondoro',
       categoryId: 'cardiology',
       specialty: 'Cardiology',
       specialtyId: 'cardiology',
@@ -79,6 +84,7 @@ abstract final class MockData {
       phone: '+263242555666',
       distanceKm: 4.1,
       hours: 'Open until 3:00 PM',
+      imageUrl: AppAssets.doctorKudzai,
       isVerified: true,
       conditions: ['hypertension', 'diabetes'],
       ageGroups: ['adult', 'senior'],
@@ -177,9 +183,31 @@ abstract final class MockData {
 
   static const familyMembers = <FamilyMemberModel>[
     FamilyMemberModel(
+      id: 'self',
+      name: 'Tendai Moyo',
+      relationship: 'Self',
+      dateOfBirth: '1988-02-14',
+      gender: FamilyGender.male,
+      medicalConditions: ['hypertension'],
+      allergies: 'Penicillin',
+      isPrimaryAccountHolder: true,
+    ),
+    FamilyMemberModel(
       id: 'f1',
-      name: 'Family member',
-      relationship: 'Dependent',
+      name: 'Tariro Moyo',
+      relationship: 'Spouse',
+      dateOfBirth: '1990-04-12',
+      gender: FamilyGender.female,
+      medicalConditions: [],
+    ),
+    FamilyMemberModel(
+      id: 'f2',
+      name: 'Kudzai Moyo',
+      relationship: 'Child',
+      dateOfBirth: '2016-08-03',
+      gender: FamilyGender.male,
+      medicalConditions: ['asthma'],
+      allergies: 'Peanuts',
     ),
   ];
 }

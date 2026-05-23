@@ -1,12 +1,1 @@
-import 'package:flutter/material.dart';
-
-class FamilyScreen extends StatelessWidget {
-  const FamilyScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Family members — placeholder')),
-    );
-  }
-}
+export 'package:smarthealth_shep/features/family/screens/family_members_screen.dart';

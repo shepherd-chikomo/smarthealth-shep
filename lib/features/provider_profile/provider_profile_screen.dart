@@ -184,31 +184,23 @@ class _LoadedProfileView extends StatelessWidget {
               const SizedBox(height: 24),
               Semantics(
                 button: true,
-                enabled: false,
                 label: l10n.profileBookAppointment,
                 child: FilledButton(
-                  onPressed: null,
+                  onPressed: () {
+                    context.push('/booking/${provider.id}');
+                  },
                   style: FilledButton.styleFrom(
                     minimumSize:
                         const Size.fromHeight(AppConstants.minTapTarget),
-                    disabledBackgroundColor: HomeDashboardColors.skeleton,
-                    disabledForegroundColor: HomeDashboardColors.textSecondary,
+                    backgroundColor: HomeDashboardColors.secondary,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.profileBookAppointment,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        l10n.profileBookPhase2,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ],
+                  child: Text(
+                    l10n.profileBookAppointment,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

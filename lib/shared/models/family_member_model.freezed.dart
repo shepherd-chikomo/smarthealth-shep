@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$FamilyMemberModel {
 
- String get id; String get name; String get relationship; String? get dateOfBirth;
+ String get id; String get name; String get relationship; String? get dateOfBirth; FamilyGender? get gender; List<String> get medicalConditions; String? get allergies; bool get isPrimaryAccountHolder;
 /// Create a copy of FamilyMemberModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $FamilyMemberModelCopyWith<FamilyMemberModel> get copyWith => _$FamilyMemberMode
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FamilyMemberModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FamilyMemberModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&const DeepCollectionEquality().equals(other.medicalConditions, medicalConditions)&&(identical(other.allergies, allergies) || other.allergies == allergies)&&(identical(other.isPrimaryAccountHolder, isPrimaryAccountHolder) || other.isPrimaryAccountHolder == isPrimaryAccountHolder));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,relationship,dateOfBirth);
+int get hashCode => Object.hash(runtimeType,id,name,relationship,dateOfBirth,gender,const DeepCollectionEquality().hash(medicalConditions),allergies,isPrimaryAccountHolder);
 
 @override
 String toString() {
-  return 'FamilyMemberModel(id: $id, name: $name, relationship: $relationship, dateOfBirth: $dateOfBirth)';
+  return 'FamilyMemberModel(id: $id, name: $name, relationship: $relationship, dateOfBirth: $dateOfBirth, gender: $gender, medicalConditions: $medicalConditions, allergies: $allergies, isPrimaryAccountHolder: $isPrimaryAccountHolder)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $FamilyMemberModelCopyWith<$Res>  {
   factory $FamilyMemberModelCopyWith(FamilyMemberModel value, $Res Function(FamilyMemberModel) _then) = _$FamilyMemberModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String relationship, String? dateOfBirth
+ String id, String name, String relationship, String? dateOfBirth, FamilyGender? gender, List<String> medicalConditions, String? allergies, bool isPrimaryAccountHolder
 });
 
 
@@ -65,13 +65,17 @@ class _$FamilyMemberModelCopyWithImpl<$Res>
 
 /// Create a copy of FamilyMemberModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? relationship = null,Object? dateOfBirth = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? relationship = null,Object? dateOfBirth = freezed,Object? gender = freezed,Object? medicalConditions = null,Object? allergies = freezed,Object? isPrimaryAccountHolder = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,relationship: null == relationship ? _self.relationship : relationship // ignore: cast_nullable_to_non_nullable
 as String,dateOfBirth: freezed == dateOfBirth ? _self.dateOfBirth : dateOfBirth // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,gender: freezed == gender ? _self.gender : gender // ignore: cast_nullable_to_non_nullable
+as FamilyGender?,medicalConditions: null == medicalConditions ? _self.medicalConditions : medicalConditions // ignore: cast_nullable_to_non_nullable
+as List<String>,allergies: freezed == allergies ? _self.allergies : allergies // ignore: cast_nullable_to_non_nullable
+as String?,isPrimaryAccountHolder: null == isPrimaryAccountHolder ? _self.isPrimaryAccountHolder : isPrimaryAccountHolder // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -156,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String relationship,  String? dateOfBirth)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String relationship,  String? dateOfBirth,  FamilyGender? gender,  List<String> medicalConditions,  String? allergies,  bool isPrimaryAccountHolder)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FamilyMemberModel() when $default != null:
-return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _:
+return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth,_that.gender,_that.medicalConditions,_that.allergies,_that.isPrimaryAccountHolder);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String relationship,  String? dateOfBirth)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String relationship,  String? dateOfBirth,  FamilyGender? gender,  List<String> medicalConditions,  String? allergies,  bool isPrimaryAccountHolder)  $default,) {final _that = this;
 switch (_that) {
 case _FamilyMemberModel():
-return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _:
+return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth,_that.gender,_that.medicalConditions,_that.allergies,_that.isPrimaryAccountHolder);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +201,10 @@ return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String relationship,  String? dateOfBirth)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String relationship,  String? dateOfBirth,  FamilyGender? gender,  List<String> medicalConditions,  String? allergies,  bool isPrimaryAccountHolder)?  $default,) {final _that = this;
 switch (_that) {
 case _FamilyMemberModel() when $default != null:
-return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _:
+return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth,_that.gender,_that.medicalConditions,_that.allergies,_that.isPrimaryAccountHolder);case _:
   return null;
 
 }
@@ -211,14 +215,24 @@ return $default(_that.id,_that.name,_that.relationship,_that.dateOfBirth);case _
 /// @nodoc
 @JsonSerializable()
 
-class _FamilyMemberModel implements FamilyMemberModel {
-  const _FamilyMemberModel({required this.id, required this.name, required this.relationship, this.dateOfBirth});
+class _FamilyMemberModel extends FamilyMemberModel {
+  const _FamilyMemberModel({required this.id, required this.name, required this.relationship, this.dateOfBirth, this.gender, final  List<String> medicalConditions = const [], this.allergies, this.isPrimaryAccountHolder = false}): _medicalConditions = medicalConditions,super._();
   factory _FamilyMemberModel.fromJson(Map<String, dynamic> json) => _$FamilyMemberModelFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override final  String relationship;
 @override final  String? dateOfBirth;
+@override final  FamilyGender? gender;
+ final  List<String> _medicalConditions;
+@override@JsonKey() List<String> get medicalConditions {
+  if (_medicalConditions is EqualUnmodifiableListView) return _medicalConditions;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_medicalConditions);
+}
+
+@override final  String? allergies;
+@override@JsonKey() final  bool isPrimaryAccountHolder;
 
 /// Create a copy of FamilyMemberModel
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FamilyMemberModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FamilyMemberModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.relationship, relationship) || other.relationship == relationship)&&(identical(other.dateOfBirth, dateOfBirth) || other.dateOfBirth == dateOfBirth)&&(identical(other.gender, gender) || other.gender == gender)&&const DeepCollectionEquality().equals(other._medicalConditions, _medicalConditions)&&(identical(other.allergies, allergies) || other.allergies == allergies)&&(identical(other.isPrimaryAccountHolder, isPrimaryAccountHolder) || other.isPrimaryAccountHolder == isPrimaryAccountHolder));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,relationship,dateOfBirth);
+int get hashCode => Object.hash(runtimeType,id,name,relationship,dateOfBirth,gender,const DeepCollectionEquality().hash(_medicalConditions),allergies,isPrimaryAccountHolder);
 
 @override
 String toString() {
-  return 'FamilyMemberModel(id: $id, name: $name, relationship: $relationship, dateOfBirth: $dateOfBirth)';
+  return 'FamilyMemberModel(id: $id, name: $name, relationship: $relationship, dateOfBirth: $dateOfBirth, gender: $gender, medicalConditions: $medicalConditions, allergies: $allergies, isPrimaryAccountHolder: $isPrimaryAccountHolder)';
 }
 
 
@@ -253,7 +267,7 @@ abstract mixin class _$FamilyMemberModelCopyWith<$Res> implements $FamilyMemberM
   factory _$FamilyMemberModelCopyWith(_FamilyMemberModel value, $Res Function(_FamilyMemberModel) _then) = __$FamilyMemberModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String relationship, String? dateOfBirth
+ String id, String name, String relationship, String? dateOfBirth, FamilyGender? gender, List<String> medicalConditions, String? allergies, bool isPrimaryAccountHolder
 });
 
 
@@ -270,13 +284,17 @@ class __$FamilyMemberModelCopyWithImpl<$Res>
 
 /// Create a copy of FamilyMemberModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? relationship = null,Object? dateOfBirth = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? relationship = null,Object? dateOfBirth = freezed,Object? gender = freezed,Object? medicalConditions = null,Object? allergies = freezed,Object? isPrimaryAccountHolder = null,}) {
   return _then(_FamilyMemberModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,relationship: null == relationship ? _self.relationship : relationship // ignore: cast_nullable_to_non_nullable
 as String,dateOfBirth: freezed == dateOfBirth ? _self.dateOfBirth : dateOfBirth // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,gender: freezed == gender ? _self.gender : gender // ignore: cast_nullable_to_non_nullable
+as FamilyGender?,medicalConditions: null == medicalConditions ? _self._medicalConditions : medicalConditions // ignore: cast_nullable_to_non_nullable
+as List<String>,allergies: freezed == allergies ? _self.allergies : allergies // ignore: cast_nullable_to_non_nullable
+as String?,isPrimaryAccountHolder: null == isPrimaryAccountHolder ? _self.isPrimaryAccountHolder : isPrimaryAccountHolder // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

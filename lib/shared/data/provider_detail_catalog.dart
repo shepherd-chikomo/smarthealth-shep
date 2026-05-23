@@ -48,8 +48,8 @@ const _details = <String, _ProviderDetailExtra>{
   'p1': _ProviderDetailExtra(
     mdpczNumber: 'MDPCZ-GP-20184',
     about:
-        'Dr. Tafadzwa Moyo is a senior general practitioner with over 12 years '
-        'of experience serving patients at Parirenyatwa Hospital. She focuses '
+        'Dr. Tendai Moyo is a senior general practitioner with over 12 years '
+        'of experience serving patients at Parirenyatwa Hospital. He focuses '
         'on chronic disease management, preventive care, and community health '
         'outreach across Harare.',
     services: [
@@ -64,7 +64,7 @@ const _details = <String, _ProviderDetailExtra>{
   'p2': _ProviderDetailExtra(
     mdpczNumber: 'MDPCZ-PD-10452',
     about:
-        'Dr. Rudo Chikwanha specialises in paediatric care for infants through '
+        'Dr. Rumbidzai Chiweshe specialises in paediatric care for infants through '
         'adolescents. She is known for compassionate child-friendly consultations '
         'and works closely with families at Avenues Clinic.',
     services: [
@@ -79,7 +79,7 @@ const _details = <String, _ProviderDetailExtra>{
   'p3': _ProviderDetailExtra(
     mdpczNumber: 'MDPCZ-DN-08731',
     about:
-        'Dr. Blessing Ndlovu offers comprehensive dental services including '
+        'Dr. Farai Nyathi offers comprehensive dental services including '
         'preventive care, restorative treatments, and oral health education.',
     services: [
       'Dental check-ups',
@@ -100,7 +100,7 @@ const _details = <String, _ProviderDetailExtra>{
   'p4': _ProviderDetailExtra(
     mdpczNumber: 'MDPCZ-CV-05621',
     about:
-        'Dr. Nyasha Mutasa is a cardiologist providing diagnostic testing, '
+        'Dr. Kudzai Mhondoro is a cardiologist providing diagnostic testing, '
         'hypertension management, and heart disease prevention at HeartCare Zimbabwe.',
     services: [
       'ECG & cardiac screening',

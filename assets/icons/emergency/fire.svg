@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" fill="none">
+  <path d="M48 18c8 10 14 16 14 28 0 10-6 18-14 22-8-4-14-12-14-22 0-12 6-18 14-28z" fill="#D32F2F"/>
+  <path d="M48 34c4 5 7 9 7 15 0 6-3 10-7 12-4-2-7-6-7-12 0-6 3-10 7-15z" fill="white" opacity="0.85"/>
+  <path d="M24 58h48l-6 14H30l-6-14z" fill="#D32F2F"/>
+  <text x="48" y="54" fill="white" font-size="10" font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">993</text>
+</svg>

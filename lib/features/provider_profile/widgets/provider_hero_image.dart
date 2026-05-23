@@ -1,9 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
 
 class ProviderHeroImage extends StatelessWidget {
   const ProviderHeroImage({super.key, required this.provider});
@@ -14,20 +15,23 @@ class ProviderHeroImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final heroUrl = provider.heroImageUrl ?? provider.imageUrl;
-    if (heroUrl != null && heroUrl.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: heroUrl,
+    final heroSource = provider.heroImageUrl ??
+        provider.imageUrl ??
+        AppAssets.providerHeroFor(provider.id);
+
+    if (heroSource != null && heroSource.isNotEmpty) {
+      return SmartImage(
+        source: heroSource,
         height: height,
         width: double.infinity,
         fit: BoxFit.cover,
         memCacheWidth: 800,
-        placeholder: (context, url) => Container(
+        placeholder: Container(
           height: height,
           color: HomeDashboardColors.skeleton,
           child: const Center(child: CircularProgressIndicator()),
         ),
-        errorWidget: (context, url, error) => _MapHero(provider: provider),
+        error: _MapHero(provider: provider),
       );
     }
     return _MapHero(provider: provider);

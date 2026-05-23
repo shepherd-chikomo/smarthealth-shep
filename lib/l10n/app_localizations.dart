@@ -435,6 +435,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong while loading this profile.'**
   String get profileErrorGeneric;
+
+  /// No description provided for @emergencyWarningBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'For life-threatening emergencies, call 999/994 directly'**
+  String get emergencyWarningBanner;
+
+  /// No description provided for @emergencyNearestDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest · {distance} km'**
+  String emergencyNearestDistance(double distance);
+
+  /// No description provided for @emergencyNearbyFacilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby 24hr Emergency Facilities'**
+  String get emergencyNearbyFacilities;
+
+  /// No description provided for @emergencyCall.
+  ///
+  /// In en, this message translates to:
+  /// **'CALL'**
+  String get emergencyCall;
+
+  /// No description provided for @emergencyDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Directions'**
+  String get emergencyDirections;
+
+  /// No description provided for @emergencyCallNow.
+  ///
+  /// In en, this message translates to:
+  /// **'CALL NOW'**
+  String get emergencyCallNow;
+
+  /// No description provided for @emergencyShowDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Directions'**
+  String get emergencyShowDirections;
+
+  /// No description provided for @emergencyNearestProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest provider'**
+  String get emergencyNearestProvider;
+
+  /// No description provided for @emergencyOfflineReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · emergency numbers ready'**
+  String get emergencyOfflineReady;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardingGetStarted;
+
+  /// No description provided for @onboardingFindDoctorsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find trusted doctors near you'**
+  String get onboardingFindDoctorsTitle;
+
+  /// No description provided for @onboardingFindDoctorsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover verified providers across Zimbabwe with maps, filters, and offline access.'**
+  String get onboardingFindDoctorsBody;
+
+  /// No description provided for @onboardingBookAppointmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Book appointments instantly'**
+  String get onboardingBookAppointmentsTitle;
+
+  /// No description provided for @onboardingBookAppointmentsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time, confirm in seconds, and keep every visit organised in one place.'**
+  String get onboardingBookAppointmentsBody;
+
+  /// No description provided for @onboardingEmergencyHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency help, one tap away'**
+  String get onboardingEmergencyHelpTitle;
+
+  /// No description provided for @onboardingEmergencyHelpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach ambulance, police, fire, and rescue numbers even when you\'re offline.'**
+  String get onboardingEmergencyHelpBody;
 }
 
 class _AppLocalizationsDelegate

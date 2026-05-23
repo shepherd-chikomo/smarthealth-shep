@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/connectivity/connectivity_notifier.dart';
 import 'package:smarthealth_shep/core/theme/app_colors.dart';
 import 'package:smarthealth_shep/core/theme/app_text_styles.dart';
@@ -26,13 +28,30 @@ class OfflineBanner extends ConsumerWidget {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Text(
-              l10n.offlineBannerMessage,
-              style: AppTextStyles.sm(
-                fontWeight: AppTextStyles.semibold,
-                color: AppColorsLight.foreground,
-              ),
-              textAlign: TextAlign.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  AppAssets.offlineCloud,
+                  width: 18,
+                  height: 18,
+                  colorFilter: const ColorFilter.mode(
+                    AppColorsLight.foreground,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    l10n.offlineBannerMessage,
+                    style: AppTextStyles.sm(
+                      fontWeight: AppTextStyles.semibold,
+                      color: AppColorsLight.foreground,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
