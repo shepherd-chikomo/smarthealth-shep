@@ -13,5 +13,88 @@
   "navHome": "Home",
   "navSearch": "Search",
   "navEmergency": "Emergency",
-  "navProfile": "Profile"
+  "navBookings": "Bookings",
+  "navProfile": "Profile",
+  "homeSearchHint": "Search doctors, clinics, hospitals…",
+  "homeChangeLocation": "Change location",
+  "homeNearbyFacilities": "Nearby Facilities",
+  "homeEmergencyTitle": "Emergency Hub",
+  "homeEmergencySubtitle": "Ambulance, police & urgent care numbers",
+  "homeCategoryNearMe": "Near Me",
+  "homeCategoryGeneralPractice": "General Practice",
+  "homeCategoryPediatrics": "Pediatrics",
+  "homeCategoryDental": "Dental",
+  "homeCategoryCardiology": "Cardiology",
+  "homeCategoryMore": "More >",
+  "homeMdpczVerified": "MDPCZ verified",
+  "homeLastUpdated": "Last updated {time}",
+  "@homeLastUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDistanceKm": "{distance} km",
+  "@homeDistanceKm": {
+    "placeholders": {
+      "distance": {
+        "type": "double",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "homeRetry": "Try again",
+  "homeErrorTitle": "Could not load facilities",
+  "homeNoProviders": "No facilities match this category nearby.",
+  "searchInputHint": "Search doctors, clinics, conditions…",
+  "searchFilterSpecialty": "Filter by Specialty",
+  "searchFilterCondition": "Filter by Medical Condition",
+  "searchFilterAgeGroup": "Patient Age Group",
+  "searchApplyFilters": "Apply Filters ({count} results)",
+  "@searchApplyFilters": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchResultsTitle": "Directory Results",
+  "searchResultsCount": "{count} providers found",
+  "@searchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchNoResults": "No providers match your search and filters.",
+  "searchOfflineHint": "Offline · searching cached providers",
+  "searchErrorTitle": "Could not load directory",
+  "profileCallNow": "Call Now",
+  "profileGetDirections": "Get Directions",
+  "profileAbout": "About",
+  "profileAboutEmpty": "No biography available for this provider.",
+  "profileShowMore": "Show more",
+  "profileShowLess": "Show less",
+  "profileServices": "Services",
+  "profileServicesEmpty": "No services listed.",
+  "profileWorkingHours": "Working Hours",
+  "profileClosed": "Closed",
+  "profileBookAppointment": "Book Appointment",
+  "profileBookPhase2": "Coming in Phase 2",
+  "profileMdpczVerified": "MDPCZ Verified",
+  "profileOfflineHint": "Offline · showing saved profile",
+  "profileNotFoundTitle": "Provider not found",
+  "profileNotFoundBody": "We couldn't find a provider with ID \"{id}\".",
+  "@profileNotFoundBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "profileGoBack": "Go back",
+  "profileErrorTitle": "Could not load profile",
+  "profileErrorGeneric": "Something went wrong while loading this profile."
 }

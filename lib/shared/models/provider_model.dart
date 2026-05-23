@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:smarthealth_shep/shared/models/working_hours_entry.dart';
 
 part 'provider_model.freezed.dart';
 part 'provider_model.g.dart';
@@ -9,12 +10,24 @@ abstract class ProviderModel with _$ProviderModel {
     required String id,
     required String name,
     required String categoryId,
+    String? specialty,
+    String? specialtyId,
+    String? facilityName,
     String? address,
     String? phone,
     double? latitude,
     double? longitude,
+    double? distanceKm,
+    String? hours,
     String? imageUrl,
+    String? heroImageUrl,
     @Default(false) bool isVerified,
+    String? mdpczNumber,
+    String? about,
+    @Default([]) List<String> services,
+    @Default([]) List<WorkingHoursEntry> weeklyHours,
+    @Default([]) List<String> conditions,
+    @Default([]) List<String> ageGroups,
   }) = _ProviderModel;
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) =>

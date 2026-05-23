@@ -148,11 +148,293 @@ abstract class AppLocalizations {
   /// **'Emergency'**
   String get navEmergency;
 
+  /// No description provided for @navBookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get navBookings;
+
   /// No description provided for @navProfile.
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get navProfile;
+
+  /// No description provided for @homeSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search doctors, clinics, hospitals…'**
+  String get homeSearchHint;
+
+  /// No description provided for @homeChangeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Change location'**
+  String get homeChangeLocation;
+
+  /// No description provided for @homeNearbyFacilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Facilities'**
+  String get homeNearbyFacilities;
+
+  /// No description provided for @homeEmergencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Hub'**
+  String get homeEmergencyTitle;
+
+  /// No description provided for @homeEmergencySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambulance, police & urgent care numbers'**
+  String get homeEmergencySubtitle;
+
+  /// No description provided for @homeCategoryNearMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Near Me'**
+  String get homeCategoryNearMe;
+
+  /// No description provided for @homeCategoryGeneralPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'General Practice'**
+  String get homeCategoryGeneralPractice;
+
+  /// No description provided for @homeCategoryPediatrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Pediatrics'**
+  String get homeCategoryPediatrics;
+
+  /// No description provided for @homeCategoryDental.
+  ///
+  /// In en, this message translates to:
+  /// **'Dental'**
+  String get homeCategoryDental;
+
+  /// No description provided for @homeCategoryCardiology.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardiology'**
+  String get homeCategoryCardiology;
+
+  /// No description provided for @homeCategoryMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More >'**
+  String get homeCategoryMore;
+
+  /// No description provided for @homeMdpczVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'MDPCZ verified'**
+  String get homeMdpczVerified;
+
+  /// No description provided for @homeLastUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {time}'**
+  String homeLastUpdated(String time);
+
+  /// No description provided for @homeDistanceKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} km'**
+  String homeDistanceKm(double distance);
+
+  /// No description provided for @homeRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get homeRetry;
+
+  /// No description provided for @homeErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load facilities'**
+  String get homeErrorTitle;
+
+  /// No description provided for @homeNoProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'No facilities match this category nearby.'**
+  String get homeNoProviders;
+
+  /// No description provided for @searchInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search doctors, clinics, conditions…'**
+  String get searchInputHint;
+
+  /// No description provided for @searchFilterSpecialty.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Specialty'**
+  String get searchFilterSpecialty;
+
+  /// No description provided for @searchFilterCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by Medical Condition'**
+  String get searchFilterCondition;
+
+  /// No description provided for @searchFilterAgeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient Age Group'**
+  String get searchFilterAgeGroup;
+
+  /// No description provided for @searchApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters ({count} results)'**
+  String searchApplyFilters(int count);
+
+  /// No description provided for @searchResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory Results'**
+  String get searchResultsTitle;
+
+  /// No description provided for @searchResultsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} providers found'**
+  String searchResultsCount(int count);
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No providers match your search and filters.'**
+  String get searchNoResults;
+
+  /// No description provided for @searchOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · searching cached providers'**
+  String get searchOfflineHint;
+
+  /// No description provided for @searchErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load directory'**
+  String get searchErrorTitle;
+
+  /// No description provided for @profileCallNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Now'**
+  String get profileCallNow;
+
+  /// No description provided for @profileGetDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Directions'**
+  String get profileGetDirections;
+
+  /// No description provided for @profileAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get profileAbout;
+
+  /// No description provided for @profileAboutEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No biography available for this provider.'**
+  String get profileAboutEmpty;
+
+  /// No description provided for @profileShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get profileShowMore;
+
+  /// No description provided for @profileShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get profileShowLess;
+
+  /// No description provided for @profileServices.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get profileServices;
+
+  /// No description provided for @profileServicesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No services listed.'**
+  String get profileServicesEmpty;
+
+  /// No description provided for @profileWorkingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Working Hours'**
+  String get profileWorkingHours;
+
+  /// No description provided for @profileClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get profileClosed;
+
+  /// No description provided for @profileBookAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Appointment'**
+  String get profileBookAppointment;
+
+  /// No description provided for @profileBookPhase2.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming in Phase 2'**
+  String get profileBookPhase2;
+
+  /// No description provided for @profileMdpczVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'MDPCZ Verified'**
+  String get profileMdpczVerified;
+
+  /// No description provided for @profileOfflineHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · showing saved profile'**
+  String get profileOfflineHint;
+
+  /// No description provided for @profileNotFoundTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider not found'**
+  String get profileNotFoundTitle;
+
+  /// No description provided for @profileNotFoundBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find a provider with ID \"{id}\".'**
+  String profileNotFoundBody(String id);
+
+  /// No description provided for @profileGoBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get profileGoBack;
+
+  /// No description provided for @profileErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load profile'**
+  String get profileErrorTitle;
+
+  /// No description provided for @profileErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while loading this profile.'**
+  String get profileErrorGeneric;
 }
 
 class _AppLocalizationsDelegate

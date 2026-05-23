@@ -9,6 +9,7 @@ abstract final class HiveBoxes {
   static const String categories = 'categories';
   static const String emergency = 'emergency';
   static const String httpCache = 'http_cache';
+  static const String homeDashboard = 'home_dashboard';
 }
 
 final cacheStoreProvider = Provider<CacheStore>((ref) {

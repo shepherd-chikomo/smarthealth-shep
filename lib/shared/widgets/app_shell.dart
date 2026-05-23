@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smarthealth_shep/core/utils/constrained_shell.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
+import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/offline_banner.dart';
 
 class AppShell extends StatelessWidget {
@@ -17,7 +17,7 @@ class AppShell extends StatelessWidget {
       children: [
         const OfflineBanner(),
         Expanded(
-          child: ConstrainedShell(child: navigationShell),
+          child: AppShellBody(child: navigationShell),
         ),
         NavigationBar(
           selectedIndex: navigationShell.currentIndex,
@@ -37,6 +37,11 @@ class AppShell extends StatelessWidget {
               icon: const Icon(Icons.emergency_outlined),
               selectedIcon: const Icon(Icons.emergency),
               label: l10n.navEmergency,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month),
+              label: l10n.navBookings,
             ),
             NavigationDestination(
               icon: const Icon(Icons.person_outline),

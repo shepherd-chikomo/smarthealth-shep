@@ -15,8 +15,8 @@ class SmartHealthApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'SmartHealth',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       routerConfig: router,
       locale: const Locale('en'),

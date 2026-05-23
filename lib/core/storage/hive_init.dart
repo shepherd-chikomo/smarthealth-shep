@@ -9,5 +9,6 @@ Future<void> initHive() async {
     Hive.openBox(HiveBoxes.categories),
     Hive.openBox(HiveBoxes.emergency),
     Hive.openBox(HiveBoxes.httpCache),
+    Hive.openBox(HiveBoxes.homeDashboard),
   ]);
 }
