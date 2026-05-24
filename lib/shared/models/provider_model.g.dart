@@ -42,6 +42,21 @@ _ProviderModel _$ProviderModelFromJson(
   ageGroups:
       (json['ageGroups'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
+  isOpenNow: json['isOpenNow'] as bool?,
+  isClosingSoon: json['isClosingSoon'] as bool?,
+  emergencyAvailable: json['emergencyAvailable'] as bool?,
+  acceptsWalkIns: json['acceptsWalkIns'] as bool?,
+  hasQueue: json['hasQueue'] as bool?,
+  queueLength: (json['queueLength'] as num?)?.toInt(),
+  waitEstimateMinutes: (json['waitEstimateMinutes'] as num?)?.toInt(),
+  nextAvailableSlot: json['nextAvailableSlot'] == null
+      ? null
+      : DateTime.parse(json['nextAvailableSlot'] as String),
+  availableToday: json['availableToday'] as bool?,
+  rating: (json['rating'] as num?)?.toDouble(),
+  reviewCount: (json['reviewCount'] as num?)?.toInt(),
+  verificationSource: json['verificationSource'] as String?,
+  isClaimed: json['isClaimed'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$ProviderModelToJson(_ProviderModel instance) =>
@@ -67,4 +82,17 @@ Map<String, dynamic> _$ProviderModelToJson(_ProviderModel instance) =>
       'weeklyHours': instance.weeklyHours,
       'conditions': instance.conditions,
       'ageGroups': instance.ageGroups,
+      'isOpenNow': instance.isOpenNow,
+      'isClosingSoon': instance.isClosingSoon,
+      'emergencyAvailable': instance.emergencyAvailable,
+      'acceptsWalkIns': instance.acceptsWalkIns,
+      'hasQueue': instance.hasQueue,
+      'queueLength': instance.queueLength,
+      'waitEstimateMinutes': instance.waitEstimateMinutes,
+      'nextAvailableSlot': instance.nextAvailableSlot?.toIso8601String(),
+      'availableToday': instance.availableToday,
+      'rating': instance.rating,
+      'reviewCount': instance.reviewCount,
+      'verificationSource': instance.verificationSource,
+      'isClaimed': instance.isClaimed,
     };

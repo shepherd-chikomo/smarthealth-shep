@@ -11,8 +11,11 @@ import 'package:smarthealth_shep/features/provider_profile/provider_profile_util
 import 'package:smarthealth_shep/features/provider_profile/widgets/provider_hero_image.dart';
 import 'package:smarthealth_shep/features/provider_profile/widgets/provider_profile_card.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
+import 'package:smarthealth_shep/shared/models/operational_status.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
-import 'package:smarthealth_shep/shared/models/working_hours_entry.dart';
+import 'package:smarthealth_shep/shared/widgets/claim_listing_cta.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/operating_hours_card.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/provider_availability_section.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -97,6 +100,21 @@ class _LoadedProfileView extends StatelessWidget {
     }
   }
 
+  static ClaimOperationalStatus _claimStatusFor(ProviderModel provider) {
+    const facilityCategories = {'hospital', 'clinic', 'pharmacy', 'ambulance'};
+    final isFacility = facilityCategories.contains(provider.categoryId);
+    if (provider.isVerified && isFacility) {
+      return ClaimOperationalStatus.verifiedFacility;
+    }
+    if (provider.isVerified) {
+      return ClaimOperationalStatus.verifiedPractitioner;
+    }
+    if (provider.isClaimed) {
+      return ClaimOperationalStatus.claimPending;
+    }
+    return ClaimOperationalStatus.unclaimed;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -165,6 +183,8 @@ class _LoadedProfileView extends StatelessWidget {
                 onDirections: () => _directions(provider),
               ),
               const SizedBox(height: 24),
+              ProviderAvailabilitySection.fromProvider(provider),
+              const SizedBox(height: 24),
               _AboutSection(
                 title: l10n.profileAbout,
                 text: provider.about ?? l10n.profileAboutEmpty,
@@ -176,7 +196,7 @@ class _LoadedProfileView extends StatelessWidget {
                 emptyLabel: l10n.profileServicesEmpty,
               ),
               const SizedBox(height: 24),
-              _WorkingHoursSection(
+              OperatingHoursCard(
                 title: l10n.profileWorkingHours,
                 hours: provider.weeklyHours,
                 closedLabel: l10n.profileClosed,
@@ -203,6 +223,37 @@ class _LoadedProfileView extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
+              ),
+              if (provider.hasQueue == true ||
+                  provider.acceptsWalkIns == true) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  button: true,
+                  label: 'Join Queue',
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.push('/queue/join/${provider.id}');
+                    },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize:
+                          const Size.fromHeight(AppConstants.minTapTarget),
+                      foregroundColor: HomeDashboardColors.primary,
+                      side: const BorderSide(color: HomeDashboardColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Join Queue',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+              ClaimListingCta(
+                targetId: provider.id,
+                claimType: 'provider',
+                claimStatus: _claimStatusFor(provider),
               ),
             ]),
           ),
@@ -308,61 +359,6 @@ class _ServicesSection extends StatelessWidget {
                   )
                   .toList(),
             ),
-    );
-  }
-}
-
-class _WorkingHoursSection extends StatelessWidget {
-  const _WorkingHoursSection({
-    required this.title,
-    required this.hours,
-    required this.closedLabel,
-  });
-
-  final String title;
-  final List<WorkingHoursEntry> hours;
-  final String closedLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SectionCard(
-      title: title,
-      child: Column(
-        children: hours.map((entry) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    entry.day,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    entry.isClosed ? closedLabel : (entry.hours ?? '—'),
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: entry.isClosed
-                          ? HomeDashboardColors.emergency
-                          : HomeDashboardColors.textSecondary,
-                      fontWeight:
-                          entry.isClosed ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

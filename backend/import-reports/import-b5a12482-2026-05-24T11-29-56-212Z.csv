@@ -1,0 +1,196 @@
+section,key,value
+summary,batch_id,b5a12482-10ce-434b-923d-c7929722f8e3
+summary,source_file,practitioners.xlsx
+summary,dry_run,false
+summary,total_rows,4318
+summary,imported,4155
+summary,failed,163
+summary,duplicates_merged,0
+summary,facilities_created,4150
+summary,providers_created,4155
+summary,links_created,4155
+summary,geocoded,0
+summary,unmatched_specialties,11
+summary,missing_cities,0
+
+failed_rows,row_number,error_code,error_message
+failed,8,VALIDATION_FAILED,Invalid email: zallana@yahoo.com z.allana@hotmail.com
+failed,27,VALIDATION_FAILED,Invalid email: tapiwabchawatama@yahoo.com tapiwakb@gmail.com
+failed,28,VALIDATION_FAILED,Invalid email: cchibonda@gmail.com cchibonda@yahoo.com
+failed,45,VALIDATION_FAILED,Invalid email: docchingwena@gmail.com docchingwena@yahoo.com
+failed,73,VALIDATION_FAILED,Invalid email: talident@gmail.com suburbsdental@gmail.com
+failed,87,VALIDATION_FAILED,Invalid email: rumbie kadzunge@gmail.com
+failed,97,VALIDATION_FAILED,Invalid email: drgkondo@hotmail.com drkondo@yahoo.com
+failed,102,VALIDATION_FAILED,Invalid email: drtinoh@gmail
+failed,107,VALIDATION_FAILED,Invalid email: takundamachera480@gmail.com nrzizh@gmail.com (husband)
+failed,116,VALIDATION_FAILED,Invalid email: smagovanyika@yahoo.com drsmagovanyika.com
+failed,151,VALIDATION_FAILED,Invalid email: masiiwamusara@yahoo.co.uk dentist.masiiwa@gmail.com
+failed,189,VALIDATION_FAILED,Invalid email: taffie25@yahoo.ca tmukokera@live.com
+failed,200,VALIDATION_FAILED,Invalid email: charitymusemwa@gmail.com tapiwamusemwa@yahoo.com
+failed,244,VALIDATION_FAILED,Invalid email: ruvarashenyoni@gmail.com 0779703401
+failed,279,VALIDATION_FAILED,Invalid email: drgtsoka@gmail.com drgsoka@primedental.co.zw
+failed,305,VALIDATION_FAILED,Invalid email: brianmauku@gmailcom
+failed,363,VALIDATION_FAILED,Invalid email: omachivenyika@gmail.com omachivenyika@psmi.com
+failed,375,VALIDATION_FAILED,Invalid email: 0736098206 stpats@comone.co.zw
+failed,400,VALIDATION_FAILED,Invalid email: eniasmoyo19@gmail.com thumoyo@gmail.com
+failed,485,VALIDATION_FAILED,Invalid email: 0775054411 tsebozara@gmail.com
+failed,493,VALIDATION_FAILED,Invalid email: nyarazano!gmail.com
+failed,528,VALIDATION_FAILED,Invalid email: shumiegracey@gmail.com gamuchirai.simunyu@yahoo.com
+failed,562,VALIDATION_FAILED,Invalid email: 0718282382 rosannachimedza@gmail.com
+failed,578,VALIDATION_FAILED,Invalid email: chinyaninite@@gmail.com
+failed,713,VALIDATION_FAILED,Invalid email: 0781290331 mikeian612@gmail.com
+failed,755,VALIDATION_FAILED,Invalid email: kelvin11@manyanga@gmail.com
+failed,821,VALIDATION_FAILED,Invalid email: tatendagerlinembira@gmail.com 0712528604
+failed,822,VALIDATION_FAILED,Invalid email: nonhlanhlambuisa212gmail.com
+failed,867,VALIDATION_FAILED,Invalid email: 713417372
+failed,909,VALIDATION_FAILED,Invalid email: addmoremushaikwa@gmail.
+failed,963,VALIDATION_FAILED,Invalid email: nomathandlovu19gmail.com
+failed,983,VALIDATION_FAILED,Invalid email: cholwewiseman2gmail.com
+failed,1017,VALIDATION_FAILED,Invalid email: kellyanesu.rushambwa
+failed,1103,VALIDATION_FAILED,Invalid email: kzvarevashe @gmail.com
+failed,1108,VALIDATION_FAILED,Invalid email: 0712407875 evaagossou@gmail.com
+failed,1181,VALIDATION_FAILED,Invalid email: cchadza@gmail.com 263774076811
+failed,1260,VALIDATION_FAILED,Invalid email: ngchigariro@gmail.com nchigariro@cimas.co.zw
+failed,1287,VALIDATION_FAILED,Invalid email: echicks23@yahoo.com edwinchikobvu@gmail.com
+failed,1335,VALIDATION_FAILED,Invalid email: eastviewmedical@gmail.com hchimuka@yahoo.co.uk
+failed,1399,VALIDATION_FAILED,Invalid email: grhmtc@@gmail.com
+failed,1420,VALIDATION_FAILED,Invalid email: chitambl@mweb.co.zw surgerychitambo@gmail.com
+failed,1445,VALIDATION_FAILED,Invalid email: nil
+failed,1452,VALIDATION_FAILED,Invalid email: audrey@oldmutual.co.zw audreytutani@gmail.com
+failed,1455,VALIDATION_FAILED,Invalid email: 777887625
+failed,1472,VALIDATION_FAILED,Invalid email: bchizhande@stannes.co.zw brightonchiz@gmail.com
+failed,1504,VALIDATION_FAILED,Invalid email: demburep212gmail.com
+failed,1536,VALIDATION_FAILED,Invalid email: kanita doka@gmail.com 0773766762
+failed,1586,VALIDATION_FAILED,Invalid email: jorandes@yahoo.com jrf292@gmail.com
+failed,1599,VALIDATION_FAILED,Invalid email: chikwakamichelle@yahoo.com drgadzayi@gmail.com
+failed,1622,VALIDATION_FAILED,Invalid email: rowlandglieman@gmail.com rglieman@gmail.com
+failed,1647,VALIDATION_FAILED,Invalid email: gozhoi@zimasco.co.zw icaaag@gmail.com
+failed,1670,VALIDATION_FAILED,Invalid email: drguagua@yahoo.com gwagwabw45@gmail.com
+failed,1682,VALIDATION_FAILED,Invalid email: gwemec@gmail.com gwemec@yahoo.com
+failed,1702,VALIDATION_FAILED,Invalid email: elihazivis@yahoo.com elisburyh@gmail.com
+failed,1740,VALIDATION_FAILED,Invalid email: gjaravaza@gmail.com vjaravaza@yahoo.com
+failed,1748,VALIDATION_FAILED,Invalid email: maudjena@gmail
+failed,1781,VALIDATION_FAILED,Invalid email: ttkambarami@gmail.com ttkambi@gmail.com ttkambi@zol.co
+failed,1795,VALIDATION_FAILED,Invalid email: desmunkan@hotmail.com desmunkan@gmail.com
+failed,1822,VALIDATION_FAILED,Invalid email: dtkasipo@gmail.com 0774102304
+failed,1950,VALIDATION_FAILED,Invalid email: collen.madembo@yahoo.com drcollen@cooltoad.com
+failed,1979,VALIDATION_FAILED,Invalid email: mafembatendaigmail.com
+failed,1984,VALIDATION_FAILED,Invalid email: ruemaffie2gmail.com 0782006323
+failed,2004,VALIDATION_FAILED,Invalid email: maguhweremcdonald @yahoo.com
+failed,2031,VALIDATION_FAILED,Invalid email: 0774107063@econetmail.com docbrianmakamure@gmail.com drbrian@docmakamure.com
+failed,2040,VALIDATION_FAILED,Invalid email: maketochipo@gmail.com 0773852626
+failed,2084,VALIDATION_FAILED,Invalid email: makuriramumbingi@yahoo.co.uk mtpmakurira@gmail.com
+failed,2115,VALIDATION_FAILED,Invalid email: jamesvushe@yahoo.com bmfmandishona@gmail.com
+failed,2130,VALIDATION_FAILED,Invalid email: mangomatadiwat@gmail.com tadiwamangomaoh97@gmail.com
+failed,2145,VALIDATION_FAILED,Invalid email: simbamanjengwa
+failed,2172,VALIDATION_FAILED,Invalid email: c.fmaparura2gmail.com
+failed,2205,VALIDATION_FAILED,Invalid email: prayermarava
+failed,2303,VALIDATION_FAILED,Invalid email: amaticha50@yahoo.co.uk drmaticha.surgery@gmail.com
+failed,2321,VALIDATION_FAILED,Invalid email: pmatsvimbo@yahoo.co.uk pfmatsvimbo@gmail.com pmdmasheast1@gmail.com
+failed,2393,VALIDATION_FAILED,Invalid email: yvettemeck2gmail.com
+failed,2399,VALIDATION_FAILED,Invalid email: 7786554923
+failed,2512,VALIDATION_FAILED,Invalid email: atm4jc@gmail.com drmuchara@outlook.com
+failed,2526,VALIDATION_FAILED,Invalid email: caltamuchucalazg2gmail.com
+failed,2529,VALIDATION_FAILED,Invalid email: brandadi99gmail.com
+failed,2533,VALIDATION_FAILED,Invalid email: taffiemudehwe@gmail.com 0778310804
+failed,2551,VALIDATION_FAILED,Invalid email: clevermudziwapasi@gmail.com mudziwapasiclever@gmail.com
+failed,2568,VALIDATION_FAILED,Invalid email: tamarymugiyo@icloud com
+failed,2577,VALIDATION_FAILED,Invalid email: evergladmgmail.com
+failed,2648,VALIDATION_FAILED,Invalid email: ctmunikwa@gmail.com 0778990136
+failed,2667,VALIDATION_FAILED,Invalid email: drmunyonga@gmail.com nickymu@psmas.co.zw
+failed,2744,VALIDATION_FAILED,Invalid email: bmusarurwa@yahoo.com bmusarurwa87@gmail.com
+failed,2753,VALIDATION_FAILED,Invalid email: drjtmusewe@yahoo.com 0773917915
+failed,2778,VALIDATION_FAILED,Invalid email: mitchellmushomga
+failed,2792,VALIDATION_FAILED,Invalid email: kukuemail2gmail.com
+failed,2844,VALIDATION_FAILED,Invalid email: bellzmutibura2gmail.com
+failed,2859,VALIDATION_FAILED,Invalid email: takudzwamutseta@gmail.com 0772144396
+failed,2896,VALIDATION_FAILED,Invalid email: brasso ray@yahoo.com rmuzvidziwa@psmi.co.zw
+failed,2897,VALIDATION_FAILED,Invalid email: seanmvelasy@gmail.com 263718439372
+failed,2900,VALIDATION_FAILED,Invalid email: clement.mwamba@yahoo.fr mwambaclement15@gmail.com
+failed,2928,VALIDATION_FAILED,Invalid email: freenkust87@gmail.com ncebenkululeko71@yahoo.com
+failed,2976,VALIDATION_FAILED,Invalid email: dngorora@gmail.com.  dngorora@hwangecolliery.co.zw
+failed,3030,VALIDATION_FAILED,Invalid email: ampachena@gmail.com drabgail@yahoo.co.uk
+failed,3094,VALIDATION_FAILED,Invalid email: nyeredr@gmail.com nyereyegonab@nssa.org.zw
+failed,3130,VALIDATION_FAILED,Invalid email: abdurrehman786@gmail.com marimbamedicalcentre@gmail.com
+failed,3147,VALIDATION_FAILED,Invalid email: samsonpomo@yahoo.com sapomo@gmail.com
+failed,3234,VALIDATION_FAILED,Invalid email: asifsharief80@yahoo.com daudsharief@gmail.com
+failed,3256,VALIDATION_FAILED,Invalid email: learnmoreshoti@gmail.com docshoti20@gmail.com
+failed,3303,VALIDATION_FAILED,Invalid email: 779075484
+failed,3305,VALIDATION_FAILED,Invalid email: sithole_emmanuel@yahoo.com/ braeemmaa@gmail.com
+failed,3323,VALIDATION_FAILED,Invalid email: jlstack@mweb.co.zw jlstack20@gmail.com
+failed,3328,VALIDATION_FAILED,Invalid email: drsupiya19@gmail.com 0787974337
+failed,3346,VALIDATION_FAILED,Invalid email: canisio@ecoweb.co.zw drtakundwac@gmail.com
+failed,3453,VALIDATION_FAILED,Invalid email: brian13zengeni2gmail.com
+failed,3503,VALIDATION_FAILED,Invalid email: benyure@yahoo.com benyurecolin@yahoo.com
+failed,3518,VALIDATION_FAILED,Invalid email: allandimingo@yahoo.com allandimingodr@gmail.com
+failed,3531,VALIDATION_FAILED,Invalid email: anaestheticrooms@gmail.com (business) jonahkasule@yahoo.com
+failed,3532,VALIDATION_FAILED,Invalid email: nclenge@gmail. com
+failed,3538,VALIDATION_FAILED,Invalid email: pmanyumwa@yahoo.com drmanyumwa@gmail.com
+failed,3540,VALIDATION_FAILED,Invalid email: anaestheticrooms@gmail.com (business) danaimarange@yahoo.co.uk
+failed,3548,VALIDATION_FAILED,Invalid email: mazondes@iwayafrica.co.zw mazondes@mweb.co.zw
+failed,3556,VALIDATION_FAILED,Invalid email: anaestheticrooms@gmail.com (business) mukonoweshuro@gmail.com
+failed,3567,VALIDATION_FAILED,Invalid email: anaestheticrooms@gmail.com (business) shingai_n@yahoo.co.uk
+failed,3569,VALIDATION_FAILED,Invalid email: anaestheticrooms@gmail.com (business) rtichnyamayaro@gmail.com
+failed,3580,VALIDATION_FAILED,Invalid email: thepractice34downie@gmail.com elenifleming95@gmail.com
+failed,3594,VALIDATION_FAILED,Invalid email: jchirenda@healthnet.zw jchirenda@medsch.uz.ac.zw
+failed,3596,VALIDATION_FAILED,Invalid email: cdhege64@gmail.com cdhege@webmail.co.za
+failed,3605,VALIDATION_FAILED,Invalid email: hwefa@zol.co.zw mahomvaagnes@gmail.com
+failed,3612,VALIDATION_FAILED,Invalid email: gmuchena@fhi360.org drglad84@gmail.com
+failed,3650,VALIDATION_FAILED,Invalid email: kazkal2003@hotmail.com surgicalaccounts@gmail.com
+failed,3656,VALIDATION_FAILED,Invalid email: mawerarooms@gmail.com gilbert.mawera@gmail.com
+failed,3693,VALIDATION_FAILED,Invalid email: ds_africa@yahoo.com mid@yoafrica.co.zw
+failed,3742,VALIDATION_FAILED,Invalid email: ttmatsa@gmail.com drttmatsa@mhchealthcare.co.zw
+failed,3746,VALIDATION_FAILED,Invalid email: fmhlanga@uz-ucsf.co.zw fmhlanga@uz-ucsf.co.zw/ felixmhla@yahoo.com
+failed,3758,VALIDATION_FAILED,Invalid email: muporich@gmail.com ricwaat@cooltoad.com
+failed,3794,VALIDATION_FAILED,Invalid email: pjthistle@hotmail.com pthistle@gmn-usa.com
+failed,3795,VALIDATION_FAILED,Invalid email: cverenga@yahoo.com drcverenga@gmail.com drcverenga@me.com
+failed,3802,VALIDATION_FAILED,Invalid email: ingani1@hotmail.com moyod@iwayafrica.co.zw
+failed,3827,VALIDATION_FAILED,Invalid email: 0777571209 atmagava@gmail.com
+failed,3839,VALIDATION_FAILED,Invalid email: gilbertimoyagmail.com
+failed,3864,VALIDATION_FAILED,Invalid email: alban.bowers@homecall.co.uk bowersrooms@gmail.com
+failed,3878,VALIDATION_FAILED,Invalid email: macheka@iwayafrica.co.zw macheka@mweb.co.zw
+failed,3882,VALIDATION_FAILED,Invalid email: rmakota6@gmail.com rmakota@pioneeringhealth.co.zw rmakotac@mohcc.org.zw
+failed,3884,VALIDATION_FAILED,Invalid email: drvmandizvidza@gmail.com drvmandizvidza@yahoo.com
+failed,3886,VALIDATION_FAILED,Invalid email: bobmangwiro@yahoo.co.uk mangwiror@nssa.org.zw
+failed,3895,VALIDATION_FAILED,Invalid email: cola@iwayafrica.co.zw   collenmsasanure@gmail.com
+failed,3915,VALIDATION_FAILED,Invalid email: veragan2@gmail.com / veragan2003@yahoo.com
+failed,3917,VALIDATION_FAILED,Invalid email: samwestonsimons@yahoo.co.uk sam.weston-simons@nhs.net
+failed,3921,VALIDATION_FAILED,Invalid email: audiomax@africaonline.co.zw cchidziva@audiomaxclinic.com
+failed,3930,VALIDATION_FAILED,Invalid email: matarusesurgery@gmail.com matarusez@gmail.com
+failed,3947,VALIDATION_FAILED,Invalid email: dandas@zol.co zw
+failed,3953,VALIDATION_FAILED,Invalid email: lawsyrocks@yahoo.com chikaralaw@gmail.com
+failed,3989,VALIDATION_FAILED,Invalid email: tichmavev@mweb.co.zw maveterasurg@gmail.com tichymav@gmail.com
+failed,4026,VALIDATION_FAILED,Invalid email: makunike@medsch.uz.ac.zw rmutasa@hotmail.com
+failed,4037,VALIDATION_FAILED,Invalid email: blessing.pvt@gmail.com blessing.zambuko@nust.ac.zw
+failed,4113,VALIDATION_FAILED,Invalid email: mmelindatendai@yahoo.com drmelmun@gmail.com
+failed,4120,VALIDATION_FAILED,Invalid email: queenkwenza@gmail.com 0778684874
+failed,4123,VALIDATION_FAILED,Invalid email: 0772240934 mpndix@metropolitanclinic.co.zw
+failed,4124,VALIDATION_FAILED,Invalid email: drmndlovusurgery@yahoo.com mbongenigm@yahoo.uk
+failed,4143,VALIDATION_FAILED,Invalid email: ian.ternouth@tdhp.org.nz ianternouth@gmail.com
+failed,4194,VALIDATION_FAILED,Invalid email: gcjakanani@gmail.com gjakanani@doc.co.zw
+failed,4230,VALIDATION_FAILED,Invalid email: ntokozosqo@gmail.com nndlovu@mweb.co.zw
+failed,4253,VALIDATION_FAILED,Invalid email: smachemedze1@yahoo.com smsmachemedze9@gmail.com
+failed,4278,VALIDATION_FAILED,Invalid email: kusekn@gmail.com ndukusurgery@gmail.com
+failed,4280,VALIDATION_FAILED,Invalid email: crispin112@yahoo.fr crispin112@gmail.com
+failed,4283,VALIDATION_FAILED,Invalid email: sachikonyem@gmail.com sanchezsachikonye@hotmail.com
+failed,4297,VALIDATION_FAILED,Invalid email: lkchonzi@gmail.com lkchonzi@ymail.com
+failed,4317,VALIDATION_FAILED,Invalid email: andrew.samkange@gmail.com csamkange@healthnet.org.zw
+failed,4318,VALIDATION_FAILED,Invalid email: evaristomarowa@yahoo.com marowaeva@gmail.com
+failed,4319,VALIDATION_FAILED,Invalid email: email_address
+
+unmatched_specialties,specialty
+specialty,Medical Practitioner
+specialty,Specialist Anaesthetist
+specialty,Specialist Family Practitioner
+specialty,Specialist Maxillo- Facial and Oral Surgeon
+specialty,Specialist Neuro Surgeon
+specialty,Specialist Paediatric Surgeon
+specialty,Specialist Periodontist
+specialty,Specialist Plastic And Reconstructive Surgeon
+specialty,Specialist Prosthodontist
+specialty,Specialist Surgeon
+specialty,specialty
+
+missing_cities,city
+
+duplicate_reviews,entity_type,source,target,confidence,score,reason

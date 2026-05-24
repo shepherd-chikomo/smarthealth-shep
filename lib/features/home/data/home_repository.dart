@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
+import 'package:smarthealth_shep/features/queue/data/queue_repository.dart';
+import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
@@ -12,12 +14,14 @@ class HomeSyncResult {
     required this.city,
     required this.lastUpdated,
     required this.isOffline,
+    this.activeQueue,
   });
 
   final List<ProviderModel> providers;
   final String city;
   final DateTime lastUpdated;
   final bool isOffline;
+  final QueueSession? activeQueue;
 }
 
 /// Loads and caches home dashboard provider data (offline-first).
@@ -25,11 +29,14 @@ class HomeRepository {
   HomeRepository({
     ProviderRepository? providerRepository,
     Connectivity? connectivity,
+    QueueRepository? queueRepository,
   })  : _providers = providerRepository ?? ProviderRepository.defaults(),
-        _connectivity = connectivity ?? Connectivity();
+        _connectivity = connectivity ?? Connectivity(),
+        _queue = queueRepository ?? QueueRepository();
 
   final ProviderRepository _providers;
   final Connectivity _connectivity;
+  final QueueRepository _queue;
 
   static const _cacheProvidersKey = 'home_providers_json';
   static const _cacheCityKey = 'home_city';
@@ -48,7 +55,6 @@ class HomeRepository {
 
     if (online) {
       try {
-        await Future<void>.delayed(const Duration(milliseconds: 600));
         final providers = await _providers.getProviders();
         final now = DateTime.now();
         await _writeCache(providers, city, now);
@@ -57,6 +63,7 @@ class HomeRepository {
           city: city,
           lastUpdated: now,
           isOffline: false,
+          activeQueue: _queue.getActiveSession(),
         );
       } catch (_) {
         final cached = _readCache();
@@ -66,6 +73,7 @@ class HomeRepository {
             city: cached.city,
             lastUpdated: cached.lastUpdated,
             isOffline: true,
+            activeQueue: _queue.getActiveSession(),
           );
         }
         rethrow;
@@ -79,6 +87,7 @@ class HomeRepository {
         city: cached.city,
         lastUpdated: cached.lastUpdated,
         isOffline: true,
+        activeQueue: _queue.getActiveSession(),
       );
     }
 

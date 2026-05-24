@@ -8,7 +8,9 @@ Future<void> initHive() async {
     Hive.openBox(HiveBoxes.providers),
     Hive.openBox(HiveBoxes.categories),
     Hive.openBox(HiveBoxes.emergency),
-    Hive.openBox(HiveBoxes.httpCache),
     Hive.openBox(HiveBoxes.homeDashboard),
+    Hive.openBox(HiveBoxes.syncQueue),
+    Hive.openBox(HiveBoxes.facilities),
+    Hive.openBox(HiveBoxes.operatingHours),
   ]);
 }

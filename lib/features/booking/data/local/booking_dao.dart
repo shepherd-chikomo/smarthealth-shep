@@ -37,10 +37,17 @@ class BookingDao {
     });
   }
 
-  Future<BookingConfirmation> saveConfirmed(BookingConfirmation booking) async {
+  Future<BookingConfirmation> saveConfirmed(
+    BookingConfirmation booking, {
+    String? localId,
+    String syncStatus = 'synced',
+    DateTime? updatedAt,
+  }) async {
     final db = await _db;
+    final id = localId ?? booking.referenceNumber;
+    final now = updatedAt ?? DateTime.now().toUtc();
     await db.insert('bookings', {
-      'id': booking.referenceNumber,
+      'id': id,
       'reference': booking.referenceNumber,
       'data_json': jsonEncode({
         'referenceNumber': booking.referenceNumber,
@@ -52,8 +59,10 @@ class BookingDao {
         'durationMinutes': booking.durationMinutes,
         'patientName': booking.patientName,
         'notes': booking.notes,
+        'syncStatus': syncStatus,
+        'updatedAt': now.toIso8601String(),
       }),
-      'created_at': DateTime.now().toUtc().toIso8601String(),
+      'created_at': now.toIso8601String(),
     });
     return booking;
   }

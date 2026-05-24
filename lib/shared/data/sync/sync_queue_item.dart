@@ -10,9 +10,15 @@ enum SyncMutationType {
 }
 
 /// Entity targeted by a queued sync operation.
+///
+/// Priority order (lower = synced first) reflects mission-critical data for
+/// low-connectivity African environments.
 enum SyncEntityType {
   emergency,
   provider,
+  facility,
+  operatingHours,
+  queueUpdate,
   appointment,
   family,
 }
@@ -23,7 +29,15 @@ enum SyncQueueStatus {
   processing,
   failed,
   needsManualRetry,
+  needsManualConflict,
   completed,
+}
+
+/// How a sync conflict was resolved.
+enum SyncConflictResolution {
+  appliedLocal,
+  appliedServer,
+  requiresManual,
 }
 
 extension SyncEntityTypeX on SyncEntityType {
@@ -31,24 +45,45 @@ extension SyncEntityTypeX on SyncEntityType {
   int get priority => switch (this) {
         SyncEntityType.emergency => 0,
         SyncEntityType.provider => 1,
-        SyncEntityType.appointment => 2,
-        SyncEntityType.family => 3,
+        SyncEntityType.facility => 2,
+        SyncEntityType.operatingHours => 3,
+        SyncEntityType.queueUpdate => 4,
+        SyncEntityType.appointment => 5,
+        SyncEntityType.family => 6,
       };
 
   String get apiPath => switch (this) {
         SyncEntityType.emergency => 'emergency',
         SyncEntityType.provider => 'providers',
+        SyncEntityType.facility => 'facilities',
+        SyncEntityType.operatingHours => 'providers',
+        SyncEntityType.queueUpdate => 'appointments/queue',
         SyncEntityType.appointment => 'appointments',
-        SyncEntityType.family => 'family',
+        SyncEntityType.family => 'patients/family',
       };
 
-  /// Directory/catalog data — server wins on conflict.
+  /// Directory/catalog data — server wins on conflict (aggressive cache).
   bool get serverWinsOnConflict => switch (this) {
         SyncEntityType.emergency => true,
         SyncEntityType.provider => true,
+        SyncEntityType.facility => true,
+        SyncEntityType.operatingHours => true,
+        SyncEntityType.queueUpdate => false,
         SyncEntityType.appointment => false,
         SyncEntityType.family => false,
       };
+
+  /// Last-write-wins using [updated_at] timestamps.
+  bool get usesLastWriteWins => switch (this) {
+        SyncEntityType.family => true,
+        SyncEntityType.queueUpdate => true,
+        SyncEntityType.appointment => false,
+        _ => false,
+      };
+
+  /// Appointments require manual resolution when both sides changed.
+  bool get requiresManualConflictResolution =>
+      this == SyncEntityType.appointment;
 }
 
 extension SyncMutationTypeX on SyncMutationType {
@@ -69,6 +104,7 @@ class SyncQueueItem extends Equatable {
     this.nextRetryAt,
     this.lastError,
     this.clientUpdatedAt,
+    this.optimistic = true,
   });
 
   final String id;
@@ -83,7 +119,12 @@ class SyncQueueItem extends Equatable {
   final String? lastError;
   final DateTime? clientUpdatedAt;
 
-  bool get requiresManualRetry => status == SyncQueueStatus.needsManualRetry;
+  /// Whether this item was applied optimistically to local storage.
+  final bool optimistic;
+
+  bool get requiresManualRetry =>
+      status == SyncQueueStatus.needsManualRetry ||
+      status == SyncQueueStatus.needsManualConflict;
 
   SyncQueueItem copyWith({
     SyncMutationType? mutationType,
@@ -95,6 +136,7 @@ class SyncQueueItem extends Equatable {
     DateTime? nextRetryAt,
     String? lastError,
     DateTime? clientUpdatedAt,
+    bool? optimistic,
     bool clearNextRetryAt = false,
     bool clearLastError = false,
   }) {
@@ -111,10 +153,11 @@ class SyncQueueItem extends Equatable {
           clearNextRetryAt ? null : (nextRetryAt ?? this.nextRetryAt),
       lastError: clearLastError ? null : (lastError ?? this.lastError),
       clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
+      optimistic: optimistic ?? this.optimistic,
     );
   }
 
-  Map<String, dynamic> toRow() {
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'mutation_type': mutationType.name,
@@ -127,29 +170,37 @@ class SyncQueueItem extends Equatable {
       'next_retry_at': nextRetryAt?.toUtc().toIso8601String(),
       'last_error': lastError,
       'client_updated_at': clientUpdatedAt?.toUtc().toIso8601String(),
+      'optimistic': optimistic,
     };
   }
 
-  factory SyncQueueItem.fromRow(Map<String, Object?> row) {
+  Map<String, Object?> toRow() => toMap();
+
+  factory SyncQueueItem.fromMap(Map<String, dynamic> map) {
     return SyncQueueItem(
-      id: row['id']! as String,
+      id: map['id']! as String,
       mutationType: SyncMutationType.values.byName(
-        row['mutation_type']! as String,
+        map['mutation_type']! as String,
       ),
-      entityType: SyncEntityType.values.byName(row['entity_type']! as String),
-      entityId: row['entity_id']! as String,
-      payload: jsonDecode(row['payload_json']! as String) as Map<String, dynamic>,
-      retryCount: row['retry_count']! as int,
-      status: SyncQueueStatus.values.byName(row['status']! as String),
-      createdAt: DateTime.parse(row['created_at']! as String),
-      nextRetryAt: row['next_retry_at'] != null
-          ? DateTime.parse(row['next_retry_at']! as String)
+      entityType: SyncEntityType.values.byName(map['entity_type']! as String),
+      entityId: map['entity_id']! as String,
+      payload: jsonDecode(map['payload_json']! as String) as Map<String, dynamic>,
+      retryCount: map['retry_count']! as int,
+      status: SyncQueueStatus.values.byName(map['status']! as String),
+      createdAt: DateTime.parse(map['created_at']! as String),
+      nextRetryAt: map['next_retry_at'] != null
+          ? DateTime.parse(map['next_retry_at']! as String)
           : null,
-      lastError: row['last_error'] as String?,
-      clientUpdatedAt: row['client_updated_at'] != null
-          ? DateTime.parse(row['client_updated_at']! as String)
+      lastError: map['last_error'] as String?,
+      clientUpdatedAt: map['client_updated_at'] != null
+          ? DateTime.parse(map['client_updated_at']! as String)
           : null,
+      optimistic: map['optimistic'] as bool? ?? true,
     );
+  }
+
+  factory SyncQueueItem.fromRow(Map<String, Object?> row) {
+    return SyncQueueItem.fromMap(Map<String, dynamic>.from(row));
   }
 
   @override
@@ -165,6 +216,39 @@ class SyncQueueItem extends Equatable {
         nextRetryAt,
         lastError,
         clientUpdatedAt,
+        optimistic,
+      ];
+}
+
+/// Result of conflict resolution between local and server copies.
+class SyncConflictResult extends Equatable {
+  const SyncConflictResult({
+    required this.resolution,
+    required this.entityType,
+    required this.entityId,
+    this.serverUpdatedAt,
+    this.clientUpdatedAt,
+    this.message,
+  });
+
+  final SyncConflictResolution resolution;
+  final SyncEntityType entityType;
+  final String entityId;
+  final DateTime? serverUpdatedAt;
+  final DateTime? clientUpdatedAt;
+  final String? message;
+
+  bool get requiresManual =>
+      resolution == SyncConflictResolution.requiresManual;
+
+  @override
+  List<Object?> get props => [
+        resolution,
+        entityType,
+        entityId,
+        serverUpdatedAt,
+        clientUpdatedAt,
+        message,
       ];
 }
 
@@ -176,6 +260,7 @@ class SyncRunResult extends Equatable {
     required this.failed,
     required this.skippedOffline,
     required this.needsManualRetry,
+    this.conflicts = 0,
   });
 
   const SyncRunResult.idle()
@@ -183,15 +268,17 @@ class SyncRunResult extends Equatable {
         succeeded = 0,
         failed = 0,
         skippedOffline = false,
-        needsManualRetry = 0;
+        needsManualRetry = 0,
+        conflicts = 0;
 
   final int processed;
   final int succeeded;
   final int failed;
   final bool skippedOffline;
   final int needsManualRetry;
+  final int conflicts;
 
   @override
   List<Object?> get props =>
-      [processed, succeeded, failed, skippedOffline, needsManualRetry];
+      [processed, succeeded, failed, skippedOffline, needsManualRetry, conflicts];
 }

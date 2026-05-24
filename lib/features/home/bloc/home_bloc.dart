@@ -34,6 +34,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         lastUpdated: current.lastUpdated,
         selectedCategoryId: current.selectedCategoryId,
         isRefreshing: true,
+        activeQueue: current.activeQueue,
       ));
     }
     await _fetch(emit, isRefresh: true);
@@ -56,6 +57,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           providers: result.providers,
           lastUpdated: result.lastUpdated,
           selectedCategoryId: categoryId,
+          activeQueue: result.activeQueue,
         ));
       } else {
         emit(HomeLoaded(
@@ -63,6 +65,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           providers: result.providers,
           lastUpdated: result.lastUpdated,
           selectedCategoryId: categoryId,
+          activeQueue: result.activeQueue,
         ));
       }
     } catch (error) {

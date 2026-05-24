@@ -1,7 +1,6 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_event.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_state.dart';
 import 'package:smarthealth_shep/features/booking/data/booking_repository.dart';
@@ -185,27 +184,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       ),
     );
 
-    final isOffline = !(await _repository.isOnline());
-    if (isOffline) {
-      await _repository.saveDraft(
-        providerId: provider.id,
-        date: date,
-        time: time,
-        patientId: patient.id,
-        notes: notes,
-      );
-      emit(
-        state.copyWith(
-          status: BookingStatus.offlineBlocked,
-          isOffline: true,
-          draftSaved: true,
-        ),
-      );
-      return;
-    }
-
     try {
-      final confirmation = await _repository.confirmBooking(
+      final result = await _repository.confirmBooking(
         provider: provider,
         date: date,
         time: time,
@@ -216,31 +196,9 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       emit(
         state.copyWith(
           status: BookingStatus.confirmed,
-          confirmation: confirmation,
-          isOffline: false,
-        ),
-      );
-    } on NetworkException catch (error, stackTrace) {
-      developer.log(
-        'Booking offline during confirm',
-        name: _logName,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      await _repository.saveDraft(
-        providerId: provider.id,
-        date: date,
-        time: time,
-        patientId: patient.id,
-        notes: notes,
-      );
-
-      emit(
-        state.copyWith(
-          status: BookingStatus.offlineBlocked,
-          isOffline: true,
-          draftSaved: true,
+          confirmation: result.confirmation,
+          isOffline: result.isPendingSync,
+          pendingSync: result.isPendingSync,
         ),
       );
     } catch (error, stackTrace) {

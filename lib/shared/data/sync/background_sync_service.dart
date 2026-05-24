@@ -3,16 +3,17 @@ import 'dart:developer' as developer;
 
 import 'package:background_fetch/background_fetch.dart' as bg_fetch;
 import 'package:flutter/foundation.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_backoff.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_background_entrypoint.dart';
 import 'package:workmanager/workmanager.dart' as wm;
 
-const _logName = 'BackgroundSyncScheduler';
+const _logName = 'BackgroundSyncService';
 const _androidTaskName = 'smarthealthBackgroundSync';
 const _androidUniqueName = 'smarthealth_sync_periodic';
 
-/// Registers WorkManager (Android) and Background Fetch (iOS) periodic sync.
-abstract final class BackgroundSyncScheduler {
-  static const periodicInterval = Duration(hours: 6);
+/// Registers platform background sync and exposes retry interval policy.
+abstract final class BackgroundSyncService {
+  static Duration get retryInterval => SyncBackoff.retryInterval;
 
   static Future<void> register() async {
     if (kIsWeb) return;
@@ -23,22 +24,20 @@ abstract final class BackgroundSyncScheduler {
 
   static Future<void> _registerWorkManager() async {
     try {
-      await wm.Workmanager().initialize(
-        syncCallbackDispatcher,
-      );
+      await wm.Workmanager().initialize(syncCallbackDispatcher);
 
       await wm.Workmanager().registerPeriodicTask(
         _androidUniqueName,
         _androidTaskName,
-        frequency: periodicInterval,
-        existingWorkPolicy: wm.ExistingPeriodicWorkPolicy.keep,
+        frequency: retryInterval,
+        existingWorkPolicy: wm.ExistingPeriodicWorkPolicy.update,
         constraints: wm.Constraints(
           networkType: wm.NetworkType.connected,
         ),
       );
 
       developer.log(
-        'WorkManager periodic sync registered (${periodicInterval.inHours}h)',
+        'WorkManager sync registered (${retryInterval.inMinutes}m)',
         name: _logName,
       );
     } catch (error, stackTrace) {
@@ -55,7 +54,7 @@ abstract final class BackgroundSyncScheduler {
     try {
       await bg_fetch.BackgroundFetch.configure(
         bg_fetch.BackgroundFetchConfig(
-          minimumFetchInterval: periodicInterval.inMinutes,
+          minimumFetchInterval: retryInterval.inMinutes,
           stopOnTerminate: false,
           enableHeadless: true,
           startOnBoot: true,
@@ -70,7 +69,7 @@ abstract final class BackgroundSyncScheduler {
       );
 
       developer.log(
-        'Background Fetch registered (${periodicInterval.inHours}h)',
+        'Background Fetch registered (${retryInterval.inMinutes}m)',
         name: _logName,
       );
     } catch (error, stackTrace) {
@@ -84,16 +83,15 @@ abstract final class BackgroundSyncScheduler {
   }
 
   static void _onBackgroundFetch(String taskId) {
-    developer.log('Background Fetch event: $taskId', name: _logName);
-    unawaited(_runBackgroundSync(taskId));
+    developer.log('Background Fetch: $taskId', name: _logName);
+    unawaited(_run(taskId));
   }
 
   static void _onBackgroundFetchTimeout(String taskId) {
-    developer.log('Background Fetch timeout: $taskId', name: _logName);
     bg_fetch.BackgroundFetch.finish(taskId);
   }
 
-  static Future<void> _runBackgroundSync(String taskId) async {
+  static Future<void> _run(String taskId) async {
     try {
       await runBackgroundSyncEntrypoint();
     } finally {

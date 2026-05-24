@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 sealed class HomeState extends Equatable {
@@ -24,6 +25,7 @@ final class HomeLoaded extends HomeState {
     this.selectedCategoryId,
     this.isRefreshing = false,
     this.isOffline = false,
+    this.activeQueue,
   });
 
   final String city;
@@ -32,6 +34,7 @@ final class HomeLoaded extends HomeState {
   final String? selectedCategoryId;
   final bool isRefreshing;
   final bool isOffline;
+  final QueueSession? activeQueue;
 
   List<ProviderModel> get visibleProviders {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
@@ -49,7 +52,9 @@ final class HomeLoaded extends HomeState {
     String? selectedCategoryId,
     bool? isRefreshing,
     bool? isOffline,
+    QueueSession? activeQueue,
     bool clearCategory = false,
+    bool clearQueue = false,
   }) {
     return HomeLoaded(
       city: city ?? this.city,
@@ -59,6 +64,7 @@ final class HomeLoaded extends HomeState {
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isOffline: isOffline ?? this.isOffline,
+      activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
     );
   }
 
@@ -70,6 +76,7 @@ final class HomeLoaded extends HomeState {
         selectedCategoryId,
         isRefreshing,
         isOffline,
+        activeQueue,
       ];
 }
 
@@ -79,12 +86,14 @@ final class HomeOffline extends HomeState {
     required this.providers,
     required this.lastUpdated,
     this.selectedCategoryId,
+    this.activeQueue,
   });
 
   final String city;
   final List<ProviderModel> providers;
   final DateTime lastUpdated;
   final String? selectedCategoryId;
+  final QueueSession? activeQueue;
 
   List<ProviderModel> get visibleProviders {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
@@ -100,7 +109,9 @@ final class HomeOffline extends HomeState {
     List<ProviderModel>? providers,
     DateTime? lastUpdated,
     String? selectedCategoryId,
+    QueueSession? activeQueue,
     bool clearCategory = false,
+    bool clearQueue = false,
   }) {
     return HomeOffline(
       city: city ?? this.city,
@@ -108,12 +119,13 @@ final class HomeOffline extends HomeState {
       lastUpdated: lastUpdated ?? this.lastUpdated,
       selectedCategoryId:
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
+      activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
     );
   }
 
   @override
   List<Object?> get props =>
-      [city, providers, lastUpdated, selectedCategoryId];
+      [city, providers, lastUpdated, selectedCategoryId, activeQueue];
 }
 
 final class HomeError extends HomeState {

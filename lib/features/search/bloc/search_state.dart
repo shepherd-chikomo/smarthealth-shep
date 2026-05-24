@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/search/models/search_criteria.dart';
+import 'package:smarthealth_shep/features/search/models/search_sort_option.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
-
 enum SearchStatus { initial, loading, ready, error }
 
 class SearchState extends Equatable {
@@ -11,10 +11,12 @@ class SearchState extends Equatable {
     this.specialties = const {},
     this.conditions = const {},
     this.ageGroups = const {},
+    this.operational = const {},
+    this.sortBy = SearchSortOption.distance,
     this.allProviders = const [],
     this.filteredProviders = const [],
-    this.isOffline = false,
-    this.errorMessage,
+    this.recentSearches = const [],
+    this.isOffline = false,    this.errorMessage,
     this.navigateToResults = false,
   });
 
@@ -23,13 +25,22 @@ class SearchState extends Equatable {
   final Set<String> specialties;
   final Set<String> conditions;
   final Set<String> ageGroups;
+  final Set<String> operational;
+  final SearchSortOption sortBy;
   final List<ProviderModel> allProviders;
   final List<ProviderModel> filteredProviders;
-  final bool isOffline;
-  final String? errorMessage;
+  final List<String> recentSearches;
+  final bool isOffline;  final String? errorMessage;
   final bool navigateToResults;
 
   int get resultsCount => filteredProviders.length;
+
+  bool get hasActiveCriteria =>
+      query.trim().isNotEmpty ||
+      specialties.isNotEmpty ||
+      conditions.isNotEmpty ||
+      ageGroups.isNotEmpty ||
+      operational.isNotEmpty;
 
   SearchCriteria get criteria => SearchCriteria(
         query: query,
@@ -38,18 +49,21 @@ class SearchState extends Equatable {
         ageGroups: ageGroups,
         results: filteredProviders,
         isOffline: isOffline,
+        operational: operational,
+        sortBy: sortBy,
       );
-
   SearchState copyWith({
     SearchStatus? status,
     String? query,
     Set<String>? specialties,
     Set<String>? conditions,
     Set<String>? ageGroups,
+    Set<String>? operational,
+    SearchSortOption? sortBy,
     List<ProviderModel>? allProviders,
     List<ProviderModel>? filteredProviders,
-    bool? isOffline,
-    String? errorMessage,
+    List<String>? recentSearches,
+    bool? isOffline,    String? errorMessage,
     bool? navigateToResults,
     bool clearError = false,
   }) {
@@ -59,10 +73,12 @@ class SearchState extends Equatable {
       specialties: specialties ?? this.specialties,
       conditions: conditions ?? this.conditions,
       ageGroups: ageGroups ?? this.ageGroups,
+      operational: operational ?? this.operational,
+      sortBy: sortBy ?? this.sortBy,
       allProviders: allProviders ?? this.allProviders,
       filteredProviders: filteredProviders ?? this.filteredProviders,
-      isOffline: isOffline ?? this.isOffline,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      recentSearches: recentSearches ?? this.recentSearches,
+      isOffline: isOffline ?? this.isOffline,      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       navigateToResults: navigateToResults ?? this.navigateToResults,
     );
   }
@@ -74,10 +90,12 @@ class SearchState extends Equatable {
         specialties,
         conditions,
         ageGroups,
+        operational,
+        sortBy,
         allProviders,
         filteredProviders,
-        isOffline,
-        errorMessage,
+        recentSearches,
+        isOffline,        errorMessage,
         navigateToResults,
       ];
 }

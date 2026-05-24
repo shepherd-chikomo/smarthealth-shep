@@ -310,6 +310,90 @@ abstract class AppLocalizations {
   /// **'No providers match your search and filters.'**
   String get searchNoResults;
 
+  /// No description provided for @searchNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your filters or search for a different specialty.'**
+  String get searchNoResultsHint;
+
+  /// No description provided for @searchClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust filters'**
+  String get searchClearFilters;
+
+  /// No description provided for @searchEmptyAvailableToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No providers available today'**
+  String get searchEmptyAvailableToday;
+
+  /// No description provided for @searchEmptyWalkIns.
+  ///
+  /// In en, this message translates to:
+  /// **'No facilities currently accepting walk-ins'**
+  String get searchEmptyWalkIns;
+
+  /// No description provided for @searchEmptyQueueHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Queue times currently high'**
+  String get searchEmptyQueueHigh;
+
+  /// No description provided for @searchFilterOperational.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get searchFilterOperational;
+
+  /// No description provided for @searchRecentSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Searches'**
+  String get searchRecentSearches;
+
+  /// No description provided for @searchPopularSpecialties.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular Specialties'**
+  String get searchPopularSpecialties;
+
+  /// No description provided for @searchNearbyFacilities.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby Facilities'**
+  String get searchNearbyFacilities;
+
+  /// No description provided for @searchEmergencyShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency Shortcuts'**
+  String get searchEmergencyShortcuts;
+
+  /// No description provided for @searchEmergencyNearMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency care near me'**
+  String get searchEmergencyNearMe;
+
+  /// No description provided for @searchOpenNowShortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Open now nearby'**
+  String get searchOpenNowShortcut;
+
+  /// No description provided for @searchEmergencyHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Emergency hub'**
+  String get searchEmergencyHub;
+
+  /// No description provided for @searchMapView.
+  ///
+  /// In en, this message translates to:
+  /// **'Map view'**
+  String get searchMapView;
+
   /// No description provided for @searchOfflineHint.
   ///
   /// In en, this message translates to:
@@ -543,6 +627,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reach ambulance, police, fire, and rescue numbers even when you\'re offline.'**
   String get onboardingEmergencyHelpBody;
+
+  /// No description provided for @appointmentsErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load appointments'**
+  String get appointmentsErrorTitle;
+
+  /// No description provided for @appointmentsUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get appointmentsUpcoming;
+
+  /// No description provided for @appointmentsPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get appointmentsPast;
+
+  /// No description provided for @appointmentsEmptyUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming appointments. Book a visit from any provider profile.'**
+  String get appointmentsEmptyUpcoming;
+
+  /// No description provided for @appointmentsDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment'**
+  String get appointmentsDetailTitle;
+
+  /// No description provided for @appointmentsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment not found'**
+  String get appointmentsNotFound;
+
+  /// No description provided for @appointmentsPatientActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Your actions'**
+  String get appointmentsPatientActions;
+
+  /// No description provided for @appointmentsFacilityActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Staff actions'**
+  String get appointmentsFacilityActions;
+
+  /// No description provided for @appointmentsCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get appointmentsCheckIn;
+
+  /// No description provided for @appointmentsJoinQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Join queue'**
+  String get appointmentsJoinQueue;
+
+  /// No description provided for @appointmentsViewQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'View queue status'**
+  String get appointmentsViewQueue;
+
+  /// No description provided for @appointmentsReschedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Reschedule'**
+  String get appointmentsReschedule;
+
+  /// No description provided for @appointmentsCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel appointment'**
+  String get appointmentsCancel;
+
+  /// No description provided for @appointmentsContactFacility.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact facility'**
+  String get appointmentsContactFacility;
+
+  /// No description provided for @appointmentsNoActions.
+  ///
+  /// In en, this message translates to:
+  /// **'No actions available for this appointment.'**
+  String get appointmentsNoActions;
+
+  /// No description provided for @appointmentsConfirmBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm booking'**
+  String get appointmentsConfirmBooking;
+
+  /// No description provided for @appointmentsMarkArrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark arrived'**
+  String get appointmentsMarkArrived;
+
+  /// No description provided for @appointmentsMoveToQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to queue'**
+  String get appointmentsMoveToQueue;
+
+  /// No description provided for @appointmentsCompleteConsultation.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete consultation'**
+  String get appointmentsCompleteConsultation;
+
+  /// No description provided for @appointmentsCancelBooking.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel booking'**
+  String get appointmentsCancelBooking;
+
+  /// No description provided for @appointmentsCancelConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to cancel this appointment?'**
+  String get appointmentsCancelConfirm;
+
+  /// No description provided for @appointmentsKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep appointment'**
+  String get appointmentsKeep;
+
+  /// No description provided for @appointmentsCheckInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm you\'ve arrived at the facility'**
+  String get appointmentsCheckInPrompt;
+
+  /// No description provided for @appointmentsAssignQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to queue'**
+  String get appointmentsAssignQueue;
+
+  /// No description provided for @appointmentsAssignQueueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the provider queue after check-in'**
+  String get appointmentsAssignQueueHint;
+
+  /// No description provided for @appointmentsConfirmArrival.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm arrival'**
+  String get appointmentsConfirmArrival;
+
+  /// No description provided for @appointmentsSelectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a date to see available times'**
+  String get appointmentsSelectDate;
+
+  /// No description provided for @appointmentsConfirmReschedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new time'**
+  String get appointmentsConfirmReschedule;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification preferences'**
+  String get notificationsPreferences;
+
+  /// No description provided for @notificationsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsEmptyTitle;
+
+  /// No description provided for @notificationsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment reminders, queue updates, and alerts will appear here.'**
+  String get notificationsEmptyBody;
+
+  /// No description provided for @notificationsErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load notifications'**
+  String get notificationsErrorTitle;
+
+  /// No description provided for @notificationsGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsGroupToday;
+
+  /// No description provided for @notificationsGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsGroupYesterday;
+
+  /// No description provided for @notificationsGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notificationsGroupEarlier;
 }
 
 class _AppLocalizationsDelegate

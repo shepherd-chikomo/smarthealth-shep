@@ -124,6 +124,49 @@ class AppLocalizationsSn extends AppLocalizations {
   String get searchNoResults => 'No providers match your search and filters.';
 
   @override
+  String get searchNoResultsHint =>
+      'Try adjusting your filters or search for a different specialty.';
+
+  @override
+  String get searchClearFilters => 'Adjust filters';
+
+  @override
+  String get searchEmptyAvailableToday => 'No providers available today';
+
+  @override
+  String get searchEmptyWalkIns => 'No facilities currently accepting walk-ins';
+
+  @override
+  String get searchEmptyQueueHigh => 'Queue times currently high';
+
+  @override
+  String get searchFilterOperational => 'Availability';
+
+  @override
+  String get searchRecentSearches => 'Recent Searches';
+
+  @override
+  String get searchPopularSpecialties => 'Popular Specialties';
+
+  @override
+  String get searchNearbyFacilities => 'Nearby Facilities';
+
+  @override
+  String get searchEmergencyShortcuts => 'Emergency Shortcuts';
+
+  @override
+  String get searchEmergencyNearMe => 'Emergency care near me';
+
+  @override
+  String get searchOpenNowShortcut => 'Open now nearby';
+
+  @override
+  String get searchEmergencyHub => 'Emergency hub';
+
+  @override
+  String get searchMapView => 'Map view';
+
+  @override
   String get searchOfflineHint => 'Offline · searching cached providers';
 
   @override
@@ -252,4 +295,121 @@ class AppLocalizationsSn extends AppLocalizations {
   @override
   String get onboardingEmergencyHelpBody =>
       'Reach ambulance, police, fire, and rescue numbers even when you\'re offline.';
+
+  @override
+  String get appointmentsErrorTitle => 'Could not load appointments';
+
+  @override
+  String get appointmentsUpcoming => 'Upcoming';
+
+  @override
+  String get appointmentsPast => 'Past';
+
+  @override
+  String get appointmentsEmptyUpcoming =>
+      'No upcoming appointments. Book a visit from any provider profile.';
+
+  @override
+  String get appointmentsDetailTitle => 'Appointment';
+
+  @override
+  String get appointmentsNotFound => 'Appointment not found';
+
+  @override
+  String get appointmentsPatientActions => 'Your actions';
+
+  @override
+  String get appointmentsFacilityActions => 'Staff actions';
+
+  @override
+  String get appointmentsCheckIn => 'Check in';
+
+  @override
+  String get appointmentsJoinQueue => 'Join queue';
+
+  @override
+  String get appointmentsViewQueue => 'View queue status';
+
+  @override
+  String get appointmentsReschedule => 'Reschedule';
+
+  @override
+  String get appointmentsCancel => 'Cancel appointment';
+
+  @override
+  String get appointmentsContactFacility => 'Contact facility';
+
+  @override
+  String get appointmentsNoActions =>
+      'No actions available for this appointment.';
+
+  @override
+  String get appointmentsConfirmBooking => 'Confirm booking';
+
+  @override
+  String get appointmentsMarkArrived => 'Mark arrived';
+
+  @override
+  String get appointmentsMoveToQueue => 'Move to queue';
+
+  @override
+  String get appointmentsCompleteConsultation => 'Complete consultation';
+
+  @override
+  String get appointmentsCancelBooking => 'Cancel booking';
+
+  @override
+  String get appointmentsCancelConfirm =>
+      'Are you sure you want to cancel this appointment?';
+
+  @override
+  String get appointmentsKeep => 'Keep appointment';
+
+  @override
+  String get appointmentsCheckInPrompt =>
+      'Confirm you\'ve arrived at the facility';
+
+  @override
+  String get appointmentsAssignQueue => 'Assign to queue';
+
+  @override
+  String get appointmentsAssignQueueHint =>
+      'Join the provider queue after check-in';
+
+  @override
+  String get appointmentsConfirmArrival => 'Confirm arrival';
+
+  @override
+  String get appointmentsSelectDate => 'Select a date to see available times';
+
+  @override
+  String get appointmentsConfirmReschedule => 'Confirm new time';
+
+  @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all read';
+
+  @override
+  String get notificationsPreferences => 'Notification preferences';
+
+  @override
+  String get notificationsEmptyTitle => 'No notifications yet';
+
+  @override
+  String get notificationsEmptyBody =>
+      'Appointment reminders, queue updates, and alerts will appear here.';
+
+  @override
+  String get notificationsErrorTitle => 'Could not load notifications';
+
+  @override
+  String get notificationsGroupToday => 'Today';
+
+  @override
+  String get notificationsGroupYesterday => 'Yesterday';
+
+  @override
+  String get notificationsGroupEarlier => 'Earlier';
 }

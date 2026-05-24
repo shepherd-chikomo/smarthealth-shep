@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #0d9488;
+}
+
+.dark {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --border: #334155;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #2dd4bf;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.card {
+  @apply rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm;
+}
+
+.input {
+  @apply w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-500/40;
+}
+
+.btn-primary {
+  @apply inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800;
+}
+
+.btn-danger {
+  @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700;
+}
+
+.data-table {
+  @apply w-full text-left text-sm;
+}
+
+.data-table th {
+  @apply border-b border-[var(--border)] px-3 py-2 font-medium text-[var(--muted)];
+}
+
+.data-table td {
+  @apply border-b border-[var(--border)] px-3 py-2;
+}
+
+.table-wrap {
+  @apply overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)];
+}
+
+.badge {
+  @apply inline-flex rounded-full px-2 py-0.5 text-xs font-medium;
+}
+
+.badge-green { @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300; }
+.badge-yellow { @apply bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300; }
+.badge-red { @apply bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300; }
+.badge-gray { @apply bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300; }
+
+.stat-card {
+  @apply rounded-xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm flex flex-col gap-1;
+}
+
+.stat-value {
+  @apply text-2xl font-bold text-teal-600 dark:text-teal-400;
+}
+
+.stat-label {
+  @apply text-sm text-[var(--muted)];
+}

@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
-import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
 
@@ -135,35 +134,37 @@ void main() {
   });
 
   group('searchProviders', () {
-    test('local search: searches SQLite and schedules background sync', () async {
+    test('online success: searches API, caches locally, returns data', () async {
       const filter = ProviderSearchFilter(query: 'cardio');
-      Future<void> Function()? scheduledTask;
 
-      when(mockDao.search(filter))
-          .thenAnswer((_) async => ProviderFixtures.searchLocalResults);
-      when(mockDao.getLastSync()).thenAnswer((_) async => ProviderFixtures.lastSyncDate);
-      when(
-        mockApi.searchProviders(filter, since: ProviderFixtures.lastSyncDate),
-      ).thenAnswer((_) async => ProviderFixtures.searchRemoteResults);
+      when(mockApi.searchProviders(filter))
+          .thenAnswer((_) async => ProviderFixtures.searchRemoteResults);
       when(mockDao.upsertProviders(any)).thenAnswer((_) async {});
       when(mockDao.setLastSync(any)).thenAnswer((_) async {});
-      when(mockSync.schedule(any, any)).thenAnswer((invocation) {
-        scheduledTask = invocation.positionalArguments[1] as Future<void> Function();
-      });
+
+      final result = await repository.searchProviders(filter);
+
+      expect(result.isOffline, isFalse);
+      expect(result.providers, ProviderFixtures.searchRemoteResults);
+      verify(mockApi.searchProviders(filter)).called(1);
+      verify(mockDao.upsertProviders(ProviderFixtures.searchRemoteResults)).called(1);
+      verifyNever(mockDao.search(filter));
+    });
+
+    test('offline fallback: API fails, returns cached local results', () async {
+      const filter = ProviderSearchFilter(query: 'cardio');
+
+      when(mockApi.searchProviders(filter))
+          .thenThrow(const NetworkException('Network unavailable'));
+      when(mockDao.search(filter))
+          .thenAnswer((_) async => ProviderFixtures.searchLocalResults);
 
       final result = await repository.searchProviders(filter);
 
       expect(result.isOffline, isTrue);
       expect(result.providers, ProviderFixtures.searchLocalResults);
       verify(mockDao.search(filter)).called(1);
-      verify(mockSync.schedule('provider-search:${filter.hashCode}', any)).called(1);
-
-      await scheduledTask?.call();
-
-      verify(mockApi.searchProviders(filter, since: ProviderFixtures.lastSyncDate))
-          .called(1);
-      verify(mockDao.upsertProviders(ProviderFixtures.searchRemoteResults)).called(1);
-      verify(mockDao.setLastSync(any)).called(1);
+      verifyNever(mockDao.upsertProviders(any));
     });
   });
 

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
-import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
+import 'package:smarthealth_shep/shared/models/operational_status.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/availability_indicator.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/status_chip.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/verification_badge.dart';
 import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 
 /// Reusable nearby-facility card for the home dashboard and search results.
 class ProviderCard extends StatelessWidget {
@@ -26,6 +29,7 @@ class ProviderCard extends StatelessWidget {
         : null;
     final imageSource =
         provider.imageUrl ?? AppAssets.providerPortraitFor(provider.id);
+    final hasOperationalInfo = _hasOperationalInfo(provider);
 
     return Semantics(
       button: onTap != null,
@@ -68,7 +72,10 @@ class ProviderCard extends StatelessWidget {
                           ),
                           if (provider.isVerified) ...[
                             const SizedBox(width: 6),
-                            _MdpczBadge(label: l10n.homeMdpczVerified),
+                            VerificationBadge(
+                              style: VerificationBadgeStyle.source,
+                              source: provider.verificationSource ?? 'MDPCZ',
+                            ),
                           ],
                         ],
                       ),
@@ -93,6 +100,14 @@ class ProviderCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (hasOperationalInfo) ...[
+                        const SizedBox(height: 6),
+                        AvailabilityIndicator.fromProvider(provider),
+                        if (_hasOperationalBadges(provider)) ...[
+                          const SizedBox(height: 6),
+                          _OperationalBadges(provider: provider),
+                        ],
+                      ],
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -112,7 +127,7 @@ class ProviderCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 12),
                           ],
-                          if (provider.hours != null)
+                          if (provider.hours != null && !hasOperationalInfo)
                             Expanded(
                               child: Text(
                                 provider.hours!,
@@ -137,52 +152,52 @@ class ProviderCard extends StatelessWidget {
     );
   }
 
+  bool _hasOperationalInfo(ProviderModel provider) {
+    return provider.isOpenNow != null ||
+        provider.isClosingSoon == true ||
+        provider.queueLength != null ||
+        provider.waitEstimateMinutes != null ||
+        provider.nextAvailableSlot != null;
+  }
+
+  bool _hasOperationalBadges(ProviderModel provider) {
+    return provider.acceptsWalkIns == true ||
+        provider.hasQueue == true ||
+        provider.availableToday == true ||
+        provider.emergencyAvailable == true;
+  }
+
   String _semanticLabel(AppLocalizations l10n) {
     final verified =
         provider.isVerified ? ', ${l10n.homeMdpczVerified}' : '';
-    return '${provider.name}$verified';
+    final open = provider.isOpenNow == true ? ', Open Now' : '';
+    final queue = provider.queueLength != null
+        ? ', Queue ${provider.queueLength}'
+        : '';
+    return '${provider.name}$verified$open$queue';
   }
 }
 
-class _MdpczBadge extends StatelessWidget {
-  const _MdpczBadge({required this.label});
+class _OperationalBadges extends StatelessWidget {
+  const _OperationalBadges({required this.provider});
 
-  final String label;
+  final ProviderModel provider;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SvgPicture.asset(
-              AppAssets.verifiedBadge,
-              width: 14,
-              height: 14,
-              colorFilter: const ColorFilter.mode(
-                HomeDashboardColors.secondary,
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(width: 2),
-            const Text(
-              'MDPCZ',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.secondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: [
+        if (provider.emergencyAvailable == true)
+          StatusChip.facility(FacilityOperationalStatus.emergencyAvailable),
+        if (provider.hasQueue == true && provider.queueLength == null)
+          StatusChip.facility(FacilityOperationalStatus.queueAvailable),
+        if (provider.acceptsWalkIns == true)
+          StatusChip.facility(FacilityOperationalStatus.walkInsAccepted),
+        if (provider.availableToday == true)
+          StatusChip.facility(FacilityOperationalStatus.availableToday),
+      ],
     );
   }
 }

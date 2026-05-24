@@ -1,0 +1,567 @@
+# SmartHealth — full local / self-host stack
+# Usage:
+#   cp docker/.env.example .env
+#   docker compose up -d
+#   docker compose --profile migrate run --rm smarthealth-migrate   # first boot only if auto-migrate skipped
+#   ./docker/scripts/healthcheck.sh
+
+name: smarthealth
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PostgreSQL (Supabase-compatible)
+  # ═══════════════════════════════════════════════════════════════════════════
+  db:
+    image: supabase/postgres:15.8.1.060
+    container_name: smarthealth-db
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - smarthealth-db-data:/var/lib/postgresql/data
+      - ./docker/supabase/init/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    ports:
+      - "${POSTGRES_HOST_PORT:-54322}:5432"
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Supabase Auth (GoTrue)
+  # ═══════════════════════════════════════════════════════════════════════════
+  auth:
+    image: supabase/gotrue:v2.164.0
+    container_name: smarthealth-auth
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+      inbucket:
+        condition: service_started
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost}
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL:-http://localhost}
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "true"
+      GOTRUE_SMS_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-inbucket}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-2500}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-noreply@smarthealth.co.zw}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-SmartHealth}
+      # GoTrue requires an SMS provider even when using test OTP (see supabase/auth#1293).
+      # textlocal with dummy credentials satisfies the provider check; test numbers skip real SMS.
+      GOTRUE_SMS_PROVIDER: textlocal
+      GOTRUE_SMS_TEXTLOCAL_API_KEY: localdev
+      GOTRUE_SMS_TEXTLOCAL_SENDER: SmartHealth
+      GOTRUE_SMS_TEST_OTP: "263771234567:123456,263771111111:654321,263772339276:123456"
+      GOTRUE_SMS_MAX_FREQUENCY: 5s
+      # Embed profiles.primary_role as user_role in JWT (see supabase/migrations/20260523100300_auth_and_rbac.sql)
+      GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED: "true"
+      GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI: pg-functions://postgres/public/custom_access_token_hook
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Inbucket (local email capture — OTP codes at http://localhost:54324)
+  # ═══════════════════════════════════════════════════════════════════════════
+  inbucket:
+    image: inbucket/inbucket:3.0.3
+    container_name: smarthealth-inbucket
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "54324:9000"
+      - "54325:2500"
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PostgREST
+  # ═══════════════════════════════════════════════════════════════════════════
+  rest:
+    image: postgrest/postgrest:v12.2.8
+    container_name: smarthealth-rest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Storage API
+  # ═══════════════════════════════════════════════════════════════════════════
+  storage:
+    image: supabase/storage-api:v1.11.13
+    container_name: smarthealth-storage
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: local
+      GLOBAL_S3_BUCKET: smarthealth-storage
+    volumes:
+      - smarthealth-storage-data:/var/lib/storage
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Postgres Meta (Studio backend)
+  # ═══════════════════════════════════════════════════════════════════════════
+  meta:
+    image: supabase/postgres-meta:v0.84.2
+    container_name: smarthealth-meta
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Kong API Gateway (Supabase entrypoint)
+  # ═══════════════════════════════════════════════════════════════════════════
+  kong:
+    image: kong:2.8.1
+    container_name: smarthealth-kong
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "8000:8000"
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+    volumes:
+      - ./docker/supabase/kong.yml:/home/kong/kong.yml:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Supabase Studio
+  # ═══════════════════════════════════════════════════════════════════════════
+  studio:
+    image: supabase/studio:2026.04.27-sha-5f60601
+    container_name: smarthealth-studio
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${STUDIO_PORT:-54323}:3000"
+    depends_on:
+      meta:
+        condition: service_started
+      kong:
+        condition: service_healthy
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DEFAULT_ORGANIZATION_NAME: SmartHealth
+      DEFAULT_PROJECT_NAME: SmartHealth Local
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL:-http://localhost:8000}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Redis (sessions, rate-limit store, job queues)
+  # ═══════════════════════════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: smarthealth-redis
+    restart: unless-stopped
+    logging: *default-logging
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis-local-password} --appendonly yes
+    volumes:
+      - smarthealth-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis-local-password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Database migrations (one-shot on startup)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-migrate:
+    image: postgres:15-alpine
+    container_name: smarthealth-migrate
+    restart: "no"
+    logging: *default-logging
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./supabase/migrations:/migrations:ro
+      - ./docker/scripts/apply-migrations.sh:/apply-migrations.sh:ro
+    entrypoint: ["/bin/sh", "/apply-migrations.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # SmartHealth API
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smarthealth-api
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_PREFIX: /v1
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis-local-password}@redis:6379
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      PAYMENTS_WEBHOOK_SECRET: ${PAYMENTS_WEBHOOK_SECRET:-dev-webhook-secret}
+      NOTIFICATION_DISPATCH_SECRET: ${NOTIFICATION_DISPATCH_SECRET:-dev-notification-dispatch-secret}
+      ANALYTICS_REFRESH_SECRET: ${ANALYTICS_REFRESH_SECRET:-dev-analytics-refresh-secret}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      RETENTION_WORKER_ENABLED: "true"
+    depends_on:
+      smarthealth-migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Admin Dashboard (static + nginx)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-/v1}
+    container_name: smarthealth-admin
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      smarthealth-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Facility Portal (Next.js)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-facility-portal:
+    build:
+      context: ./facility-portal
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+    container_name: smarthealth-facility-portal
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOSTNAME: 0.0.0.0
+      API_URL: http://smarthealth-api:3000
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
+    depends_on:
+      smarthealth-api:
+        condition: service_healthy
+      kong:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Nginx reverse proxy (public entrypoint)
+  # ═══════════════════════════════════════════════════════════════════════════
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: smarthealth-nginx
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      smarthealth-api:
+        condition: service_healthy
+      smarthealth-admin:
+        condition: service_healthy
+      smarthealth-facility-portal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - smarthealth-internal
+      - smarthealth-public
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Monitoring — Prometheus
+  # ═══════════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: smarthealth-prometheus
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["monitoring"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - smarthealth-prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Monitoring — Grafana
+  # ═══════════════════════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: smarthealth-grafana
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["monitoring"]
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3002
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - smarthealth-grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Postgres metrics exporter
+  # ═══════════════════════════════════════════════════════════════════════════
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: smarthealth-postgres-exporter
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["monitoring"]
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Redis metrics exporter
+  # ═══════════════════════════════════════════════════════════════════════════
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: smarthealth-redis-exporter
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["monitoring"]
+    environment:
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis-local-password}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Uptime monitoring
+  # ═══════════════════════════════════════════════════════════════════════════
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: smarthealth-uptime-kuma
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["monitoring"]
+    ports:
+      - "3003:3001"
+    volumes:
+      - smarthealth-uptime-kuma-data:/app/data
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Automated backups (scheduled sidecar)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-backup:
+    image: postgres:15-alpine
+    container_name: smarthealth-backup
+    restart: unless-stopped
+    logging: *default-logging
+    profiles: ["backup"]
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-af-south-1}
+      S3_BUCKET: ${S3_BUCKET:-smarthealth-backups}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+    volumes:
+      - smarthealth-backups:/backups
+      - smarthealth-storage-data:/storage-backup:ro
+      - ./docker/scripts/backup.sh:/backup.sh:ro
+      - ./docker/scripts/backup-s3.sh:/backup-s3.sh:ro
+      - ./docker/scripts/backup-cron.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smarthealth-internal
+
+volumes:
+  smarthealth-db-data:
+  smarthealth-redis-data:
+  smarthealth-storage-data:
+  smarthealth-backups:
+  smarthealth-prometheus-data:
+  smarthealth-grafana-data:
+  smarthealth-uptime-kuma-data:
+
+networks:
+  smarthealth-internal:
+    driver: bridge
+  smarthealth-public:
+    driver: bridge

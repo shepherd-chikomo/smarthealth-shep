@@ -31,6 +31,7 @@ class BookingState extends Equatable {
     this.isOffline = false,
     this.draftSaved = false,
     this.confirmation,
+    this.pendingSync = false,
     this.errorMessage,
   });
 
@@ -48,6 +49,7 @@ class BookingState extends Equatable {
   final bool isOffline;
   final bool draftSaved;
   final BookingConfirmation? confirmation;
+  final bool pendingSync;
   final String? errorMessage;
 
   bool get canContinue =>
@@ -77,6 +79,7 @@ class BookingState extends Equatable {
     bool? isOffline,
     bool? draftSaved,
     BookingConfirmation? confirmation,
+    bool? pendingSync,
     String? errorMessage,
     bool clearSelectedTime = false,
     bool clearError = false,
@@ -99,6 +102,7 @@ class BookingState extends Equatable {
       draftSaved: draftSaved ?? this.draftSaved,
       confirmation:
           clearConfirmation ? null : (confirmation ?? this.confirmation),
+      pendingSync: pendingSync ?? this.pendingSync,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -119,6 +123,7 @@ class BookingState extends Equatable {
         isOffline,
         draftSaved,
         confirmation,
+        pendingSync,
         errorMessage,
       ];
 }

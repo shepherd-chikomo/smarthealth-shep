@@ -1,0 +1,85 @@
+# SmartHealth Self-Hosted Supabase Stack (legacy sidecars)
+#
+# NOTE: Use the root docker-compose.yml for the full stack.
+# This file provides migration and backup sidecars only.
+
+name: smarthealth-supabase
+
+services:
+  # ---------------------------------------------------------------------------
+  # SmartHealth migration runner (one-shot)
+  # Applies SQL migrations to a running Postgres instance
+  # ---------------------------------------------------------------------------
+  smarthealth-migrate:
+    image: postgres:15-alpine
+    container_name: smarthealth-migrate
+    profiles: ["migrate"]
+    environment:
+      PGHOST: ${POSTGRES_HOST:-db}
+      PGPORT: ${POSTGRES_PORT:-5432}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ../supabase/migrations:/migrations:ro
+      - ./scripts/apply-migrations.sh:/apply-migrations.sh:ro
+    entrypoint: ["/bin/sh", "/apply-migrations.sh"]
+    networks:
+      - supabase-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Database backup sidecar
+  # ---------------------------------------------------------------------------
+  smarthealth-backup:
+    image: postgres:15-alpine
+    container_name: smarthealth-backup
+    profiles: ["backup"]
+    environment:
+      PGHOST: ${POSTGRES_HOST:-db}
+      PGPORT: ${POSTGRES_PORT:-5432}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+    volumes:
+      - smarthealth-backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    networks:
+      - supabase-network
+
+  # ---------------------------------------------------------------------------
+  # Reference Postgres for standalone migration testing
+  # (when not using full Supabase stack)
+  # ---------------------------------------------------------------------------
+  db:
+    image: supabase/postgres:15.8.1.060
+    container_name: smarthealth-db
+    profiles: ["standalone"]
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    volumes:
+      - smarthealth-db-data:/var/lib/postgresql/data
+      - ../supabase/migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - supabase-network
+
+volumes:
+  smarthealth-db-data:
+  smarthealth-backups:
+
+networks:
+  supabase-network:
+    name: smarthealth-supabase-network
+    driver: bridge

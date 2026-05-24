@@ -1,0 +1,2 @@
+# Placeholder — generate with: ./docker/scripts/generate-ssl.sh
+# Or use Let's Encrypt / certbot in production (see docs/deployment/SSL.md)

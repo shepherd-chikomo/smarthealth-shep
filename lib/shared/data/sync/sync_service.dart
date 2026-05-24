@@ -3,11 +3,17 @@ import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
+import 'package:smarthealth_shep/shared/data/sync/delta_sync_coordinator.dart';
+import 'package:smarthealth_shep/shared/data/sync/optimistic_update_store.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_backoff.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_conflict_resolver.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_executor.dart';
-import 'package:smarthealth_shep/shared/data/sync/sync_queue_dao.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_queue_hive_dao.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_queue_storage.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_recovery_service.dart';
 
 const _logName = 'SyncService';
 
@@ -15,20 +21,26 @@ const _logName = 'SyncService';
 class SyncService {
   SyncService({
     required Dio dio,
-    SyncQueueDao? queueDao,
+    SyncQueueStorage? queueStorage,
     SyncExecutor? executor,
+    DeltaSyncCoordinator? deltaCoordinator,
+    OptimisticUpdateStore? optimisticStore,
     Connectivity? connectivity,
-    this.baseUrl = 'https://api.smarthealth.example/v1',
-  })  : _queueDao = queueDao ?? SyncQueueDao(),
+  })  : _queueDao = queueStorage ?? SyncQueueHiveDao(),
         _executor = executor ??
-            SyncExecutor(dio: dio, baseUrl: baseUrl),
+            SyncExecutor(
+              dio: dio,
+              deltaCoordinator: deltaCoordinator,
+            ),
+        _delta = deltaCoordinator ?? DeltaSyncCoordinator(dio: dio),
+        _optimistic = optimisticStore ?? OptimisticUpdateStore(),
         _connectivity = connectivity ?? Connectivity();
 
-  final SyncQueueDao _queueDao;
+  final SyncQueueStorage _queueDao;
   final SyncExecutor _executor;
+  final DeltaSyncCoordinator _delta;
+  final OptimisticUpdateStore _optimistic;
   final Connectivity _connectivity;
-
-  final String baseUrl;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   bool _wasOffline = false;
@@ -36,40 +48,37 @@ class SyncService {
 
   static SyncService? _instance;
 
-  /// Shared instance for background isolates and repositories.
+  SyncQueueStorage get queueStorage => _queueDao;
+
   static SyncService? get instance => _instance;
 
-  /// Registers the process-wide [SyncService] singleton.
   static void register(SyncService service) {
     _instance = service;
   }
 
-  /// Builds a standalone service for background entrypoints.
-  static SyncService forBackground({
-    String baseUrl = 'https://api.smarthealth.example/v1',
-  }) {
+  static SyncService forBackground() {
     final dio = Dio(
       BaseOptions(
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Accept': 'application/json'},
       ),
     );
-    return SyncService(dio: dio, baseUrl: baseUrl);
+    return SyncService(dio: dio);
   }
 
-  /// Initializes listeners — call once on app launch.
   Future<void> initialize() async {
     register(this);
+    final recovery = SyncRecoveryService(syncService: this);
+    await recovery.recoverStaleProcessingItems();
+
     _connectivitySub?.cancel();
     _connectivitySub =
         _connectivity.onConnectivityChanged.listen(_onConnectivityChanged);
 
     final online = await isOnline();
     _wasOffline = !online;
-    if (online) {
-      unawaited(syncNow(trigger: SyncTrigger.appLaunch));
-    }
   }
 
   void dispose() {
@@ -81,14 +90,26 @@ class SyncService {
     return results.any((r) => r != ConnectivityResult.none);
   }
 
-  /// Enqueues a user mutation for background upload.
+  /// Enqueues a user mutation with optimistic local update tracking.
   Future<void> enqueue({
     required SyncMutationType mutationType,
     required SyncEntityType entityType,
     required String entityId,
     required Map<String, dynamic> payload,
     DateTime? clientUpdatedAt,
+    bool optimistic = true,
   }) async {
+    final updatedAt = clientUpdatedAt ?? DateTime.now().toUtc();
+
+    if (optimistic) {
+      await _optimistic.record(
+        entityType: entityType,
+        entityId: entityId,
+        payload: payload,
+        clientUpdatedAt: updatedAt,
+      );
+    }
+
     final item = SyncQueueItem(
       id: '${entityType.name}_${entityId}_${DateTime.now().microsecondsSinceEpoch}',
       mutationType: mutationType,
@@ -98,7 +119,8 @@ class SyncService {
       retryCount: 0,
       status: SyncQueueStatus.pending,
       createdAt: DateTime.now().toUtc(),
-      clientUpdatedAt: clientUpdatedAt ?? DateTime.now().toUtc(),
+      clientUpdatedAt: updatedAt,
+      optimistic: optimistic,
     );
 
     await _queueDao.enqueue(item);
@@ -112,17 +134,14 @@ class SyncService {
     }
   }
 
-  /// Pull-to-refresh entry point.
   Future<SyncRunResult> syncPullToRefresh() {
     return syncNow(trigger: SyncTrigger.pullToRefresh);
   }
 
-  /// Periodic / WorkManager / Background Fetch entry point.
   Future<SyncRunResult> runBackgroundSync() {
     return syncNow(trigger: SyncTrigger.background);
   }
 
-  /// Immediate sync: delta pulls then queue processing by priority.
   Future<SyncRunResult> syncNow({SyncTrigger trigger = SyncTrigger.manual}) async {
     if (_syncInFlight) {
       developer.log('Sync already in flight — skipping', name: _logName);
@@ -146,19 +165,24 @@ class SyncService {
     var processed = 0;
     var succeeded = 0;
     var failed = 0;
+    var conflicts = 0;
     var needsManualRetry = 0;
 
     try {
-      await _executor.runDeltaPulls();
+      await _delta.runDeltaPulls();
 
       final items = await _queueDao.getRunnableItems();
       for (final item in items) {
         processed++;
-        final ok = await _processItem(item);
-        if (ok) {
-          succeeded++;
-        } else {
-          failed++;
+        final outcome = await _processItem(item);
+        switch (outcome) {
+          case _ProcessOutcome.success:
+            succeeded++;
+          case _ProcessOutcome.failed:
+            failed++;
+          case _ProcessOutcome.conflict:
+            conflicts++;
+            failed++;
         }
       }
 
@@ -169,7 +193,7 @@ class SyncService {
 
       developer.log(
         'Sync finished ($trigger): processed=$processed succeeded=$succeeded '
-        'failed=$failed manualRetry=$needsManualRetry',
+        'failed=$failed conflicts=$conflicts manualRetry=$needsManualRetry',
         name: _logName,
       );
 
@@ -179,6 +203,7 @@ class SyncService {
         failed: failed,
         skippedOffline: false,
         needsManualRetry: needsManualRetry,
+        conflicts: conflicts,
       );
     } catch (error, stackTrace) {
       developer.log(
@@ -193,6 +218,7 @@ class SyncService {
         failed: failed + 1,
         skippedOffline: false,
         needsManualRetry: needsManualRetry,
+        conflicts: conflicts,
       );
     } finally {
       _syncInFlight = false;
@@ -206,13 +232,11 @@ class SyncService {
 
   Future<int> pendingCount() => _queueDao.countPending();
 
-  /// Re-queues all items flagged for manual retry.
   Future<SyncRunResult> retryManualItems() async {
     await _queueDao.resetManualRetryItems();
     return syncNow(trigger: SyncTrigger.manualRetry);
   }
 
-  /// Legacy debounce helper — enqueues immediate one-shot sync work.
   void schedule(String key, Future<void> Function() task) {
     unawaited(_runLegacyTask(key, task));
   }
@@ -232,13 +256,48 @@ class SyncService {
     }
   }
 
-  Future<bool> _processItem(SyncQueueItem item) async {
+  Future<_ProcessOutcome> _processItem(SyncQueueItem item) async {
     await _queueDao.markProcessing(item.id);
 
     try {
-      await _executor.processQueueItem(item);
+      final serverBody = await _executor.processQueueItem(item);
+
+      if (serverBody != null) {
+        final conflict = SyncConflictResolver.resolve(
+          entityType: item.entityType,
+          entityId: item.entityId,
+          clientUpdatedAt: item.clientUpdatedAt,
+          serverUpdatedAt: _parseUpdatedAt(serverBody),
+          serverModifiedWhilePending:
+              serverBody['conflict'] == true,
+        );
+
+        if (conflict.requiresManual) {
+          await _queueDao.updateItem(
+            item.copyWith(
+              status: SyncQueueStatus.needsManualConflict,
+              lastError: conflict.message,
+            ),
+          );
+          return _ProcessOutcome.conflict;
+        }
+
+        if (conflict.resolution == SyncConflictResolution.appliedServer) {
+          developer.log(
+            'Server wins for ${item.entityType.name}/${item.entityId}',
+            name: _logName,
+          );
+        }
+      }
+
       await _queueDao.markCompleted(item.id);
-      return true;
+      if (item.optimistic) {
+        await _optimistic.clear(
+          entityType: item.entityType,
+          entityId: item.entityId,
+        );
+      }
+      return _ProcessOutcome.success;
     } on NetworkException catch (error, stackTrace) {
       return _handleFailure(item, error.message, stackTrace);
     } on DioException catch (error, stackTrace) {
@@ -249,7 +308,7 @@ class SyncService {
     }
   }
 
-  Future<bool> _handleFailure(
+  Future<_ProcessOutcome> _handleFailure(
     SyncQueueItem item,
     String message,
     StackTrace stackTrace,
@@ -271,7 +330,7 @@ class SyncService {
           nextRetryAt: null,
         ),
       );
-      return false;
+      return _ProcessOutcome.failed;
     }
 
     await _queueDao.updateItem(
@@ -282,7 +341,7 @@ class SyncService {
         nextRetryAt: SyncBackoff.nextRetryTime(nextRetry),
       ),
     );
-    return false;
+    return _ProcessOutcome.failed;
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
@@ -293,9 +352,16 @@ class SyncService {
     }
     _wasOffline = !online;
   }
+
+  DateTime? _parseUpdatedAt(Map<String, dynamic> body) {
+    final raw = body['updatedAt'] ?? body['updated_at'];
+    if (raw is String) return DateTime.tryParse(raw)?.toUtc();
+    return null;
+  }
 }
 
-/// What triggered a sync cycle.
+enum _ProcessOutcome { success, failed, conflict }
+
 enum SyncTrigger {
   appLaunch,
   pullToRefresh,

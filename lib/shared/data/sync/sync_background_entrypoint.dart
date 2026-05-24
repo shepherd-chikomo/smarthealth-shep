@@ -1,3 +1,4 @@
+import 'package:smarthealth_shep/core/storage/hive_init.dart';
 import 'package:smarthealth_shep/core/storage/sqlite_init.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_service.dart';
 import 'package:workmanager/workmanager.dart';
@@ -13,6 +14,7 @@ void syncCallbackDispatcher() {
 
 /// Shared background sync body for WorkManager and Background Fetch.
 Future<void> runBackgroundSyncEntrypoint() async {
+  await initHive();
   await initSqlite();
   final service = SyncService.instance ?? SyncService.forBackground();
   await service.runBackgroundSync();

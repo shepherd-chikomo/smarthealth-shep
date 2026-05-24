@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
+import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
 import 'package:smarthealth_shep/features/booking/data/local/booking_dao.dart';
 import 'package:smarthealth_shep/features/family/data/local/family_member_dao.dart';
 import 'package:smarthealth_shep/features/booking/models/booking_confirmation.dart';
@@ -9,47 +10,54 @@ import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
 import 'package:smarthealth_shep/features/booking/models/time_slot.dart';
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
 import 'package:smarthealth_shep/shared/data/mock_data.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
+import 'package:smarthealth_shep/shared/data/sync/sync_service.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 const _logName = 'BookingRepository';
 const _defaultDurationMinutes = 30;
 
-/// Availability, patient list, and booking submission for the booking flow.
+/// Result of booking confirmation including offline sync status.
+class BookingResult {
+  const BookingResult({
+    required this.confirmation,
+    required this.isPendingSync,
+    required this.localId,
+  });
+
+  final BookingConfirmation confirmation;
+  final bool isPendingSync;
+  final String localId;
+}
+
+/// Availability, patient list, and offline-first booking submission.
 class BookingRepository {
   BookingRepository({
     ProviderDao? providerDao,
     FamilyMemberDao? familyMemberDao,
     BookingDao? bookingDao,
+    SyncService? syncService,
     Connectivity? connectivity,
+    AppointmentsRepository? appointmentsRepository,
   })  : _providerDao = providerDao ?? ProviderDao(),
         _familyDao = familyMemberDao ?? FamilyMemberDao(),
         _bookingDao = bookingDao ?? BookingDao(),
+        _appointmentsRepository =
+            appointmentsRepository ?? AppointmentsRepository(),
+        _syncService = syncService ?? SyncService.instance ?? SyncService.forBackground(),
         _connectivity = connectivity ?? Connectivity();
 
   final ProviderDao _providerDao;
   final FamilyMemberDao _familyDao;
   final BookingDao _bookingDao;
+  final AppointmentsRepository _appointmentsRepository;
+  final SyncService _syncService;
   final Connectivity _connectivity;
 
   static const slotTimes = [
-    '08:00',
-    '08:30',
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '12:00',
-    '12:30',
-    '13:00',
-    '13:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
   ];
 
   Future<bool> isOnline() async {
@@ -67,7 +75,6 @@ class BookingRepository {
     return null;
   }
 
-  /// Weekdays within the next [daysAhead] days that accept bookings.
   List<DateTime> availableDates({int daysAhead = 60}) {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
@@ -92,11 +99,6 @@ class BookingRepository {
   }
 
   Future<List<TimeSlot>> getTimeSlots(String providerId, DateTime date) async {
-    developer.log(
-      'Generating slots for $providerId on ${date.toIso8601String()}',
-      name: _logName,
-    );
-
     await Future<void>.delayed(const Duration(milliseconds: 250));
 
     final seed = providerId.hashCode + date.day + date.month * 31;
@@ -132,21 +134,20 @@ class BookingRepository {
     return null;
   }
 
-  Future<BookingConfirmation> confirmBooking({
+  /// Confirms booking offline-first: saves locally, queues sync when offline.
+  Future<BookingResult> confirmBooking({
     required ProviderModel provider,
     required DateTime date,
     required String time,
     required PatientOption patient,
     String? notes,
+    String? facilityId,
   }) async {
-    if (!await isOnline()) {
-      throw const NetworkException('Booking requires internet');
-    }
-
-    developer.log('Submitting booking to API', name: _logName);
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-
+    final localId = 'appt_${DateTime.now().millisecondsSinceEpoch}';
     final reference = await _bookingDao.nextReferenceNumber();
+    final now = DateTime.now().toUtc();
+
+    final scheduledAt = _combineDateTime(date, time);
     final confirmation = BookingConfirmation(
       referenceNumber: reference,
       providerId: provider.id,
@@ -159,7 +160,87 @@ class BookingRepository {
       notes: notes?.trim().isEmpty ?? true ? null : notes?.trim(),
     );
 
-    return _bookingDao.saveConfirmed(confirmation);
+    final payload = {
+      'id': localId,
+      'referenceNumber': reference,
+      'facilityId': facilityId ?? provider.id,
+      'providerId': provider.id,
+      'familyMemberId': patient.id == PatientOption.selfId ? null : patient.id,
+      'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      'durationMinutes': _defaultDurationMinutes,
+      'notes': confirmation.notes,
+      'status': 'pending',
+      'updatedAt': now.toIso8601String(),
+    };
+
+    await _bookingDao.saveConfirmed(
+      confirmation,
+      localId: localId,
+      syncStatus: 'pending',
+      updatedAt: now,
+    );
+
+    await _appointmentsRepository.saveFromBooking(
+      booking: confirmation,
+      localId: localId,
+      provider: provider,
+    );
+
+    final online = await isOnline();
+
+    if (online) {
+      try {
+        developer.log('Submitting booking online', name: _logName);
+        await _syncService.enqueue(
+          mutationType: SyncMutationType.create,
+          entityType: SyncEntityType.appointment,
+          entityId: localId,
+          payload: payload,
+          clientUpdatedAt: now,
+        );
+        return BookingResult(
+          confirmation: confirmation,
+          isPendingSync: false,
+          localId: localId,
+        );
+      } on NetworkException {
+        developer.log('Online submit failed — queued for retry', name: _logName);
+      }
+    }
+
+    developer.log('Booking saved offline — queued for sync', name: _logName);
+    await _syncService.enqueue(
+      mutationType: SyncMutationType.create,
+      entityType: SyncEntityType.appointment,
+      entityId: localId,
+      payload: payload,
+      clientUpdatedAt: now,
+    );
+
+    return BookingResult(
+      confirmation: confirmation,
+      isPendingSync: true,
+      localId: localId,
+    );
+  }
+
+  /// Queues a walk-in queue status update (auto-syncs when online).
+  Future<void> enqueueQueueUpdate({
+    required String appointmentId,
+    required String status,
+    DateTime? clientUpdatedAt,
+  }) async {
+    final updatedAt = clientUpdatedAt ?? DateTime.now().toUtc();
+    await _syncService.enqueue(
+      mutationType: SyncMutationType.update,
+      entityType: SyncEntityType.queueUpdate,
+      entityId: appointmentId,
+      payload: {
+        'status': status,
+        'updatedAt': updatedAt.toIso8601String(),
+      },
+      clientUpdatedAt: updatedAt,
+    );
   }
 
   Future<void> saveDraft({
@@ -169,7 +250,6 @@ class BookingRepository {
     required String patientId,
     String? notes,
   }) async {
-    developer.log('Saving booking draft locally', name: _logName);
     await _bookingDao.saveDraft(
       providerId: providerId,
       date: date,
@@ -177,5 +257,12 @@ class BookingRepository {
       patientId: patientId,
       notes: notes,
     );
+  }
+
+  DateTime _combineDateTime(DateTime date, String time) {
+    final parts = time.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
+    return DateTime(date.year, date.month, date.day, hour, minute);
   }
 }

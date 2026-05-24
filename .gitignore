@@ -43,3 +43,10 @@ app.*.map.json
 # Environment
 .env
 .env.*
+!supabase/env/.env.example
+!supabase/env/.env.local.example
+!supabase/env/.env.staging.example
+!supabase/env/.env.production.example
+
+# Backups
+backups/

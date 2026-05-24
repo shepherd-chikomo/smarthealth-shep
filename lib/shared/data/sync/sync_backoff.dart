@@ -1,25 +1,17 @@
-/// Exponential backoff schedule for failed sync queue items.
+/// Retry schedule for failed sync queue items.
+///
+/// Mission-critical offline mutations retry every 15 minutes, up to 10 attempts.
 abstract final class SyncBackoff {
-  static const maxRetries = 5;
+  static const maxRetries = 10;
 
-  static const delays = [
-    Duration(minutes: 1),
-    Duration(minutes: 5),
-    Duration(minutes: 15),
-    Duration(minutes: 30),
-    Duration(hours: 1),
-  ];
+  static const retryInterval = Duration(minutes: 15);
 
   /// Returns the delay before the next attempt after [retryCount] failures.
-  static Duration delayForRetry(int retryCount) {
-    if (retryCount <= 0) return delays.first;
-    if (retryCount >= delays.length) return delays.last;
-    return delays[retryCount - 1];
-  }
+  static Duration delayForRetry(int retryCount) => retryInterval;
 
   static DateTime nextRetryTime(int retryCount, {DateTime? from}) {
     final base = from ?? DateTime.now().toUtc();
-    return base.add(delayForRetry(retryCount));
+    return base.add(retryInterval);
   }
 
   static bool exceededMaxRetries(int retryCount) => retryCount >= maxRetries;

@@ -1,46 +1,90 @@
-import 'package:smarthealth_shep/features/home/data/home_repository.dart';
+import 'package:smarthealth_shep/features/search/data/search_filter_engine.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
 
 class SearchProvidersResult {
   const SearchProvidersResult({
     required this.providers,
-    required this.isOffline,
+    this.isOffline = false,
   });
 
   final List<ProviderModel> providers;
   final bool isOffline;
 }
 
-/// Loads provider directory from cache (offline-first) or network fallback.
+/// Ranked healthcare search — API-first with offline fallback.
 class SearchRepository {
   SearchRepository({
-    HomeRepository? homeRepository,
     ProviderRepository? providerRepository,
-  })  : _homeRepository = homeRepository ?? HomeRepository(),
-        _providerRepository = providerRepository ?? ProviderRepository.defaults();
+  }) : _providerRepository = providerRepository ?? ProviderRepository.defaults();
 
-  final HomeRepository _homeRepository;
   final ProviderRepository _providerRepository;
 
+  /// Loads the full provider directory (for filter chip options).
   Future<SearchProvidersResult> loadProviders() async {
+    final result = await _providerRepository.getProviders();
+    return SearchProvidersResult(
+      providers: result,
+      isOffline: false,
+    );
+  }
+
+  /// Executes ranked search against the healthcare search engine.
+  Future<SearchProvidersResult> search({
+    required String query,
+    Set<String> specialties = const {},
+    Set<String> conditions = const {},
+    Set<String> ageGroups = const {},
+    Set<String> operational = const {},
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
+    String? city,
+    String? province,
+  }) async {
+    final filter = ProviderSearchFilter(
+      query: query,
+      specialties: specialties,
+      conditions: conditions,
+      ageGroups: ageGroups,
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+      isVerified: operational.contains('verified_only') ? true : null,
+      openNow: operational.contains('open_now') ? true : null,
+      queueUnder30: operational.contains('queue_under_30') ? true : null,
+      availableToday:
+          operational.contains('available_today') ? true : null,
+      acceptsWalkIns: operational.contains('walk_ins') ? true : null,
+      emergencyAvailable: operational.contains('emergency') ? true : null,
+      city: city,
+      province: province,
+    );
+
+    if (filter.isEmpty) {
+      final all = await loadProviders();
+      return all;
+    }
+
     try {
-      final sync = await _homeRepository.sync();
+      final result = await _providerRepository.searchProviders(filter);
       return SearchProvidersResult(
-        providers: sync.providers,
-        isOffline: sync.isOffline,
+        providers: result.providers,
+        isOffline: result.isOffline,
       );
     } catch (_) {
-      final cached = _homeRepository.readCachedProviders();
-      if (cached != null && cached.isNotEmpty) {
-        return SearchProvidersResult(
-          providers: cached,
-          isOffline: true,
-        );
-      }
-      final fallback = await _providerRepository.getProviders();
+      final cached = await loadProviders();
+      final filtered = SearchFilterEngine.apply(
+        providers: cached.providers,
+        query: query,
+        specialties: specialties,
+        conditions: conditions,
+        ageGroups: ageGroups,
+        operational: operational,
+      );
       return SearchProvidersResult(
-        providers: fallback,
+        providers: filtered,
         isOffline: true,
       );
     }

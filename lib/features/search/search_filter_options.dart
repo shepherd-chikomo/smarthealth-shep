@@ -6,7 +6,7 @@ class SearchFilterOption {
   final String label;
 }
 
-enum SearchFilterGroup { specialty, condition, ageGroup }
+enum SearchFilterGroup { specialty, condition, ageGroup, operational }
 
 /// Static filter catalog for the search screen.
 abstract final class SearchFilterOptions {
@@ -38,5 +38,14 @@ abstract final class SearchFilterOptions {
     SearchFilterOption(id: 'teen', label: 'Teen (13-17)'),
     SearchFilterOption(id: 'adult', label: 'Adult (18-64)'),
     SearchFilterOption(id: 'senior', label: 'Senior (65+)'),
+  ];
+
+  static const operational = [
+    SearchFilterOption(id: 'open_now', label: 'Open Now'),
+    SearchFilterOption(id: 'available_today', label: 'Available Today'),
+    SearchFilterOption(id: 'walk_ins', label: 'Walk-ins Accepted'),
+    SearchFilterOption(id: 'queue_under_30', label: 'Queue Under 30 mins'),
+    SearchFilterOption(id: 'verified_only', label: 'Verified Only'),
+    SearchFilterOption(id: 'emergency', label: 'Emergency Available'),
   ];
 }

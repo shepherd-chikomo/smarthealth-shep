@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/core/sync/sync_providers.dart';
@@ -23,6 +24,7 @@ final providerRepositoryProvider = Provider<ProviderRepository>((ref) {
     dao: ProviderDao(),
     api: ApiService(dio),
     syncService: ref.watch(syncServiceProvider),
+    seedMockDataOnEmpty: AppConfig.seedMockDataOnEmpty,
   );
 });
 
@@ -32,7 +34,7 @@ class ProviderRepository {
     required ProviderDao dao,
     required ApiService api,
     required SyncService syncService,
-    this.seedMockDataOnEmpty = true,
+    this.seedMockDataOnEmpty = false,
   })  : _dao = dao,
         _api = api,
         _syncService = syncService;
@@ -41,6 +43,7 @@ class ProviderRepository {
   factory ProviderRepository.defaults({SyncService? syncService}) {
     final dio = Dio(
       BaseOptions(
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 30),
         headers: {'Accept': 'application/json'},
@@ -50,6 +53,7 @@ class ProviderRepository {
       dao: ProviderDao(),
       api: ApiService(dio),
       syncService: syncService ?? SyncService.instance ?? SyncService.forBackground(),
+      seedMockDataOnEmpty: AppConfig.seedMockDataOnEmpty,
     );
   }
 
@@ -125,18 +129,28 @@ class ProviderRepository {
   ) async {
     await _ensureSeeded();
 
-    final local = await _dao.search(filter);
-    developer.log(
-      'Returning ${local.length} local search results',
-      name: _logName,
-    );
-
-    _syncService.schedule(
-      'provider-search:${filter.hashCode}',
-      () => _backgroundSearch(filter),
-    );
-
-    return ProvidersQueryResult(providers: local, isOffline: true);
+    try {
+      developer.log('Searching providers via ranked search API', name: _logName);
+      final remote = await _api.searchProviders(filter);
+      await _dao.upsertProviders(remote);
+      await _dao.setLastSync(DateTime.now().toUtc());
+      return ProvidersQueryResult(providers: remote, isOffline: false);
+    } on NetworkException catch (error, stackTrace) {
+      developer.log(
+        'Search API unavailable — falling back to local cache',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+      final local = await _dao.search(filter);
+      if (local.isEmpty) {
+        throw NetworkException(
+          'No network and no cached providers for this search.',
+          cause: error,
+        );
+      }
+      return ProvidersQueryResult(providers: local, isOffline: true);
+    }
   }
 
   Future<ProviderDetailQueryResult?> getProviderById(String id) async {
@@ -264,26 +278,6 @@ class ProviderRepository {
         stackTrace: stackTrace,
       );
       rethrow;
-    }
-  }
-
-  Future<void> _backgroundSearch(ProviderSearchFilter filter) async {
-    try {
-      final since = await _dao.getLastSync();
-      final remote = await _api.searchProviders(filter, since: since);
-      await _dao.upsertProviders(remote);
-      await _dao.setLastSync(DateTime.now().toUtc());
-      developer.log(
-        'Background search cached ${remote.length} providers',
-        name: _logName,
-      );
-    } on NetworkException catch (error, stackTrace) {
-      developer.log(
-        'Background search skipped (offline)',
-        name: _logName,
-        error: error,
-        stackTrace: stackTrace,
-      );
     }
   }
 

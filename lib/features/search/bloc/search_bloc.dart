@@ -1,24 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smarthealth_shep/features/search/bloc/search_event.dart';
 import 'package:smarthealth_shep/features/search/bloc/search_state.dart';
-import 'package:smarthealth_shep/features/search/data/search_filter_engine.dart';
+import 'package:smarthealth_shep/features/search/data/recent_search_store.dart';
 import 'package:smarthealth_shep/features/search/data/search_repository.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
-import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  SearchBloc({SearchRepository? repository})
-      : _repository = repository ?? SearchRepository(),
+  SearchBloc({
+    SearchRepository? repository,
+    RecentSearchStore? recentSearchStore,
+  })  : _repository = repository ?? SearchRepository(),
+        _recentSearchStore = recentSearchStore ?? RecentSearchStore(),
         super(const SearchState()) {
     on<SearchQueryChanged>(_onQueryChanged);
     on<FilterToggled>(_onFilterToggled);
     on<FiltersApplied>(_onFiltersApplied);
     on<SearchReloadRequested>(_onReload);
+    on<SortChanged>(_onSortChanged);
+    on<RecentSearchesLoaded>(_onRecentSearchesLoaded);
+    on<RecentSearchRemoved>(_onRecentSearchRemoved);
+    on<SearchDebounced>(_onDebouncedSearch);
 
     add(const SearchReloadRequested());
+    _loadRecentSearches();
   }
 
   final SearchRepository _repository;
+  final RecentSearchStore _recentSearchStore;
+  Timer? _debounce;
+
+  Future<void> _loadRecentSearches() async {
+    final searches = await _recentSearchStore.load();
+    add(RecentSearchesLoaded(searches));
+  }
+
+  Future<void> _onRecentSearchesLoaded(
+    RecentSearchesLoaded event,
+    Emitter<SearchState> emit,
+  ) async {
+    emit(state.copyWith(recentSearches: event.searches));
+  }
+
+  Future<void> _onRecentSearchRemoved(
+    RecentSearchRemoved event,
+    Emitter<SearchState> emit,
+  ) async {
+    await _recentSearchStore.remove(event.query);
+    final searches = await _recentSearchStore.load();
+    emit(state.copyWith(recentSearches: searches));
+  }
+
+  Future<void> _onSortChanged(
+    SortChanged event,
+    Emitter<SearchState> emit,
+  ) async {
+    emit(state.copyWith(sortBy: event.sort, navigateToResults: false));
+  }
 
   Future<void> _onReload(
     SearchReloadRequested event,
@@ -27,18 +66,116 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(status: SearchStatus.loading, clearError: true));
     try {
       final result = await _repository.loadProviders();
-      final filtered = _filter(
-        providers: result.providers,
-        query: state.query,
-        specialties: state.specialties,
-        conditions: state.conditions,
-        ageGroups: state.ageGroups,
-      );
       emit(
         state.copyWith(
           status: SearchStatus.ready,
           allProviders: result.providers,
-          filteredProviders: filtered,
+          filteredProviders: result.providers,
+          isOffline: result.isOffline,
+        ),
+      );
+      if (state.hasActiveCriteria) {
+        await _runSearch(emit);
+      }
+    } catch (error) {
+      emit(
+        state.copyWith(
+          status: SearchStatus.error,
+          errorMessage: error.toString(),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onQueryChanged(
+    SearchQueryChanged event,
+    Emitter<SearchState> emit,
+  ) async {
+    emit(state.copyWith(query: event.query, navigateToResults: false));
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      add(const SearchDebounced());
+    });
+  }
+
+  Future<void> _onDebouncedSearch(
+    SearchDebounced event,
+    Emitter<SearchState> emit,
+  ) async {
+    await _runSearch(emit);
+  }
+
+  Future<void> _onFilterToggled(
+    FilterToggled event,
+    Emitter<SearchState> emit,
+  ) async {
+    final specialties = Set<String>.from(state.specialties);
+    final conditions = Set<String>.from(state.conditions);
+    final ageGroups = Set<String>.from(state.ageGroups);
+    final operational = Set<String>.from(state.operational);
+
+    final target = switch (event.group) {
+      SearchFilterGroup.specialty => specialties,
+      SearchFilterGroup.condition => conditions,
+      SearchFilterGroup.ageGroup => ageGroups,
+      SearchFilterGroup.operational => operational,
+    };
+
+    if (target.contains(event.filterId)) {
+      target.remove(event.filterId);
+    } else {
+      target.add(event.filterId);
+    }
+
+    emit(
+      state.copyWith(
+        specialties: specialties,
+        conditions: conditions,
+        ageGroups: ageGroups,
+        operational: operational,
+        navigateToResults: false,
+      ),
+    );
+    await _runSearch(emit);
+  }
+
+  Future<void> _onFiltersApplied(
+    FiltersApplied event,
+    Emitter<SearchState> emit,
+  ) async {
+    if (state.query.trim().isNotEmpty) {
+      await _recentSearchStore.add(state.query);
+      final searches = await _recentSearchStore.load();
+      emit(state.copyWith(recentSearches: searches));
+    }
+    emit(state.copyWith(navigateToResults: true));
+    emit(state.copyWith(navigateToResults: false));
+  }
+
+  Future<void> _runSearch(Emitter<SearchState> emit) async {
+    if (!state.hasActiveCriteria) {
+      emit(
+        state.copyWith(
+          filteredProviders: state.allProviders,
+          status: SearchStatus.ready,
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(status: SearchStatus.loading, clearError: true));
+    try {
+      final result = await _repository.search(
+        query: state.query,
+        specialties: state.specialties,
+        conditions: state.conditions,
+        ageGroups: state.ageGroups,
+        operational: state.operational,
+      );
+      emit(
+        state.copyWith(
+          status: SearchStatus.ready,
+          filteredProviders: result.providers,
           isOffline: result.isOffline,
         ),
       );
@@ -52,77 +189,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     }
   }
 
-  void _onQueryChanged(SearchQueryChanged event, Emitter<SearchState> emit) {
-    final filtered = _filter(
-      providers: state.allProviders,
-      query: event.query,
-      specialties: state.specialties,
-      conditions: state.conditions,
-      ageGroups: state.ageGroups,
-    );
-    emit(
-      state.copyWith(
-        query: event.query,
-        filteredProviders: filtered,
-        navigateToResults: false,
-      ),
-    );
-  }
-
-  void _onFilterToggled(FilterToggled event, Emitter<SearchState> emit) {
-    final specialties = Set<String>.from(state.specialties);
-    final conditions = Set<String>.from(state.conditions);
-    final ageGroups = Set<String>.from(state.ageGroups);
-
-    final target = switch (event.group) {
-      SearchFilterGroup.specialty => specialties,
-      SearchFilterGroup.condition => conditions,
-      SearchFilterGroup.ageGroup => ageGroups,
-    };
-
-    if (target.contains(event.filterId)) {
-      target.remove(event.filterId);
-    } else {
-      target.add(event.filterId);
-    }
-
-    final filtered = _filter(
-      providers: state.allProviders,
-      query: state.query,
-      specialties: specialties,
-      conditions: conditions,
-      ageGroups: ageGroups,
-    );
-
-    emit(
-      state.copyWith(
-        specialties: specialties,
-        conditions: conditions,
-        ageGroups: ageGroups,
-        filteredProviders: filtered,
-        navigateToResults: false,
-      ),
-    );
-  }
-
-  void _onFiltersApplied(FiltersApplied event, Emitter<SearchState> emit) {
-    emit(state.copyWith(navigateToResults: true));
-    emit(state.copyWith(navigateToResults: false));
-  }
-
-  List<ProviderModel> _filter({
-    required List<ProviderModel> providers,
-    required String query,
-    required Set<String> specialties,
-    required Set<String> conditions,
-    required Set<String> ageGroups,
-  }) {
-    return SearchFilterEngine.apply(
-      providers: providers,
-      query: query,
-      specialties: specialties,
-      conditions: conditions,
-      ageGroups: ageGroups,
-    );
+  @override
+  Future<void> close() {
+    _debounce?.cancel();
+    return super.close();
   }
 }

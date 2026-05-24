@@ -1,0 +1,1989 @@
+{
+  "batchId": "b5a12482-10ce-434b-923d-c7929722f8e3",
+  "sourceFile": "practitioners.xlsx",
+  "dryRun": false,
+  "startedAt": "2026-05-24T11:29:12.041Z",
+  "completedAt": "2026-05-24T11:29:56.212Z",
+  "totalRows": 4318,
+  "imported": 4155,
+  "failed": 163,
+  "duplicatesMerged": 0,
+  "facilitiesCreated": 4150,
+  "providersCreated": 4155,
+  "linksCreated": 4155,
+  "specialtiesUnmatched": [
+    "Medical Practitioner",
+    "Specialist Anaesthetist",
+    "Specialist Family Practitioner",
+    "Specialist Maxillo- Facial and Oral Surgeon",
+    "Specialist Neuro Surgeon",
+    "Specialist Paediatric Surgeon",
+    "Specialist Periodontist",
+    "Specialist Plastic And Reconstructive Surgeon",
+    "Specialist Prosthodontist",
+    "Specialist Surgeon",
+    "specialty"
+  ],
+  "missingCities": [],
+  "unmatchedSpecialtyCount": 11,
+  "geocodedCount": 0,
+  "failedRows": [
+    {
+      "rowNumber": 8,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: zallana@yahoo.com z.allana@hotmail.com",
+      "raw": {
+        "_sheetRow": 8,
+        "title": "Dr",
+        "practitionerName": "Allana Zahraa",
+        "email": "zallana@yahoo.com z.allana@hotmail.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 27,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: tapiwabchawatama@yahoo.com tapiwakb@gmail.com",
+      "raw": {
+        "_sheetRow": 27,
+        "title": "Dr",
+        "practitionerName": "Chawatama Tapiwa",
+        "email": "tapiwabchawatama@yahoo.com tapiwakb@gmail.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 28,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cchibonda@gmail.com cchibonda@yahoo.com",
+      "raw": {
+        "_sheetRow": 28,
+        "title": "Dr",
+        "practitionerName": "Chibonda Chengetai",
+        "email": "cchibonda@gmail.com cchibonda@yahoo.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 45,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: docchingwena@gmail.com docchingwena@yahoo.com",
+      "raw": {
+        "_sheetRow": 45,
+        "title": "Dr",
+        "practitionerName": "Chingwena Advance",
+        "email": "docchingwena@gmail.com docchingwena@yahoo.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 73,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: talident@gmail.com suburbsdental@gmail.com",
+      "raw": {
+        "_sheetRow": 73,
+        "title": "Dr",
+        "practitionerName": "Goremykin Dmitry Vladimirovich",
+        "email": "talident@gmail.com suburbsdental@gmail.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 87,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: rumbie kadzunge@gmail.com",
+      "raw": {
+        "_sheetRow": 87,
+        "title": "Dr",
+        "practitionerName": "Kadzunge Rumbidzai",
+        "email": "rumbie kadzunge@gmail.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 97,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drgkondo@hotmail.com drkondo@yahoo.com",
+      "raw": {
+        "_sheetRow": 97,
+        "title": "Dr",
+        "practitionerName": "Kondo Girlie",
+        "email": "drgkondo@hotmail.com drkondo@yahoo.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 102,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drtinoh@gmail",
+      "raw": {
+        "_sheetRow": 102,
+        "title": "Dr",
+        "practitionerName": "Kuzovamunahu Tinotenda",
+        "email": "drtinoh@gmail",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 107,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: takundamachera480@gmail.com nrzizh@gmail.com (husband)",
+      "raw": {
+        "_sheetRow": 107,
+        "title": "Dr",
+        "practitionerName": "Machera Takunda Tracy",
+        "email": "takundamachera480@gmail.com nrzizh@gmail.com (husband)",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 116,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: smagovanyika@yahoo.com drsmagovanyika.com",
+      "raw": {
+        "_sheetRow": 116,
+        "title": "Dr",
+        "practitionerName": "Magovanyika Shepherd",
+        "email": "smagovanyika@yahoo.com drsmagovanyika.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 151,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: masiiwamusara@yahoo.co.uk dentist.masiiwa@gmail.com",
+      "raw": {
+        "_sheetRow": 151,
+        "title": "Dr",
+        "practitionerName": "Masiiwa Antonette",
+        "email": "masiiwamusara@yahoo.co.uk dentist.masiiwa@gmail.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 189,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: taffie25@yahoo.ca tmukokera@live.com",
+      "raw": {
+        "_sheetRow": 189,
+        "title": "Dr",
+        "practitionerName": "Mukorera Tafadzwa Fraderick",
+        "email": "taffie25@yahoo.ca tmukokera@live.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 200,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: charitymusemwa@gmail.com tapiwamusemwa@yahoo.com",
+      "raw": {
+        "_sheetRow": 200,
+        "title": "Dr",
+        "practitionerName": "Musemwa Charity Tapiwa",
+        "email": "charitymusemwa@gmail.com tapiwamusemwa@yahoo.com",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 244,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ruvarashenyoni@gmail.com 0779703401",
+      "raw": {
+        "_sheetRow": 244,
+        "title": "Dr",
+        "practitionerName": "Nyoni Ruvarashe Millicent",
+        "email": "ruvarashenyoni@gmail.com 0779703401",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 279,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drgtsoka@gmail.com drgsoka@primedental.co.zw",
+      "raw": {
+        "_sheetRow": 279,
+        "title": "Dr",
+        "practitionerName": "Tsoka Gerald",
+        "email": "drgtsoka@gmail.com drgsoka@primedental.co.zw",
+        "specialty": "Dental Practitioner"
+      }
+    },
+    {
+      "rowNumber": 305,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: brianmauku@gmailcom",
+      "raw": {
+        "_sheetRow": 305,
+        "title": "Mr",
+        "practitionerName": "Mauku Brian",
+        "email": "brianmauku@gmailcom",
+        "specialty": "Dental Technician"
+      }
+    },
+    {
+      "rowNumber": 363,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: omachivenyika@gmail.com omachivenyika@psmi.com",
+      "raw": {
+        "_sheetRow": 363,
+        "title": "Mr",
+        "practitionerName": "Machivenyika Onesmo",
+        "email": "omachivenyika@gmail.com omachivenyika@psmi.com",
+        "specialty": "Dental Therapist"
+      }
+    },
+    {
+      "rowNumber": 375,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0736098206 stpats@comone.co.zw",
+      "raw": {
+        "_sheetRow": 375,
+        "title": "Ms",
+        "practitionerName": "Mandireva Jane",
+        "email": "0736098206 stpats@comone.co.zw",
+        "specialty": "Dental Therapist"
+      }
+    },
+    {
+      "rowNumber": 400,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: eniasmoyo19@gmail.com thumoyo@gmail.com",
+      "raw": {
+        "_sheetRow": 400,
+        "title": "Mr",
+        "practitionerName": "Moyo Enias",
+        "email": "eniasmoyo19@gmail.com thumoyo@gmail.com",
+        "specialty": "Dental Therapist"
+      }
+    },
+    {
+      "rowNumber": 485,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0775054411 tsebozara@gmail.com",
+      "raw": {
+        "_sheetRow": 485,
+        "title": "Ms",
+        "practitionerName": "Teli Tsebo Florina",
+        "email": "0775054411 tsebozara@gmail.com",
+        "specialty": "Dental Therapist"
+      }
+    },
+    {
+      "rowNumber": 493,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nyarazano!gmail.com",
+      "raw": {
+        "_sheetRow": 493,
+        "title": "Ms",
+        "practitionerName": "Zano Nyaradzai",
+        "email": "nyarazano!gmail.com",
+        "specialty": "Dental Therapist"
+      }
+    },
+    {
+      "rowNumber": 528,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: shumiegracey@gmail.com gamuchirai.simunyu@yahoo.com",
+      "raw": {
+        "_sheetRow": 528,
+        "title": "Dr",
+        "practitionerName": "Charumbira Shumirai Grace",
+        "email": "shumiegracey@gmail.com gamuchirai.simunyu@yahoo.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 562,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0718282382 rosannachimedza@gmail.com",
+      "raw": {
+        "_sheetRow": 562,
+        "title": "Dr",
+        "practitionerName": "Chimedza Precious Rosanna",
+        "email": "0718282382 rosannachimedza@gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 578,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: chinyaninite@@gmail.com",
+      "raw": {
+        "_sheetRow": 578,
+        "title": "Dr",
+        "practitionerName": "Chinyani Tinashe Emmanuel",
+        "email": "chinyaninite@@gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 713,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0781290331 mikeian612@gmail.com",
+      "raw": {
+        "_sheetRow": 713,
+        "title": "Dr",
+        "practitionerName": "Machemedze Mike Ian C",
+        "email": "0781290331 mikeian612@gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 755,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kelvin11@manyanga@gmail.com",
+      "raw": {
+        "_sheetRow": 755,
+        "title": "Dr",
+        "practitionerName": "Manyan'a Kelvin",
+        "email": "kelvin11@manyanga@gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 821,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: tatendagerlinembira@gmail.com 0712528604",
+      "raw": {
+        "_sheetRow": 821,
+        "title": "Dr",
+        "practitionerName": "Mbira Tatenda Gerline",
+        "email": "tatendagerlinembira@gmail.com 0712528604",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 822,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nonhlanhlambuisa212gmail.com",
+      "raw": {
+        "_sheetRow": 822,
+        "title": "Dr",
+        "practitionerName": "Mbuisa Nonhlanhla Elisah",
+        "email": "nonhlanhlambuisa212gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 867,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 713417372",
+      "raw": {
+        "_sheetRow": 867,
+        "title": "Dr",
+        "practitionerName": "Mudzimiri Tanaka",
+        "email": "713417372",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 909,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: addmoremushaikwa@gmail.",
+      "raw": {
+        "_sheetRow": 909,
+        "title": "Dr",
+        "practitionerName": "Mushaikwa Addmore",
+        "email": "addmoremushaikwa@gmail.",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 963,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nomathandlovu19gmail.com",
+      "raw": {
+        "_sheetRow": 963,
+        "title": "Dr",
+        "practitionerName": "Ndlovu Nomthandazo Nanette Langelihle",
+        "email": "nomathandlovu19gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 983,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cholwewiseman2gmail.com",
+      "raw": {
+        "_sheetRow": 983,
+        "title": "Dr",
+        "practitionerName": "Nleya Choolwe Wiseman",
+        "email": "cholwewiseman2gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 1017,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kellyanesu.rushambwa",
+      "raw": {
+        "_sheetRow": 1017,
+        "title": "Dr",
+        "practitionerName": "Rushambwa Kelly Anesu",
+        "email": "kellyanesu.rushambwa",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 1103,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kzvarevashe @gmail.com",
+      "raw": {
+        "_sheetRow": 1103,
+        "title": "Dr",
+        "practitionerName": "Zvarevashe Kuziva Jeritha",
+        "email": "kzvarevashe @gmail.com",
+        "specialty": "Intern"
+      }
+    },
+    {
+      "rowNumber": 1108,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0712407875 evaagossou@gmail.com",
+      "raw": {
+        "_sheetRow": 1108,
+        "title": "Dr",
+        "practitionerName": "Agossou Eva",
+        "email": "0712407875 evaagossou@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1181,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cchadza@gmail.com 263774076811",
+      "raw": {
+        "_sheetRow": 1181,
+        "title": "Dr",
+        "practitionerName": "Chadzamira Christabel Blessing",
+        "email": "cchadza@gmail.com 263774076811",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1260,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ngchigariro@gmail.com nchigariro@cimas.co.zw",
+      "raw": {
+        "_sheetRow": 1260,
+        "title": "Dr",
+        "practitionerName": "Chigariro Nyasha George",
+        "email": "ngchigariro@gmail.com nchigariro@cimas.co.zw",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1287,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: echicks23@yahoo.com edwinchikobvu@gmail.com",
+      "raw": {
+        "_sheetRow": 1287,
+        "title": "Dr",
+        "practitionerName": "Chikobvu Edwin",
+        "email": "echicks23@yahoo.com edwinchikobvu@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1335,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: eastviewmedical@gmail.com hchimuka@yahoo.co.uk",
+      "raw": {
+        "_sheetRow": 1335,
+        "title": "Dr",
+        "practitionerName": "Chimuka Harris",
+        "email": "eastviewmedical@gmail.com hchimuka@yahoo.co.uk",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1399,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: grhmtc@@gmail.com",
+      "raw": {
+        "_sheetRow": 1399,
+        "title": "Dr",
+        "practitionerName": "Chirenga Takudzwa Graham",
+        "email": "grhmtc@@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1420,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: chitambl@mweb.co.zw surgerychitambo@gmail.com",
+      "raw": {
+        "_sheetRow": 1420,
+        "title": "Dr",
+        "practitionerName": "Chitambo Lazarus",
+        "email": "chitambl@mweb.co.zw surgerychitambo@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1445,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nil",
+      "raw": {
+        "_sheetRow": 1445,
+        "title": "Dr",
+        "practitionerName": "Chiundiza Privilege",
+        "email": "nil",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1452,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: audrey@oldmutual.co.zw audreytutani@gmail.com",
+      "raw": {
+        "_sheetRow": 1452,
+        "title": "Dr",
+        "practitionerName": "Chivaura Audrey Kathleen Kudzai",
+        "email": "audrey@oldmutual.co.zw audreytutani@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1455,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 777887625",
+      "raw": {
+        "_sheetRow": 1455,
+        "title": "Dr",
+        "practitionerName": "Chivinge Chris",
+        "email": "777887625",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1472,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: bchizhande@stannes.co.zw brightonchiz@gmail.com",
+      "raw": {
+        "_sheetRow": 1472,
+        "title": "Dr",
+        "practitionerName": "Chizhande Brighton Tasariraushe",
+        "email": "bchizhande@stannes.co.zw brightonchiz@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1504,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: demburep212gmail.com",
+      "raw": {
+        "_sheetRow": 1504,
+        "title": "Dr",
+        "practitionerName": "Dembure Philip Farai Tapiwa",
+        "email": "demburep212gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1536,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kanita doka@gmail.com 0773766762",
+      "raw": {
+        "_sheetRow": 1536,
+        "title": "Dr",
+        "practitionerName": "Doka Kudzai Anita",
+        "email": "kanita doka@gmail.com 0773766762",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1586,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: jorandes@yahoo.com jrf292@gmail.com",
+      "raw": {
+        "_sheetRow": 1586,
+        "title": "Dr",
+        "practitionerName": "Fernandes Jonathan Rosario",
+        "email": "jorandes@yahoo.com jrf292@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1599,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: chikwakamichelle@yahoo.com drgadzayi@gmail.com",
+      "raw": {
+        "_sheetRow": 1599,
+        "title": "Dr",
+        "practitionerName": "Gadzayi Michelle Ruvimbo",
+        "email": "chikwakamichelle@yahoo.com drgadzayi@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1622,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: rowlandglieman@gmail.com rglieman@gmail.com",
+      "raw": {
+        "_sheetRow": 1622,
+        "title": "Dr",
+        "practitionerName": "Glieman Rowland",
+        "email": "rowlandglieman@gmail.com rglieman@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1647,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gozhoi@zimasco.co.zw icaaag@gmail.com",
+      "raw": {
+        "_sheetRow": 1647,
+        "title": "Dr",
+        "practitionerName": "Gozho Innocent Simbarashe",
+        "email": "gozhoi@zimasco.co.zw icaaag@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1670,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drguagua@yahoo.com gwagwabw45@gmail.com",
+      "raw": {
+        "_sheetRow": 1670,
+        "title": "Dr",
+        "practitionerName": "Gwagwa Budirirayi William",
+        "email": "drguagua@yahoo.com gwagwabw45@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1682,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gwemec@gmail.com gwemec@yahoo.com",
+      "raw": {
+        "_sheetRow": 1682,
+        "title": "Dr",
+        "practitionerName": "Gweme Conford",
+        "email": "gwemec@gmail.com gwemec@yahoo.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1702,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: elihazivis@yahoo.com elisburyh@gmail.com",
+      "raw": {
+        "_sheetRow": 1702,
+        "title": "Dr",
+        "practitionerName": "Haruzivi Elisbury Farai",
+        "email": "elihazivis@yahoo.com elisburyh@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1740,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gjaravaza@gmail.com vjaravaza@yahoo.com",
+      "raw": {
+        "_sheetRow": 1740,
+        "title": "Dr",
+        "practitionerName": "Jaravaza Vengesai Stein",
+        "email": "gjaravaza@gmail.com vjaravaza@yahoo.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1748,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: maudjena@gmail",
+      "raw": {
+        "_sheetRow": 1748,
+        "title": "Dr",
+        "practitionerName": "Jena Maud",
+        "email": "maudjena@gmail",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1781,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ttkambarami@gmail.com ttkambi@gmail.com ttkambi@zol.co",
+      "raw": {
+        "_sheetRow": 1781,
+        "title": "Dr",
+        "practitionerName": "Kambarami Timothy Tonderai",
+        "email": "ttkambarami@gmail.com ttkambi@gmail.com ttkambi@zol.co",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1795,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: desmunkan@hotmail.com desmunkan@gmail.com",
+      "raw": {
+        "_sheetRow": 1795,
+        "title": "Dr",
+        "practitionerName": "Kanganga Desire Munyaradzi",
+        "email": "desmunkan@hotmail.com desmunkan@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1822,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: dtkasipo@gmail.com 0774102304",
+      "raw": {
+        "_sheetRow": 1822,
+        "title": "Dr",
+        "practitionerName": "Kasipo Donald",
+        "email": "dtkasipo@gmail.com 0774102304",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1950,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: collen.madembo@yahoo.com drcollen@cooltoad.com",
+      "raw": {
+        "_sheetRow": 1950,
+        "title": "Dr",
+        "practitionerName": "Madembo Collen",
+        "email": "collen.madembo@yahoo.com drcollen@cooltoad.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1979,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mafembatendaigmail.com",
+      "raw": {
+        "_sheetRow": 1979,
+        "title": "Dr",
+        "practitionerName": "Mafemba Tendai Enock",
+        "email": "mafembatendaigmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 1984,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ruemaffie2gmail.com 0782006323",
+      "raw": {
+        "_sheetRow": 1984,
+        "title": "Dr",
+        "practitionerName": "Mafurirano Ruvimbo",
+        "email": "ruemaffie2gmail.com 0782006323",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2004,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: maguhweremcdonald @yahoo.com",
+      "raw": {
+        "_sheetRow": 2004,
+        "title": "Dr",
+        "practitionerName": "Maguhwere Mcdonald Munashe",
+        "email": "MAGUHWEREMcDonald @YAHOO.COM",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2031,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0774107063@econetmail.com docbrianmakamure@gmail.com drbrian@docmakamure.com",
+      "raw": {
+        "_sheetRow": 2031,
+        "title": "Dr",
+        "practitionerName": "Makamure Brian Kudzai",
+        "email": "0774107063@econetmail.com docbrianmakamure@gmail.com drbrian@docmakamure.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2040,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: maketochipo@gmail.com 0773852626",
+      "raw": {
+        "_sheetRow": 2040,
+        "title": "Dr",
+        "practitionerName": "Maketo Chipo",
+        "email": "maketochipo@gmail.com 0773852626",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2084,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: makuriramumbingi@yahoo.co.uk mtpmakurira@gmail.com",
+      "raw": {
+        "_sheetRow": 2084,
+        "title": "Dr",
+        "practitionerName": "Makurira Mumbingi Takura Phineas",
+        "email": "makuriramumbingi@yahoo.co.uk mtpmakurira@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2115,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: jamesvushe@yahoo.com bmfmandishona@gmail.com",
+      "raw": {
+        "_sheetRow": 2115,
+        "title": "Dr",
+        "practitionerName": "Mandishona Boniface Muranganwa",
+        "email": "jamesvushe@yahoo.com bmfmandishona@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2130,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mangomatadiwat@gmail.com tadiwamangomaoh97@gmail.com",
+      "raw": {
+        "_sheetRow": 2130,
+        "title": "Dr",
+        "practitionerName": "Mangoma Tadiwa Thandazani",
+        "email": "mangomatadiwat@gmail.com tadiwamangomaoh97@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2145,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: simbamanjengwa",
+      "raw": {
+        "_sheetRow": 2145,
+        "title": "Dr",
+        "practitionerName": "Manjengwa Simbarashe",
+        "email": "simbamanjengwa",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2172,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: c.fmaparura2gmail.com",
+      "raw": {
+        "_sheetRow": 2172,
+        "title": "Dr",
+        "practitionerName": "Maparura Charles Farai",
+        "email": "c.fmaparura2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2205,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: prayermarava",
+      "raw": {
+        "_sheetRow": 2205,
+        "title": "Dr",
+        "practitionerName": "Marava Prayer",
+        "email": "prayermarava",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2303,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: amaticha50@yahoo.co.uk drmaticha.surgery@gmail.com",
+      "raw": {
+        "_sheetRow": 2303,
+        "title": "Dr",
+        "practitionerName": "Maticha Admire",
+        "email": "amaticha50@yahoo.co.uk drmaticha.surgery@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2321,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: pmatsvimbo@yahoo.co.uk pfmatsvimbo@gmail.com pmdmasheast1@gmail.com",
+      "raw": {
+        "_sheetRow": 2321,
+        "title": "Dr",
+        "practitionerName": "Matsvimbo Paul Farai",
+        "email": "pmatsvimbo@yahoo.co.uk pfmatsvimbo@gmail.com pmdmasheast1@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2393,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: yvettemeck2gmail.com",
+      "raw": {
+        "_sheetRow": 2393,
+        "title": "Dr",
+        "practitionerName": "Meck Nothando Yvette",
+        "email": "yvettemeck2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2399,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 7786554923",
+      "raw": {
+        "_sheetRow": 2399,
+        "title": "Dr",
+        "practitionerName": "Mhaka Talent",
+        "email": "7786554923",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2512,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: atm4jc@gmail.com drmuchara@outlook.com",
+      "raw": {
+        "_sheetRow": 2512,
+        "title": "Dr",
+        "practitionerName": "Muchara Alfred Tapiwa",
+        "email": "atm4jc@gmail.com drmuchara@outlook.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2526,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: caltamuchucalazg2gmail.com",
+      "raw": {
+        "_sheetRow": 2526,
+        "title": "Dr",
+        "practitionerName": "Muchuchuti Caltus",
+        "email": "caltamuchucalazg2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2529,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: brandadi99gmail.com",
+      "raw": {
+        "_sheetRow": 2529,
+        "title": "Dr",
+        "practitionerName": "Mudadi Brandon Mufaro",
+        "email": "brandadi99gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2533,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: taffiemudehwe@gmail.com 0778310804",
+      "raw": {
+        "_sheetRow": 2533,
+        "title": "Dr",
+        "practitionerName": "Mudehwe Tafadzwa",
+        "email": "taffiemudehwe@gmail.com 0778310804",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2551,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: clevermudziwapasi@gmail.com mudziwapasiclever@gmail.com",
+      "raw": {
+        "_sheetRow": 2551,
+        "title": "Dr",
+        "practitionerName": "Mudziwapasi Clever  Garikai",
+        "email": "clevermudziwapasi@gmail.com mudziwapasiclever@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2568,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: tamarymugiyo@icloud com",
+      "raw": {
+        "_sheetRow": 2568,
+        "title": "Dr",
+        "practitionerName": "Mugiyo Thamary Thelmar",
+        "email": "tamarymugiyo@icloud com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2577,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: evergladmgmail.com",
+      "raw": {
+        "_sheetRow": 2577,
+        "title": "Dr",
+        "practitionerName": "Mugutso Everglad",
+        "email": "evergladmgmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2648,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ctmunikwa@gmail.com 0778990136",
+      "raw": {
+        "_sheetRow": 2648,
+        "title": "Dr",
+        "practitionerName": "Munikwa Caleb Tinashe",
+        "email": "ctmunikwa@gmail.com 0778990136",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2667,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drmunyonga@gmail.com nickymu@psmas.co.zw",
+      "raw": {
+        "_sheetRow": 2667,
+        "title": "Dr",
+        "practitionerName": "Munyonga Nicholas",
+        "email": "drmunyonga@gmail.com nickymu@psmas.co.zw",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2744,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: bmusarurwa@yahoo.com bmusarurwa87@gmail.com",
+      "raw": {
+        "_sheetRow": 2744,
+        "title": "Dr",
+        "practitionerName": "Musarurwa Bothwell",
+        "email": "bmusarurwa@yahoo.com bmusarurwa87@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2753,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drjtmusewe@yahoo.com 0773917915",
+      "raw": {
+        "_sheetRow": 2753,
+        "title": "Dr",
+        "practitionerName": "Musewe Justine Tonderai",
+        "email": "drjtmusewe@yahoo.com 0773917915",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2778,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mitchellmushomga",
+      "raw": {
+        "_sheetRow": 2778,
+        "title": "Dr",
+        "practitionerName": "Mushonga Mitchell Vhenekai",
+        "email": "mitchellmushomga",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2792,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kukuemail2gmail.com",
+      "raw": {
+        "_sheetRow": 2792,
+        "title": "Dr",
+        "practitionerName": "Musingwini Kudzai Leona",
+        "email": "kukuemail2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2844,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: bellzmutibura2gmail.com",
+      "raw": {
+        "_sheetRow": 2844,
+        "title": "Dr",
+        "practitionerName": "Mutibura Belinda",
+        "email": "bellzmutibura2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2859,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: takudzwamutseta@gmail.com 0772144396",
+      "raw": {
+        "_sheetRow": 2859,
+        "title": "Dr",
+        "practitionerName": "Mutseta Takudzwa",
+        "email": "takudzwamutseta@gmail.com 0772144396",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2896,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: brasso ray@yahoo.com rmuzvidziwa@psmi.co.zw",
+      "raw": {
+        "_sheetRow": 2896,
+        "title": "Dr",
+        "practitionerName": "Muzvidziwa Raymond",
+        "email": "BRASSO RAY@YAHOO.COM rmuzvidziwa@psmi.co.zw",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2897,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: seanmvelasy@gmail.com 263718439372",
+      "raw": {
+        "_sheetRow": 2897,
+        "title": "Dr",
+        "practitionerName": "Mvelasi Munyaradzi Shingai",
+        "email": "seanmvelasy@gmail.com 263718439372",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2900,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: clement.mwamba@yahoo.fr mwambaclement15@gmail.com",
+      "raw": {
+        "_sheetRow": 2900,
+        "title": "Dr",
+        "practitionerName": "Mwamba Mpoyi Clement",
+        "email": "clement.mwamba@yahoo.fr mwambaclement15@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2928,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: freenkust87@gmail.com ncebenkululeko71@yahoo.com",
+      "raw": {
+        "_sheetRow": 2928,
+        "title": "Dr",
+        "practitionerName": "Ncube Nkululeko Freedom",
+        "email": "freenkust87@gmail.com ncebenkululeko71@yahoo.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 2976,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: dngorora@gmail.com.  dngorora@hwangecolliery.co.zw",
+      "raw": {
+        "_sheetRow": 2976,
+        "title": "Dr",
+        "practitionerName": "Ngorora Didymus Bernard",
+        "email": "dngorora@gmail.com.  dngorora@hwangecolliery.co.zw",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3030,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ampachena@gmail.com drabgail@yahoo.co.uk",
+      "raw": {
+        "_sheetRow": 3030,
+        "title": "Dr",
+        "practitionerName": "Nyahwema Abigail",
+        "email": "ampachena@gmail.com drabgail@yahoo.co.uk",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3094,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nyeredr@gmail.com nyereyegonab@nssa.org.zw",
+      "raw": {
+        "_sheetRow": 3094,
+        "title": "Dr",
+        "practitionerName": "Nyereyegona Betty Isabel",
+        "email": "nyeredr@gmail.com nyereyegonab@nssa.org.zw",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3130,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: abdurrehman786@gmail.com marimbamedicalcentre@gmail.com",
+      "raw": {
+        "_sheetRow": 3130,
+        "title": "Dr",
+        "practitionerName": "Patel Abdur - Rehman Shaukatali",
+        "email": "abdurrehman786@gmail.com marimbamedicalcentre@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3147,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: samsonpomo@yahoo.com sapomo@gmail.com",
+      "raw": {
+        "_sheetRow": 3147,
+        "title": "Dr",
+        "practitionerName": "Pomo Samson",
+        "email": "samsonpomo@yahoo.com sapomo@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3234,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: asifsharief80@yahoo.com daudsharief@gmail.com",
+      "raw": {
+        "_sheetRow": 3234,
+        "title": "Dr",
+        "practitionerName": "Sharief Asif",
+        "email": "asifsharief80@yahoo.com daudsharief@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3256,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: learnmoreshoti@gmail.com docshoti20@gmail.com",
+      "raw": {
+        "_sheetRow": 3256,
+        "title": "Dr",
+        "practitionerName": "Shoti Learnmore",
+        "email": "learnmoreshoti@gmail.com docshoti20@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3303,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 779075484",
+      "raw": {
+        "_sheetRow": 3303,
+        "title": "Dr",
+        "practitionerName": "Sithole Chikomborero Daniel",
+        "email": "779075484",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3305,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: sithole_emmanuel@yahoo.com/ braeemmaa@gmail.com",
+      "raw": {
+        "_sheetRow": 3305,
+        "title": "Dr",
+        "practitionerName": "Sithole Emmanuel",
+        "email": "sithole_emmanuel@yahoo.com/ braeemmaa@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3323,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: jlstack@mweb.co.zw jlstack20@gmail.com",
+      "raw": {
+        "_sheetRow": 3323,
+        "title": "Dr",
+        "practitionerName": "Stack Jonathan Leonard",
+        "email": "jlstack@mweb.co.zw jlstack20@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3328,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drsupiya19@gmail.com 0787974337",
+      "raw": {
+        "_sheetRow": 3328,
+        "title": "Dr",
+        "practitionerName": "Supiya Spheric Tatenda",
+        "email": "drsupiya19@gmail.com 0787974337",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3346,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: canisio@ecoweb.co.zw drtakundwac@gmail.com",
+      "raw": {
+        "_sheetRow": 3346,
+        "title": "Dr",
+        "practitionerName": "Takundwa Canisio Tavengwa",
+        "email": "canisio@ecoweb.co.zw drtakundwac@gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3453,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: brian13zengeni2gmail.com",
+      "raw": {
+        "_sheetRow": 3453,
+        "title": "Dr",
+        "practitionerName": "Zengeni Zvikomborero Brian",
+        "email": "brian13zengeni2gmail.com",
+        "specialty": "Medical Practitioner"
+      }
+    },
+    {
+      "rowNumber": 3503,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: benyure@yahoo.com benyurecolin@yahoo.com",
+      "raw": {
+        "_sheetRow": 3503,
+        "title": "Dr",
+        "practitionerName": "Benyure Colin Tichaona",
+        "email": "benyure@yahoo.com benyurecolin@yahoo.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3518,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: allandimingo@yahoo.com allandimingodr@gmail.com",
+      "raw": {
+        "_sheetRow": 3518,
+        "title": "Dr",
+        "practitionerName": "Dimingo Allan Ntando",
+        "email": "allandimingo@yahoo.com allandimingodr@gmail.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3531,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: anaestheticrooms@gmail.com (business) jonahkasule@yahoo.com",
+      "raw": {
+        "_sheetRow": 3531,
+        "title": "Dr",
+        "practitionerName": "Kasule Jonah",
+        "email": "anaestheticrooms@gmail.com (business) jonahkasule@yahoo.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3532,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: nclenge@gmail. com",
+      "raw": {
+        "_sheetRow": 3532,
+        "title": "Dr",
+        "practitionerName": "Katwamba Nicolas Lenge",
+        "email": "nclenge@gmail. com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3538,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: pmanyumwa@yahoo.com drmanyumwa@gmail.com",
+      "raw": {
+        "_sheetRow": 3538,
+        "title": "Dr",
+        "practitionerName": "Manyumwa Petros Ngatendwe",
+        "email": "pmanyumwa@yahoo.com drmanyumwa@gmail.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3540,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: anaestheticrooms@gmail.com (business) danaimarange@yahoo.co.uk",
+      "raw": {
+        "_sheetRow": 3540,
+        "title": "Dr",
+        "practitionerName": "Marange Danai",
+        "email": "anaestheticrooms@gmail.com (business) danaimarange@yahoo.co.uk",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3548,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mazondes@iwayafrica.co.zw mazondes@mweb.co.zw",
+      "raw": {
+        "_sheetRow": 3548,
+        "title": "Dr",
+        "practitionerName": "Mazonde Simbarashe",
+        "email": "mazondes@iwayafrica.co.zw mazondes@mweb.co.zw",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3556,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: anaestheticrooms@gmail.com (business) mukonoweshuro@gmail.com",
+      "raw": {
+        "_sheetRow": 3556,
+        "title": "Dr",
+        "practitionerName": "Mukonoweshuro Taonga",
+        "email": "anaestheticrooms@gmail.com (business) mukonoweshuro@gmail.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3567,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: anaestheticrooms@gmail.com (business) shingai_n@yahoo.co.uk",
+      "raw": {
+        "_sheetRow": 3567,
+        "title": "Dr",
+        "practitionerName": "Nyaguse Shingai Audrey",
+        "email": "anaestheticrooms@gmail.com (business) shingai_n@yahoo.co.uk",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3569,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: anaestheticrooms@gmail.com (business) rtichnyamayaro@gmail.com",
+      "raw": {
+        "_sheetRow": 3569,
+        "title": "Dr",
+        "practitionerName": "Nyamayaro Raphael Tichaona Tafadzwa",
+        "email": "anaestheticrooms@gmail.com (business) rtichnyamayaro@gmail.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3580,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: thepractice34downie@gmail.com elenifleming95@gmail.com",
+      "raw": {
+        "_sheetRow": 3580,
+        "title": "Dr",
+        "practitionerName": "Zambellis Helen Harriet",
+        "email": "thepractice34downie@gmail.com elenifleming95@gmail.com",
+        "specialty": "Specialist Anaesthetist"
+      }
+    },
+    {
+      "rowNumber": 3594,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: jchirenda@healthnet.zw jchirenda@medsch.uz.ac.zw",
+      "raw": {
+        "_sheetRow": 3594,
+        "title": "Dr",
+        "practitionerName": "Chirenda Joconiah",
+        "email": "jchirenda@healthnet.zw jchirenda@medsch.uz.ac.zw",
+        "specialty": "Specialist Community Physician"
+      }
+    },
+    {
+      "rowNumber": 3596,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cdhege64@gmail.com cdhege@webmail.co.za",
+      "raw": {
+        "_sheetRow": 3596,
+        "title": "Dr",
+        "practitionerName": "Dhege Celestino",
+        "email": "cdhege64@gmail.com cdhege@webmail.co.za",
+        "specialty": "Specialist Community Physician"
+      }
+    },
+    {
+      "rowNumber": 3605,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: hwefa@zol.co.zw mahomvaagnes@gmail.com",
+      "raw": {
+        "_sheetRow": 3605,
+        "title": "Dr",
+        "practitionerName": "Mahomva Agnes Illah",
+        "email": "hwefa@zol.co.zw mahomvaagnes@gmail.com",
+        "specialty": "Specialist Community Physician"
+      }
+    },
+    {
+      "rowNumber": 3612,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gmuchena@fhi360.org drglad84@gmail.com",
+      "raw": {
+        "_sheetRow": 3612,
+        "title": "Dr",
+        "practitionerName": "Muchena Gladwin",
+        "email": "gmuchena@fhi360.org drglad84@gmail.com",
+        "specialty": "Specialist Community Physician"
+      }
+    },
+    {
+      "rowNumber": 3650,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kazkal2003@hotmail.com surgicalaccounts@gmail.com",
+      "raw": {
+        "_sheetRow": 3650,
+        "title": "Dr",
+        "practitionerName": "Kalangu Kazadi Kaluile Ntenga",
+        "email": "kazkal2003@hotmail.com surgicalaccounts@gmail.com",
+        "specialty": "Specialist Neuro Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3656,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mawerarooms@gmail.com gilbert.mawera@gmail.com",
+      "raw": {
+        "_sheetRow": 3656,
+        "title": "Dr",
+        "practitionerName": "Mawera Gilbert",
+        "email": "mawerarooms@gmail.com gilbert.mawera@gmail.com",
+        "specialty": "Specialist Neuro Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3693,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ds_africa@yahoo.com mid@yoafrica.co.zw",
+      "raw": {
+        "_sheetRow": 3693,
+        "title": "Dr",
+        "practitionerName": "Djordjevic Dragana",
+        "email": "ds_africa@yahoo.com mid@yoafrica.co.zw",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3742,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ttmatsa@gmail.com drttmatsa@mhchealthcare.co.zw",
+      "raw": {
+        "_sheetRow": 3742,
+        "title": "Dr",
+        "practitionerName": "Matsa Tawanda Takawira",
+        "email": "ttmatsa@gmail.com drttmatsa@mhchealthcare.co.zw",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3746,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: fmhlanga@uz-ucsf.co.zw fmhlanga@uz-ucsf.co.zw/ felixmhla@yahoo.com",
+      "raw": {
+        "_sheetRow": 3746,
+        "title": "Dr",
+        "practitionerName": "Mhlanga Felix Godwin",
+        "email": "fmhlanga@uz-ucsf.co.zw fmhlanga@uz-ucsf.co.zw/ felixmhla@yahoo.com",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3758,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: muporich@gmail.com ricwaat@cooltoad.com",
+      "raw": {
+        "_sheetRow": 3758,
+        "title": "Dr",
+        "practitionerName": "Mupombwa Richard",
+        "email": "muporich@gmail.com ricwaat@cooltoad.com",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3794,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: pjthistle@hotmail.com pthistle@gmn-usa.com",
+      "raw": {
+        "_sheetRow": 3794,
+        "title": "Dr",
+        "practitionerName": "Thistle Paul James",
+        "email": "pjthistle@hotmail.com pthistle@gmn-usa.com",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3795,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cverenga@yahoo.com drcverenga@gmail.com drcverenga@me.com",
+      "raw": {
+        "_sheetRow": 3795,
+        "title": "Dr",
+        "practitionerName": "Verenga  Cladious",
+        "email": "cverenga@yahoo.com drcverenga@gmail.com drcverenga@me.com",
+        "specialty": "Specialist Obstetrician and Gynaecologist"
+      }
+    },
+    {
+      "rowNumber": 3802,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ingani1@hotmail.com moyod@iwayafrica.co.zw",
+      "raw": {
+        "_sheetRow": 3802,
+        "title": "Dr",
+        "practitionerName": "Moyo Dingani",
+        "email": "ingani1@hotmail.com moyod@iwayafrica.co.zw",
+        "specialty": "Specialist Occupational Physician"
+      }
+    },
+    {
+      "rowNumber": 3827,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0777571209 atmagava@gmail.com",
+      "raw": {
+        "_sheetRow": 3827,
+        "title": "Dr",
+        "practitionerName": "Magava Aaron Thembinkosi",
+        "email": "0777571209 atmagava@gmail.com",
+        "specialty": "Specialist Ophthalmologist"
+      }
+    },
+    {
+      "rowNumber": 3839,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gilbertimoyagmail.com",
+      "raw": {
+        "_sheetRow": 3839,
+        "title": "Dr",
+        "practitionerName": "Moyo Gilbert",
+        "email": "gilbertimoyagmail.com",
+        "specialty": "Specialist Ophthalmologist"
+      }
+    },
+    {
+      "rowNumber": 3864,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: alban.bowers@homecall.co.uk bowersrooms@gmail.com",
+      "raw": {
+        "_sheetRow": 3864,
+        "title": "Dr",
+        "practitionerName": "Bowers Alban Gerard",
+        "email": "alban.bowers@homecall.co.uk bowersrooms@gmail.com",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3878,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: macheka@iwayafrica.co.zw macheka@mweb.co.zw",
+      "raw": {
+        "_sheetRow": 3878,
+        "title": "Dr",
+        "practitionerName": "Macheka Adolf",
+        "email": "macheka@iwayafrica.co.zw macheka@mweb.co.zw",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3882,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: rmakota6@gmail.com rmakota@pioneeringhealth.co.zw rmakotac@mohcc.org.zw",
+      "raw": {
+        "_sheetRow": 3882,
+        "title": "Dr",
+        "practitionerName": "Makota Raphael",
+        "email": "rmakota6@gmail.com rmakota@pioneeringhealth.co.zw rmakotaC@mohcc.org.zw",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3884,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drvmandizvidza@gmail.com drvmandizvidza@yahoo.com",
+      "raw": {
+        "_sheetRow": 3884,
+        "title": "Dr",
+        "practitionerName": "Mandizvidza Valentine",
+        "email": "drvmandizvidza@gmail.com drvmandizvidza@yahoo.com",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3886,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: bobmangwiro@yahoo.co.uk mangwiror@nssa.org.zw",
+      "raw": {
+        "_sheetRow": 3886,
+        "title": "Dr",
+        "practitionerName": "Mangwiro Robert",
+        "email": "bobmangwiro@yahoo.co.uk mangwiror@nssa.org.zw",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3895,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: cola@iwayafrica.co.zw   collenmsasanure@gmail.com",
+      "raw": {
+        "_sheetRow": 3895,
+        "title": "Dr",
+        "practitionerName": "Msasanure Collen",
+        "email": "cola@iwayafrica.co.zw   collenmsasanure@gmail.com",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3915,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: veragan2@gmail.com / veragan2003@yahoo.com",
+      "raw": {
+        "_sheetRow": 3915,
+        "title": "Dr",
+        "practitionerName": "Vera George Augustine Noah",
+        "email": "veragan2@gmail.com / veragan2003@yahoo.com",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3917,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: samwestonsimons@yahoo.co.uk sam.weston-simons@nhs.net",
+      "raw": {
+        "_sheetRow": 3917,
+        "title": "Dr",
+        "practitionerName": "Weston-Simons John Samuel",
+        "email": "samwestonsimons@yahoo.co.uk sam.weston-simons@nhs.net",
+        "specialty": "Specialist Orthopaedic Surgeon"
+      }
+    },
+    {
+      "rowNumber": 3921,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: audiomax@africaonline.co.zw cchidziva@audiomaxclinic.com",
+      "raw": {
+        "_sheetRow": 3921,
+        "title": "Dr",
+        "practitionerName": "Chidziva Clemence",
+        "email": "audiomax@africaonline.co.zw cchidziva@audiomaxclinic.com",
+        "specialty": "Specialist Otorhinolaryngologist"
+      }
+    },
+    {
+      "rowNumber": 3930,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: matarusesurgery@gmail.com matarusez@gmail.com",
+      "raw": {
+        "_sheetRow": 3930,
+        "title": "Dr",
+        "practitionerName": "Mataruse Zororo",
+        "email": "matarusesurgery@gmail.com matarusez@gmail.com",
+        "specialty": "Specialist Otorhinolaryngologist"
+      }
+    },
+    {
+      "rowNumber": 3947,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: dandas@zol.co zw",
+      "raw": {
+        "_sheetRow": 3947,
+        "title": "Dr",
+        "practitionerName": "Bwakura-Dangarembizi Mutsawashe Filda",
+        "email": "dandas@zol.co zw",
+        "specialty": "Specialist Paediatrician"
+      }
+    },
+    {
+      "rowNumber": 3953,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: lawsyrocks@yahoo.com chikaralaw@gmail.com",
+      "raw": {
+        "_sheetRow": 3953,
+        "title": "Dr",
+        "practitionerName": "Chikara Lawson Takawira",
+        "email": "lawsyrocks@yahoo.com chikaralaw@gmail.com",
+        "specialty": "Specialist Paediatrician"
+      }
+    },
+    {
+      "rowNumber": 3989,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: tichmavev@mweb.co.zw maveterasurg@gmail.com tichymav@gmail.com",
+      "raw": {
+        "_sheetRow": 3989,
+        "title": "Dr",
+        "practitionerName": "Mavetera Tichinani",
+        "email": "tichmavev@mweb.co.zw maveterasurg@gmail.com tichymav@gmail.com",
+        "specialty": "Specialist Paediatrician"
+      }
+    },
+    {
+      "rowNumber": 4026,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: makunike@medsch.uz.ac.zw rmutasa@hotmail.com",
+      "raw": {
+        "_sheetRow": 4026,
+        "title": "Dr",
+        "practitionerName": "Makunike - Mutasa Rudo Tanyaradzwa",
+        "email": "makunike@medsch.uz.ac.zw rmutasa@hotmail.com",
+        "specialty": "Specialist Pathologist"
+      }
+    },
+    {
+      "rowNumber": 4037,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: blessing.pvt@gmail.com blessing.zambuko@nust.ac.zw",
+      "raw": {
+        "_sheetRow": 4037,
+        "title": "Dr",
+        "practitionerName": "Zambuko Blessing",
+        "email": "blessing.pvt@gmail.com blessing.zambuko@nust.ac.zw",
+        "specialty": "Specialist Pathologist"
+      }
+    },
+    {
+      "rowNumber": 4113,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: mmelindatendai@yahoo.com drmelmun@gmail.com",
+      "raw": {
+        "_sheetRow": 4113,
+        "title": "Dr",
+        "practitionerName": "Munemo Melinda Tendai",
+        "email": "mmelindatendai@yahoo.com drmelmun@gmail.com",
+        "specialty": "Specialist Physician"
+      }
+    },
+    {
+      "rowNumber": 4120,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: queenkwenza@gmail.com 0778684874",
+      "raw": {
+        "_sheetRow": 4120,
+        "title": "Dr",
+        "practitionerName": "Ncube Kwenzakwenkosi",
+        "email": "queenkwenza@gmail.com 0778684874",
+        "specialty": "Specialist Physician"
+      }
+    },
+    {
+      "rowNumber": 4123,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: 0772240934 mpndix@metropolitanclinic.co.zw",
+      "raw": {
+        "_sheetRow": 4123,
+        "title": "Dr",
+        "practitionerName": "Ndiweni Malusi",
+        "email": "0772240934 mpndix@metropolitanclinic.co.zw",
+        "specialty": "Specialist Physician"
+      }
+    },
+    {
+      "rowNumber": 4124,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: drmndlovusurgery@yahoo.com mbongenigm@yahoo.uk",
+      "raw": {
+        "_sheetRow": 4124,
+        "title": "Dr",
+        "practitionerName": "Ndlovu Mbongeni",
+        "email": "drmndlovusurgery@yahoo.com mbongenigm@yahoo.uk",
+        "specialty": "Specialist Physician"
+      }
+    },
+    {
+      "rowNumber": 4143,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ian.ternouth@tdhp.org.nz ianternouth@gmail.com",
+      "raw": {
+        "_sheetRow": 4143,
+        "title": "Dr",
+        "practitionerName": "Ternouth Ian Frank Richard",
+        "email": "ian.ternouth@tdhp.org.nz ianternouth@gmail.com",
+        "specialty": "Specialist Physician"
+      }
+    },
+    {
+      "rowNumber": 4194,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: gcjakanani@gmail.com gjakanani@doc.co.zw",
+      "raw": {
+        "_sheetRow": 4194,
+        "title": "Dr",
+        "practitionerName": "Jakanani George Chanetsa",
+        "email": "gcjakanani@gmail.com gjakanani@doc.co.zw",
+        "specialty": "Specialist Radiologist (Diagnostic)"
+      }
+    },
+    {
+      "rowNumber": 4230,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: ntokozosqo@gmail.com nndlovu@mweb.co.zw",
+      "raw": {
+        "_sheetRow": 4230,
+        "title": "Dr",
+        "practitionerName": "Ndlovu Ntokozo",
+        "email": "ntokozosqo@gmail.com NNDLOVU@MWEB.CO.ZW",
+        "specialty": "Specialist Radiotherapist and Oncologist"
+      }
+    },
+    {
+      "rowNumber": 4253,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: smachemedze1@yahoo.com smsmachemedze9@gmail.com",
+      "raw": {
+        "_sheetRow": 4253,
+        "title": "Dr",
+        "practitionerName": "Machemedze Solomon",
+        "email": "smachemedze1@yahoo.com smsmachemedze9@gmail.com",
+        "specialty": "Specialist Surgeon"
+      }
+    },
+    {
+      "rowNumber": 4278,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: kusekn@gmail.com ndukusurgery@gmail.com",
+      "raw": {
+        "_sheetRow": 4278,
+        "title": "Dr",
+        "practitionerName": "Nduku Kusezweni Kevin",
+        "email": "kusekn@gmail.com ndukusurgery@gmail.com",
+        "specialty": "Specialist Surgeon"
+      }
+    },
+    {
+      "rowNumber": 4280,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: crispin112@yahoo.fr crispin112@gmail.com",
+      "raw": {
+        "_sheetRow": 4280,
+        "title": "Dr",
+        "practitionerName": "Ntoto Mambote Crispen Oliver",
+        "email": "crispin112@yahoo.fr crispin112@gmail.com",
+        "specialty": "Specialist Surgeon"
+      }
+    },
+    {
+      "rowNumber": 4283,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: sachikonyem@gmail.com sanchezsachikonye@hotmail.com",
+      "raw": {
+        "_sheetRow": 4283,
+        "title": "Dr",
+        "practitionerName": "Sachikonye  Mordecai Herbert",
+        "email": "sachikonyem@gmail.com sanchezsachikonye@hotmail.com",
+        "specialty": "Specialist Surgeon"
+      }
+    },
+    {
+      "rowNumber": 4297,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: lkchonzi@gmail.com lkchonzi@ymail.com",
+      "raw": {
+        "_sheetRow": 4297,
+        "title": "Dr",
+        "practitionerName": "Chonzi Ladislous Kudakwashe",
+        "email": "lkchonzi@gmail.com lkchonzi@ymail.com",
+        "specialty": "Specialist Urologist"
+      }
+    },
+    {
+      "rowNumber": 4317,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: andrew.samkange@gmail.com csamkange@healthnet.org.zw",
+      "raw": {
+        "_sheetRow": 4317,
+        "title": "Dr",
+        "practitionerName": "Samkange Christopher Andrew",
+        "email": "andrew.samkange@gmail.com csamkange@healthnet.org.zw",
+        "specialty": "Specialist Urologist"
+      }
+    },
+    {
+      "rowNumber": 4318,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: evaristomarowa@yahoo.com marowaeva@gmail.com",
+      "raw": {
+        "_sheetRow": 4318,
+        "title": "Dr",
+        "practitionerName": "Marowa Evaristo",
+        "email": "evaristomarowa@yahoo.com marowaeva@gmail.com",
+        "specialty": "Specialist Venereologist"
+      }
+    },
+    {
+      "rowNumber": 4319,
+      "errorCode": "VALIDATION_FAILED",
+      "errorMessage": "Invalid email: email_address",
+      "raw": {
+        "_sheetRow": 4319,
+        "title": "Title",
+        "practitionerName": "Fullname",
+        "email": "email_address",
+        "specialty": "specialty"
+      }
+    }
+  ],
+  "duplicateReviews": []
+}

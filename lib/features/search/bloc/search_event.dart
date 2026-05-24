@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
+import 'package:smarthealth_shep/features/search/models/search_sort_option.dart';
 
 sealed class SearchEvent extends Equatable {
   const SearchEvent();
@@ -36,4 +37,35 @@ final class FiltersApplied extends SearchEvent {
 
 final class SearchReloadRequested extends SearchEvent {
   const SearchReloadRequested();
+}
+
+final class SearchDebounced extends SearchEvent {
+  const SearchDebounced();
+}
+
+final class SortChanged extends SearchEvent {
+  const SortChanged(this.sort);
+
+  final SearchSortOption sort;
+
+  @override
+  List<Object?> get props => [sort];
+}
+
+final class RecentSearchesLoaded extends SearchEvent {
+  const RecentSearchesLoaded(this.searches);
+
+  final List<String> searches;
+
+  @override
+  List<Object?> get props => [searches];
+}
+
+final class RecentSearchRemoved extends SearchEvent {
+  const RecentSearchRemoved(this.query);
+
+  final String query;
+
+  @override
+  List<Object?> get props => [query];
 }

@@ -1,0 +1,8 @@
+# Supabase local development artifacts
+.branches
+.temp
+.env
+.env.local
+
+# Generated types (optional — commit if team prefers)
+# types/database.types.ts

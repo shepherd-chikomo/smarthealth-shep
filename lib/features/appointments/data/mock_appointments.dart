@@ -1,0 +1,132 @@
+import 'package:smarthealth_shep/core/assets.dart';
+import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
+import 'package:smarthealth_shep/shared/models/operational_status.dart';
+
+/// Seed appointments covering the full operational lifecycle.
+abstract final class MockAppointments {
+  static List<AppointmentModel> seed({DateTime? now}) {
+    final base = now ?? DateTime.now();
+    final tomorrow = DateTime(
+      base.year,
+      base.month,
+      base.day,
+    ).add(const Duration(days: 1));
+
+    return [
+      AppointmentModel(
+        id: 'appt_seed_confirmed',
+        referenceNumber: 'SH-SEED-001',
+        providerId: 'p1',
+        providerName: 'Dr. Tendai Moyo',
+        facilityName: 'Parirenyatwa Hospital',
+        specialty: 'General Practice',
+        providerImageUrl: AppAssets.doctorTendai,
+        facilityPhone: '+263242703831',
+        scheduledAt: tomorrow.copyWith(hour: 10, minute: 30),
+        durationMinutes: 30,
+        patientName: 'Tendai Moyo',
+        patientId: 'self',
+        appointmentType: AppointmentType.inPerson,
+        status: AppointmentOperationalStatus.confirmed,
+        reminderState: AppointmentReminderState.scheduled,
+        reminderAt: tomorrow.copyWith(hour: 10, minute: 30).subtract(
+              const Duration(hours: 24),
+            ),
+      ),
+      AppointmentModel(
+        id: 'appt_seed_pending',
+        referenceNumber: 'SH-SEED-002',
+        providerId: 'p2',
+        providerName: 'Dr. Rumbidzai Chiweshe',
+        facilityName: 'Avenues Clinic',
+        specialty: 'Pediatrics',
+        providerImageUrl: AppAssets.doctorRumbidzai,
+        facilityPhone: '+263242870111',
+        scheduledAt: tomorrow.copyWith(hour: 14, minute: 0),
+        durationMinutes: 30,
+        patientName: 'Kudzai Moyo',
+        patientId: 'f2',
+        appointmentType: AppointmentType.followUp,
+        status: AppointmentOperationalStatus.pending,
+        reminderState: AppointmentReminderState.scheduled,
+        reminderAt: tomorrow.copyWith(hour: 14, minute: 0).subtract(
+              const Duration(hours: 2),
+            ),
+      ),
+      AppointmentModel(
+        id: 'appt_seed_checked_in',
+        referenceNumber: 'SH-SEED-003',
+        providerId: 'p5',
+        providerName: 'Dr. Chipo Dube',
+        facilityName: 'Maternity Wing, Parirenyatwa',
+        specialty: 'Obstetrics',
+        facilityPhone: '+263242703832',
+        scheduledAt: base.copyWith(hour: 9, minute: 0),
+        durationMinutes: 45,
+        patientName: 'Tendai Moyo',
+        appointmentType: AppointmentType.inPerson,
+        status: AppointmentOperationalStatus.checkedIn,
+        reminderState: AppointmentReminderState.sent,
+        checkedInAt: base.copyWith(hour: 8, minute: 52),
+      ),
+      AppointmentModel(
+        id: 'appt_seed_in_queue',
+        referenceNumber: 'SH-SEED-004',
+        providerId: 'p1',
+        providerName: 'Dr. Tendai Moyo',
+        facilityName: 'Parirenyatwa Hospital',
+        specialty: 'General Practice',
+        providerImageUrl: AppAssets.doctorTendai,
+        facilityPhone: '+263242703831',
+        scheduledAt: base.copyWith(hour: 11, minute: 0),
+        durationMinutes: 30,
+        patientName: 'Tendai Moyo',
+        appointmentType: AppointmentType.inPerson,
+        status: AppointmentOperationalStatus.inQueue,
+        reminderState: AppointmentReminderState.sent,
+        queuePosition: 3,
+        estimatedWaitMinutes: 18,
+        queueSessionId: 'queue_demo_1',
+        checkedInAt: base.copyWith(hour: 10, minute: 45),
+      ),
+      AppointmentModel(
+        id: 'appt_seed_completed',
+        referenceNumber: 'SH-SEED-005',
+        providerId: 'p6',
+        providerName: 'Dr. Farai Ncube',
+        facilityName: 'Central Medical Centre',
+        specialty: 'Internal Medicine',
+        facilityPhone: '+263242111222',
+        scheduledAt: base.subtract(const Duration(days: 3)).copyWith(
+              hour: 15,
+              minute: 0,
+            ),
+        durationMinutes: 30,
+        patientName: 'Tendai Moyo',
+        appointmentType: AppointmentType.telehealth,
+        status: AppointmentOperationalStatus.completed,
+        reminderState: AppointmentReminderState.sent,
+      ),
+      AppointmentModel(
+        id: 'appt_seed_rescheduled',
+        referenceNumber: 'SH-SEED-006',
+        providerId: 'p9',
+        providerName: 'Dr. Lisa van der Merwe',
+        facilityName: 'Skin Health Harare',
+        specialty: 'Dermatology',
+        facilityPhone: '+263242444555',
+        scheduledAt: base.add(const Duration(days: 4)).copyWith(
+              hour: 16,
+              minute: 30,
+            ),
+        durationMinutes: 30,
+        patientName: 'Tariro Moyo',
+        patientId: 'f1',
+        appointmentType: AppointmentType.inPerson,
+        status: AppointmentOperationalStatus.rescheduled,
+        reminderState: AppointmentReminderState.scheduled,
+        reminderAt: base.add(const Duration(days: 3)).copyWith(hour: 16),
+      ),
+    ];
+  }
+}

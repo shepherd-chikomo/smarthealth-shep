@@ -1,225 +1,141 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
-import 'package:smarthealth_shep/core/network/api_service.dart';
-import 'package:smarthealth_shep/core/storage/app_database.dart';
-import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
-import 'package:smarthealth_shep/shared/data/sync/sync_conflict_resolver.dart';
+import 'package:smarthealth_shep/shared/data/sync/delta_sync_coordinator.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
-import 'package:sqflite/sqflite.dart';
 
 const _logName = 'SyncExecutor';
 
-/// Applies queued mutations and delta pulls against the remote API.
+/// Applies queued mutations against the remote API.
 class SyncExecutor {
   SyncExecutor({
     required Dio dio,
-    ApiService? apiService,
-    ProviderDao? providerDao,
-    AppDatabase? database,
-    this.baseUrl = 'https://api.smarthealth.example/v1',
+    DeltaSyncCoordinator? deltaCoordinator,
   })  : _dio = dio,
-        _api = apiService ?? ApiService(dio, baseUrl: baseUrl),
-        _providerDao = providerDao ?? ProviderDao(),
-        _database = database ?? AppDatabase.instance;
+        _delta = deltaCoordinator ?? DeltaSyncCoordinator(dio: dio);
 
   final Dio _dio;
-  final ApiService _api;
-  final ProviderDao _providerDao;
-  final AppDatabase _database;
-  final String baseUrl;
+  final DeltaSyncCoordinator _delta;
 
-  static const _lastSyncPrefix = 'last_sync_';
+  Future<void> runDeltaPulls() => _delta.runDeltaPulls();
 
-  Future<Database> get _db => _database.database;
-
-  /// Runs delta sync pulls in priority order (server wins for directory data).
-  Future<void> runDeltaPulls() async {
-    await _pullEmergency();
-    await _pullProviders();
-    await _pullAppointments();
-  }
-
-  Future<void> processQueueItem(SyncQueueItem item) async {
+  /// Processes a queue item and returns server response body when available.
+  Future<Map<String, dynamic>?> processQueueItem(SyncQueueItem item) async {
     developer.log(
       'Processing ${item.mutationType.label} ${item.entityType.name}/${item.entityId}',
       name: _logName,
     );
 
-    switch (item.entityType) {
-      case SyncEntityType.family:
-        await _pushFamilyMutation(item);
-      case SyncEntityType.appointment:
-        await _pushAppointmentMutation(item);
-      case SyncEntityType.provider:
-        await _pushProviderMutation(item);
-      case SyncEntityType.emergency:
-        await _pushEmergencyMutation(item);
-    }
+    return switch (item.entityType) {
+      SyncEntityType.family => _pushFamilyMutation(item),
+      SyncEntityType.appointment => _pushAppointmentMutation(item),
+      SyncEntityType.queueUpdate => _pushQueueUpdateMutation(item),
+      SyncEntityType.provider => _pushProviderMutation(item),
+      SyncEntityType.facility => _pushFacilityMutation(item),
+      SyncEntityType.operatingHours => _pushOperatingHoursMutation(item),
+      SyncEntityType.emergency => _pushEmergencyMutation(item),
+    };
   }
 
-  Future<void> _pullEmergency() async {
-    final since = await _readLastSync(SyncEntityType.emergency);
-    final response = await _dio.get<Map<String, dynamic>>(
-      '$baseUrl/emergency/sync',
-      queryParameters: {
-        if (since != null) 'since': since.toUtc().toIso8601String(),
-      },
-    );
-
-    final data = response.data ?? {};
-    final syncedAt = _parseSyncedAt(data['syncedAt']);
-    await _writeLastSync(SyncEntityType.emergency, syncedAt);
-    developer.log('Emergency delta pull complete', name: _logName);
-  }
-
-  Future<void> _pullProviders() async {
-    final since = await _providerDao.getLastSync();
-    final payload = await _api.syncProviders(since: since);
-
-    if (SyncConflictResolver.shouldApplyServerDirectoryRecord(
-      entityType: SyncEntityType.provider,
-    )) {
-      await _providerDao.upsertProviders(payload.updated);
-      await _providerDao.deleteProviders(payload.deletedIds);
-      await _providerDao.setLastSync(payload.syncedAt);
-    }
-
-    developer.log(
-      'Provider delta pull: ${payload.updated.length} updated, '
-      '${payload.deletedIds.length} deleted',
-      name: _logName,
-    );
-  }
-
-  Future<void> _pullAppointments() async {
-    final since = await _readLastSync(SyncEntityType.appointment);
-    final response = await _dio.get<Map<String, dynamic>>(
-      '$baseUrl/appointments/sync',
-      queryParameters: {
-        if (since != null) 'since': since.toUtc().toIso8601String(),
-      },
-    );
-
-    final data = response.data ?? {};
-    final syncedAt = _parseSyncedAt(data['syncedAt']);
-    await _writeLastSync(SyncEntityType.appointment, syncedAt);
-    developer.log('Appointment delta pull complete', name: _logName);
-  }
-
-  Future<void> _pushFamilyMutation(SyncQueueItem item) async {
-    final path = '$baseUrl/family/${item.entityId}';
+  Future<Map<String, dynamic>?> _pushFamilyMutation(SyncQueueItem item) async {
+    final path = '/patients/family/${item.entityId}';
 
     switch (item.mutationType) {
       case SyncMutationType.create:
-      case SyncMutationType.update:
-        final response = await _dio.put<Map<String, dynamic>>(
-          path,
-          data: item.payload,
-        );
-        await _resolveUserDataConflict(
-          item: item,
-          serverBody: response.data,
-        );
-      case SyncMutationType.delete:
-        await _dio.delete<void>(path);
-    }
-  }
-
-  Future<void> _pushAppointmentMutation(SyncQueueItem item) async {
-    final path = '$baseUrl/appointments/${item.entityId}';
-
-    switch (item.mutationType) {
-      case SyncMutationType.create:
-      case SyncMutationType.update:
         final response = await _dio.post<Map<String, dynamic>>(
+          '/patients/family',
+          data: item.payload,
+        );
+        return _extractBody(response.data, 'member');
+      case SyncMutationType.update:
+        final response = await _dio.patch<Map<String, dynamic>>(
           path,
           data: item.payload,
         );
-        await _resolveUserDataConflict(
-          item: item,
-          serverBody: response.data,
+        return _extractBody(response.data, 'member');
+      case SyncMutationType.delete:
+        await _dio.delete<void>(path);
+        return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _pushAppointmentMutation(
+    SyncQueueItem item,
+  ) async {
+    final path = '/appointments/${item.entityId}';
+
+    switch (item.mutationType) {
+      case SyncMutationType.create:
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/appointments',
+          data: item.payload,
         );
+        return _extractBody(response.data, 'appointment');
+      case SyncMutationType.update:
+        final response = await _dio.patch<Map<String, dynamic>>(
+          path,
+          data: item.payload,
+        );
+        return _extractBody(response.data, 'appointment');
       case SyncMutationType.delete:
         await _dio.delete<void>(path);
+        return null;
     }
   }
 
-  Future<void> _pushProviderMutation(SyncQueueItem item) async {
-    final path = '$baseUrl/providers/${item.entityId}';
+  Future<Map<String, dynamic>?> _pushQueueUpdateMutation(
+    SyncQueueItem item,
+  ) async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/appointments/${item.entityId}',
+      data: item.payload,
+    );
+    return _extractBody(response.data, 'appointment');
+  }
+
+  Future<Map<String, dynamic>?> _pushProviderMutation(SyncQueueItem item) async {
+    final path = '/providers/${item.entityId}';
     switch (item.mutationType) {
       case SyncMutationType.create:
       case SyncMutationType.update:
-        await _dio.put<Map<String, dynamic>>(path, data: item.payload);
+        await _dio.patch<Map<String, dynamic>>(path, data: item.payload);
+        return null;
       case SyncMutationType.delete:
         await _dio.delete<void>(path);
+        return null;
     }
   }
 
-  Future<void> _pushEmergencyMutation(SyncQueueItem item) async {
-    final path = '$baseUrl/emergency/${item.entityId}';
-    switch (item.mutationType) {
-      case SyncMutationType.create:
-      case SyncMutationType.update:
-        await _dio.put<Map<String, dynamic>>(path, data: item.payload);
-      case SyncMutationType.delete:
-        await _dio.delete<void>(path);
-    }
-  }
-
-  Future<void> _resolveUserDataConflict({
-    required SyncQueueItem item,
-    required Map<String, dynamic>? serverBody,
-  }) async {
-    if (serverBody == null) return;
-
-    final serverUpdatedRaw = serverBody['updatedAt'] as String?;
-    final serverUpdated = serverUpdatedRaw != null
-        ? DateTime.tryParse(serverUpdatedRaw)?.toUtc()
-        : null;
-
-    final applyLocal = SyncConflictResolver.shouldApplyLocalMutation(
-      entityType: item.entityType,
-      clientUpdatedAt: item.clientUpdatedAt,
-      serverUpdatedAt: serverUpdated,
+  Future<Map<String, dynamic>?> _pushFacilityMutation(SyncQueueItem item) async {
+    await _dio.get<Map<String, dynamic>>(
+      '/facilities/${item.entityId}',
     );
-
-    if (!applyLocal) {
-      developer.log(
-        'Server wins LWW for ${item.entityType.name}/${item.entityId}',
-        name: _logName,
-      );
-    }
+    return null;
   }
 
-  Future<DateTime?> _readLastSync(SyncEntityType entity) async {
-    final db = await _db;
-    final rows = await db.query(
-      'sync_metadata',
-      where: 'key = ?',
-      whereArgs: ['$_lastSyncPrefix${entity.name}'],
-      limit: 1,
+  Future<Map<String, dynamic>?> _pushOperatingHoursMutation(
+    SyncQueueItem item,
+  ) async {
+    await _dio.get<Map<String, dynamic>>(
+      '/providers/${item.entityId}',
     );
-    if (rows.isEmpty) return null;
-    return DateTime.tryParse(rows.first['value']! as String);
+    return null;
   }
 
-  Future<void> _writeLastSync(SyncEntityType entity, DateTime syncedAt) async {
-    final db = await _db;
-    await db.insert(
-      'sync_metadata',
-      {
-        'key': '$_lastSyncPrefix${entity.name}',
-        'value': syncedAt.toUtc().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+  Future<Map<String, dynamic>?> _pushEmergencyMutation(SyncQueueItem item) async {
+    await _dio.get<Map<String, dynamic>>(
+      '/emergency/services',
     );
+    return null;
   }
 
-  DateTime _parseSyncedAt(Object? raw) {
-    if (raw is String) {
-      return DateTime.tryParse(raw)?.toUtc() ?? DateTime.now().toUtc();
-    }
-    return DateTime.now().toUtc();
+  Map<String, dynamic>? _extractBody(
+    Map<String, dynamic>? data,
+    String key,
+  ) {
+    if (data == null) return null;
+    final nested = data[key];
+    if (nested is Map<String, dynamic>) return nested;
+    return data;
   }
 }

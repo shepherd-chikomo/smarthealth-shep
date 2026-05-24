@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smarthealth_shep/core/assets.dart';
+import 'package:smarthealth_shep/core/auth/auth_state.dart';
+import 'package:smarthealth_shep/core/auth/secure_storage.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -21,11 +24,31 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    final prefs = await SharedPreferences.getInstance();
+    final results = await Future.wait([
+      SharedPreferences.getInstance(),
+      SecureStorage().hasSession(),
+      Future<void>.delayed(const Duration(milliseconds: 300)),
+    ]);
+
+    final prefs = results[0] as SharedPreferences;
+    final hasSession = results[1] as bool;
     final completed = prefs.getBool(OnboardingScreen.completedKey) ?? false;
+
     if (!mounted) return;
-    context.go(completed ? '/home' : '/onboarding');
+
+    if (!completed) {
+      context.go('/onboarding');
+      return;
+    }
+
+    if (hasSession) {
+      await ref.read(authControllerProvider.notifier).refresh();
+      if (!mounted) return;
+      context.go('/home');
+      return;
+    }
+
+    context.go('/login');
   }
 
   @override

@@ -28,6 +28,19 @@ abstract class ProviderModel with _$ProviderModel {
     @Default([]) List<WorkingHoursEntry> weeklyHours,
     @Default([]) List<String> conditions,
     @Default([]) List<String> ageGroups,
+    bool? isOpenNow,
+    bool? isClosingSoon,
+    bool? emergencyAvailable,
+    bool? acceptsWalkIns,
+    bool? hasQueue,
+    int? queueLength,
+    int? waitEstimateMinutes,
+    DateTime? nextAvailableSlot,
+    bool? availableToday,
+    double? rating,
+    int? reviewCount,
+    String? verificationSource,
+    @Default(false) bool isClaimed,
   }) = _ProviderModel;
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) =>

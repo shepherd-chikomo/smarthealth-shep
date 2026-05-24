@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
@@ -18,10 +19,8 @@ class ProviderSyncPayload {
 
 /// Remote provider API backed by Dio.
 class ApiService {
-  ApiService(
-    this._dio, {
-    this.baseUrl = 'https://api.smarthealth.example/v1',
-  });
+  ApiService(this._dio, {String? baseUrl})
+      : baseUrl = baseUrl ?? AppConfig.apiBaseUrl;
 
   final Dio _dio;
   final String baseUrl;
@@ -33,7 +32,7 @@ class ApiService {
     DateTime? since,
   }) async {
     final response = await _get<Map<String, dynamic>>(
-      '$baseUrl/providers/nearby',
+      '/providers/nearby',
       queryParameters: {
         'lat': lat,
         'lon': lon,
@@ -46,11 +45,10 @@ class ApiService {
   }
 
   Future<List<ProviderModel>> searchProviders(
-    ProviderSearchFilter filter, {
-    DateTime? since,
-  }) async {
+    ProviderSearchFilter filter,
+  ) async {
     final response = await _get<Map<String, dynamic>>(
-      '$baseUrl/providers/search',
+      '/search/providers',
       queryParameters: {
         if (filter.query.isNotEmpty) 'q': filter.query,
         if (filter.categoryId != null) 'categoryId': filter.categoryId,
@@ -64,7 +62,16 @@ class ApiService {
         if (filter.latitude != null) 'lat': filter.latitude,
         if (filter.longitude != null) 'lon': filter.longitude,
         if (filter.radiusKm != null) 'radiusKm': filter.radiusKm,
-        if (since != null) 'since': since.toUtc().toIso8601String(),
+        if (filter.isVerified == true) 'isVerified': true,
+        if (filter.openNow == true) 'openNow': true,
+        if (filter.queueUnder30 == true) 'queueUnder30': true,
+        if (filter.availableToday == true) 'availableToday': true,
+        if (filter.acceptsWalkIns == true) 'acceptsWalkIns': true,
+        if (filter.emergencyAvailable == true) 'emergencyAvailable': true,
+        if (filter.city != null) 'city': filter.city,
+        if (filter.province != null) 'province': filter.province,
+        if (filter.facilityId != null) 'facilityId': filter.facilityId,
+        'limit': 50,
       },
     );
 
@@ -73,7 +80,7 @@ class ApiService {
 
   Future<ProviderModel?> getProviderById(String id) async {
     final response = await _get<Map<String, dynamic>>(
-      '$baseUrl/providers/$id',
+      '/providers/$id',
     );
 
     final data = response.data?['provider'];
@@ -83,7 +90,7 @@ class ApiService {
 
   Future<ProviderSyncPayload> syncProviders({DateTime? since}) async {
     final response = await _get<Map<String, dynamic>>(
-      '$baseUrl/providers/sync',
+      '/providers/sync',
       queryParameters: {
         if (since != null) 'since': since.toUtc().toIso8601String(),
       },

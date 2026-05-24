@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Dashboard-specific palette (mirrors product spec).
 abstract final class HomeDashboardColors {
-  static const Color primary = Color(0xFF1976D2);
+  static const Color primary = Color(0xFF0072BC);
   static const Color secondary = Color(0xFF00897B);
-  static const Color emergency = Color(0xFFD32F2F);
+  static const Color emergency = Color(0xFFE30613);
   static const Color background = Color(0xFFF5F5F5);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color textPrimary = Color(0xFF212121);

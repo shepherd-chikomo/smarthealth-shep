@@ -9,6 +9,7 @@ import 'package:smarthealth_shep/features/search/bloc/search_state.dart';
 import 'package:smarthealth_shep/features/search/data/search_repository.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/features/search/widgets/search_filter_chip.dart';
+import 'package:smarthealth_shep/features/search/widgets/search_suggestions_panel.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
@@ -64,11 +65,11 @@ class _SearchViewState extends State<_SearchView> {
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
-            if (state.status == SearchStatus.loading) {
+            if (state.status == SearchStatus.loading && state.allProviders.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state.status == SearchStatus.error) {
+            if (state.status == SearchStatus.error && state.allProviders.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -135,6 +136,36 @@ class _SearchViewState extends State<_SearchView> {
                 Expanded(
                   child: ListView(
                     children: [
+                      if (!state.hasActiveCriteria)
+                        SearchSuggestionsPanel(
+                          recentSearches: state.recentSearches,
+                          providers: state.allProviders,
+                          onQuerySelected: (query) {
+                            _controller.text = query;
+                            context
+                                .read<SearchBloc>()
+                                .add(SearchQueryChanged(query));
+                          },
+                          onSpecialtySelected: (id) => context
+                              .read<SearchBloc>()
+                              .add(
+                                FilterToggled(
+                                  group: SearchFilterGroup.specialty,
+                                  filterId: id,
+                                ),
+                              ),
+                          onOperationalSelected: (id) => context
+                              .read<SearchBloc>()
+                              .add(
+                                FilterToggled(
+                                  group: SearchFilterGroup.operational,
+                                  filterId: id,
+                                ),
+                              ),
+                          onRecentRemoved: (query) => context
+                              .read<SearchBloc>()
+                              .add(RecentSearchRemoved(query)),
+                        ),
                       SearchFilterSection(
                         title: l10n.searchFilterSpecialty,
                         options: SearchFilterOptions.specialties,
@@ -158,6 +189,15 @@ class _SearchViewState extends State<_SearchView> {
                         options: SearchFilterOptions.ageGroups,
                         selectedIds: state.ageGroups,
                         group: SearchFilterGroup.ageGroup,
+                        onToggle: (group, id) => context
+                            .read<SearchBloc>()
+                            .add(FilterToggled(group: group, filterId: id)),
+                      ),
+                      SearchFilterSection(
+                        title: l10n.searchFilterOperational,
+                        options: SearchFilterOptions.operational,
+                        selectedIds: state.operational,
+                        group: SearchFilterGroup.operational,
                         onToggle: (group, id) => context
                             .read<SearchBloc>()
                             .add(FilterToggled(group: group, filterId: id)),

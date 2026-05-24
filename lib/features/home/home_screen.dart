@@ -4,14 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/data/categories.dart';
+import 'package:smarthealth_shep/features/appointments/widgets/home_upcoming_appointment_banner.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_bloc.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.dart';
+import 'package:smarthealth_shep/features/notifications/widgets/notification_bell_button.dart';
+import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
+import 'package:smarthealth_shep/shared/widgets/design_system/queue_card.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 import 'package:smarthealth_shep/shared/widgets/category_icon.dart';
 import 'package:smarthealth_shep/shared/widgets/provider_card.dart';
@@ -62,7 +66,15 @@ class _HomeDashboardView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _LocationPill(city: _cityFromState(state)),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _LocationPill(city: _cityFromState(state)),
+                            ),
+                            const SizedBox(width: 12),
+                            const NotificationBellButton(),
+                          ],
+                        ),
                         const SizedBox(height: 12),
                         _HomeSearchBar(
                           hint: l10n.homeSearchHint,
@@ -79,6 +91,14 @@ class _HomeDashboardView extends StatelessWidget {
                           subtitle: l10n.homeEmergencySubtitle,
                           onTap: () => context.go('/emergency'),
                         ),
+                        if (_activeQueueFromState(state) != null) ...[
+                          const SizedBox(height: 16),
+                          _ActiveQueueBanner(
+                            session: _activeQueueFromState(state)!,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        const HomeUpcomingAppointmentBanner(),
                         const SizedBox(height: 20),
                         _SectionHeader(
                           title: l10n.homeNearbyFacilities,
@@ -108,6 +128,12 @@ class _HomeDashboardView extends StatelessWidget {
   String? _categoryFromState(HomeState state) => switch (state) {
         HomeLoaded(:final selectedCategoryId) => selectedCategoryId,
         HomeOffline(:final selectedCategoryId) => selectedCategoryId,
+        _ => null,
+      };
+
+  QueueSession? _activeQueueFromState(HomeState state) => switch (state) {
+        HomeLoaded(:final activeQueue) => activeQueue,
+        HomeOffline(:final activeQueue) => activeQueue,
         _ => null,
       };
 
@@ -186,6 +212,36 @@ class _HomeDashboardView extends StatelessWidget {
     }
 
     return const [];
+  }
+}
+
+class _ActiveQueueBanner extends StatelessWidget {
+  const _ActiveQueueBanner({required this.session});
+
+  final QueueSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Your Queue',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: HomeDashboardColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        QueueCard.fromSession(
+          session,
+          compact: true,
+          showLiveIndicator: true,
+          onTap: () => context.push('/queue/${session.id}'),
+        ),
+      ],
+    );
   }
 }
 
