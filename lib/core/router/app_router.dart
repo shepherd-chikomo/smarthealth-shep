@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smarthealth_shep/core/auth/auth_repository.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/appointments/screens/appointment_detail_screen.dart';
 import 'package:smarthealth_shep/features/appointments/screens/appointments_screen.dart';
 import 'package:smarthealth_shep/features/appointments/screens/check_in_screen.dart';
@@ -65,6 +66,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (auth.isAuthenticated && isAuthRoute) {
+        return '/home';
+      }
+
+      if (AppConfig.skipAuthForTesting && isAuthRoute) {
         return '/home';
       }
 

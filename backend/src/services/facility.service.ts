@@ -82,7 +82,74 @@ export async function getPortalProfile(userId: string) {
   }
 
   if (facilities.length === 0) {
+    const ownedProvider = await query<{
+      id: string;
+      name: string;
+      specialty: string | null;
+      registration_number: string | null;
+    }>(
+      `SELECT id, name, specialty, registration_number FROM public.providers
+       WHERE owner_id = $1 AND is_claimed = true AND deleted_at IS NULL
+       LIMIT 1`,
+      [userId],
+    );
+
+    if (ownedProvider.rows[0]) {
+      const { getMyPrimaryFacilities } = await import('./practitioner-claim.service.js');
+      const linked = await getMyPrimaryFacilities(userId);
+      return {
+        id: profile.rows[0].id,
+        role: profile.rows[0].primary_role,
+        firstName: profile.rows[0].first_name,
+        lastName: profile.rows[0].last_name,
+        email: profile.rows[0].email,
+        phone: profile.rows[0].phone,
+        facilities: [],
+        linkedFacilities: linked.facilities,
+        provider: {
+          id: ownedProvider.rows[0].id,
+          name: ownedProvider.rows[0].name,
+          specialty: ownedProvider.rows[0].specialty,
+          registrationNumber: ownedProvider.rows[0].registration_number,
+        },
+        portalMode: 'provider' as const,
+      };
+    }
+
     throw new AppError(403, 'NO_FACILITY_ACCESS', 'No facility membership found for this account');
+  }
+
+  const ownedProvider = await query<{
+    id: string;
+    name: string;
+    specialty: string | null;
+    registration_number: string | null;
+  }>(
+    `SELECT id, name, specialty, registration_number FROM public.providers
+     WHERE owner_id = $1 AND is_claimed = true AND deleted_at IS NULL
+     LIMIT 1`,
+    [userId],
+  );
+
+  let linkedFacilities: Awaited<
+    ReturnType<typeof import('./practitioner-claim.service.js').getMyPrimaryFacilities>
+  >['facilities'] = [];
+  let provider: {
+    id: string;
+    name: string;
+    specialty: string | null;
+    registrationNumber: string | null;
+  } | undefined;
+
+  if (ownedProvider.rows[0]) {
+    const { getMyPrimaryFacilities } = await import('./practitioner-claim.service.js');
+    linkedFacilities = (await getMyPrimaryFacilities(userId)).facilities;
+    provider = {
+      id: ownedProvider.rows[0].id,
+      name: ownedProvider.rows[0].name,
+      specialty: ownedProvider.rows[0].specialty,
+      registrationNumber: ownedProvider.rows[0].registration_number,
+    };
   }
 
   return {
@@ -98,6 +165,9 @@ export async function getPortalProfile(userId: string) {
       role: f.role,
       membershipId: f.membership_id,
     })),
+    linkedFacilities,
+    provider,
+    portalMode: 'facility' as const,
   };
 }
 

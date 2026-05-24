@@ -14,10 +14,25 @@ abstract final class AppConfig {
     defaultValue: false,
   );
 
-  /// Whether mock fallbacks are permitted (debug builds only, unless explicitly enabled).
-  static bool get allowMockFallbacks => kDebugMode && allowMockData;
+  /// True when the API URL targets the dev machine loopback (invalid on physical devices).
+  static bool get usesLocalhostApi =>
+      apiBaseUrl.contains('localhost') || apiBaseUrl.contains('127.0.0.1');
+
+  /// Whether mock fallbacks are permitted (debug + explicit flag, or debug on localhost).
+  static bool get allowMockFallbacks =>
+      kDebugMode && (allowMockData || usesLocalhostApi);
 
   static bool get seedMockDataOnEmpty => allowMockFallbacks;
+
+  /// Bypass OTP/login for local device testing. Hard-disabled in release builds.
+  ///
+  /// Enabled in debug when API is localhost, or when `--dart-define=SKIP_AUTH=true`.
+  /// Production builds always require real authentication.
+  static bool get skipAuthForTesting {
+    if (kReleaseMode) return false;
+    const skipAuthFlag = bool.fromEnvironment('SKIP_AUTH', defaultValue: false);
+    return skipAuthFlag || usesLocalhostApi;
+  }
 
   static bool get isReleaseMode => kReleaseMode;
 }

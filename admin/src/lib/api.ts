@@ -217,6 +217,22 @@ export const api = {
   providers: (params?: ListParams) =>
     request<{ providers: unknown[]; pagination: PaginationMeta }>(`/admin/providers${qs(params)}`),
 
+  updateProvider: (
+    id: string,
+    body: {
+      title?: string | null;
+      firstName?: string;
+      lastName?: string;
+      specialty?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      gender?: 'male' | 'female' | 'other' | null;
+      qualification?: string | null;
+      registrationNumber?: string | null;
+    },
+  ) =>
+    request(`/admin/providers/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
   verifyProvider: (id: string, verified: boolean) =>
     request(`/admin/providers/${id}/verify`, { method: 'PATCH', body: JSON.stringify({ verified }) }),
 
@@ -355,4 +371,74 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ verified }),
     }),
+
+  adminFacilities: (params?: ListParams & { queue?: string }) =>
+    request<{ facilities: Array<{
+      id: string;
+      name: string;
+      address: string | null;
+      city: string | null;
+      isVerified: boolean;
+      isClaimed: boolean;
+      primaryRoleHolder: string | null;
+      linkedProviderCount: number;
+    }>; pagination: PaginationMeta }>(`/admin/facilities${qs(params)}`),
+
+  importReviewQueue: (params?: ListParams & { queueType?: string }) =>
+    request<{ items: Array<{
+      id: string;
+      queueType: string;
+      facilityId: string | null;
+      facilityName: string | null;
+      providerId: string | null;
+      providerName: string | null;
+      registrationNumber: string | null;
+      notes: string | null;
+    }>; pagination: PaginationMeta }>(`/admin/import-review-queue${qs(params)}`),
+
+  associatePractitioner: (body: { facilityId: string; providerId: string; queueItemId?: string }) =>
+    request('/admin/facilities/associate', { method: 'POST', body: JSON.stringify(body) }),
+
+  searchProvidersForAssociation: (params?: ListParams) =>
+    request<{ providers: Array<{ id: string; name: string; registrationNumber: string | null }> }>(
+      `/admin/providers/search-for-association${qs(params)}`,
+    ),
+
+  registryDiffRuns: (params?: ListParams) =>
+    request<{ runs: Array<{
+      id: string;
+      sourceType: string;
+      sourceFile: string;
+      status: string;
+      addedCount: number;
+      updatedCount: number;
+      removedCount: number;
+      startedAt: string;
+    }>; pagination: PaginationMeta }>(`/admin/registry-changes${qs(params)}`),
+
+  registryDiffItems: (runId: string, params?: ListParams & { status?: string }) =>
+    request<{ items: Array<{
+      id: string;
+      entityType: string;
+      changeType: string;
+      stableKey: string;
+      fieldChanges: Record<string, { old: string; new: string }>;
+      status: string;
+    }>; pagination: PaginationMeta }>(`/admin/registry-changes/${runId}/items${qs(params)}`),
+
+  reviewRegistryDiffItem: (id: string, action: 'approve' | 'ignore', reviewNotes?: string) =>
+    request(`/admin/registry-changes/items/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reviewNotes }),
+    }),
+
+  manualValidationTickets: (params?: ListParams & { status?: string }) =>
+    request<{ tickets: Array<{
+      id: string;
+      registrationNumber: string;
+      specialty: string | null;
+      submitterName: string | null;
+      submitterEmail: string | null;
+      status: string;
+    }> }>(`/admin/manual-validation${qs(params)}`),
 };

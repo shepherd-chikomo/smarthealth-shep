@@ -19,6 +19,8 @@ import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SecurityPage } from './pages/SecurityPage';
 import { ClaimsPage } from './pages/ClaimsPage';
 import { ImportPage } from './pages/ImportPage';
+import { FacilitiesPage } from './pages/FacilitiesPage';
+import { RegistryChangesPage } from './pages/RegistryChangesPage';
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30_000 } } });
 
@@ -49,6 +51,8 @@ export function App() {
                 <Route path="facility-admins" element={<FacilityAdminsPage />} />
                 <Route path="queue" element={<QueuePage />} />
                 <Route path="providers" element={<ProvidersPage />} />
+                <Route path="facilities" element={<FacilitiesPage />} />
+                <Route path="registry-changes" element={<RegistryChangesPage />} />
                 <Route path="claims" element={<ClaimsPage />} />
                 <Route path="import" element={<ImportPage />} />
                 <Route path="appointments" element={<AppointmentsPage />} />

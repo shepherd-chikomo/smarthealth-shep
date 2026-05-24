@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getRequestContext } from '../lib/request-context.js';
 import { facilityListQuerySchema, requireFacilityStaffAuth } from '../plugins/facility-guard.js';
 import * as facility from '../services/facility.service.js';
+import * as invitations from '../services/invitations.service.js';
 
 const hourEntrySchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
@@ -659,6 +660,64 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
       reply.header('Content-Type', 'text/csv');
       reply.header('Content-Disposition', `attachment; filename="${request.query.type}-report.csv"`);
       return csv;
+    },
+  );
+
+  app.post(
+    '/facility/practitioners/invite',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ registrationNumber: z.string().min(1) }),
+      },
+    },
+    async (request, reply) => {
+      const result = await invitations.invitePractitionerByRegNumber(
+        request.user!,
+        request.facilityId!,
+        request.body.registrationNumber,
+        getRequestContext(request),
+      );
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.delete(
+    '/facility/practitioners/:providerId',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        params: z.object({ providerId: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      invitations.removeInvitedPractitioner(
+        request.user!,
+        request.facilityId!,
+        request.params.providerId,
+        getRequestContext(request),
+      ),
+  );
+
+  app.post(
+    '/facility/admins/invite',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ email: z.string().email() }),
+      },
+    },
+    async (request, reply) => {
+      const result = await invitations.inviteFacilityAdminByEmail(
+        request.user!,
+        request.facilityId!,
+        request.body.email,
+        getRequestContext(request),
+      );
+      return reply.status(201).send(result);
     },
   );
 };

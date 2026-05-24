@@ -1,3 +1,20 @@
+export interface LinkedFacility {
+  id: string;
+  name: string;
+  city: string | null;
+  isClaimed: boolean;
+  isVerified: boolean;
+  canClaimOwnership: boolean;
+  isOwnedByMe?: boolean;
+}
+
+export interface ProviderSummary {
+  id: string;
+  name: string;
+  specialty: string | null;
+  registrationNumber: string | null;
+}
+
 export interface PortalProfile {
   id: string;
   role: string;
@@ -6,6 +23,9 @@ export interface PortalProfile {
   email: string | null;
   phone: string | null;
   facilities: { id: string; name: string; role: string; membershipId: string }[];
+  linkedFacilities?: LinkedFacility[];
+  provider?: ProviderSummary;
+  portalMode?: 'provider' | 'facility';
 }
 
 export interface PaginationMeta {
@@ -233,6 +253,21 @@ export const api = {
 
   removeStaff: (fid: string, id: string) =>
     request(`/facility/staff/${id}`, fid, { method: 'DELETE' }),
+
+  invitePractitioner: (fid: string, registrationNumber: string) =>
+    request(`/facility/practitioners/invite`, fid, {
+      method: 'POST',
+      body: JSON.stringify({ registrationNumber }),
+    }),
+
+  removePractitioner: (fid: string, providerId: string) =>
+    request(`/facility/practitioners/${providerId}`, fid, { method: 'DELETE' }),
+
+  inviteFacilityAdmin: (fid: string, email: string) =>
+    request(`/facility/admins/invite`, fid, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
 
   analytics: (fid: string) =>
     request<{ dashboard: Record<string, unknown> }>(`/facility/analytics`, fid),

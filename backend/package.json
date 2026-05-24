@@ -16,7 +16,11 @@
     "security:owasp": "tsx scripts/owasp-check.ts",
     "lint": "tsc --noEmit",
     "openapi:export": "tsx scripts/export-openapi.ts",
-    "import:providers": "tsx scripts/import/import_practitioners.ts"
+    "import:providers": "tsx scripts/import/import_practitioners.ts",
+    "import:dual": "tsx scripts/import/import_dual_registry.ts",
+    "import:emails": "tsx scripts/import/import_practitioner_emails.ts",
+    "import:wipe": "tsx scripts/import/wipe_import_data.ts",
+    "import:diff": "tsx scripts/import/registry_diff.ts"
   },
   "engines": {
     "node": ">=20"

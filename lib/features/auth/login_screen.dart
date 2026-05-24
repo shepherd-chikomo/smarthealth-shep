@@ -140,14 +140,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onSelectionChanged: _loading
                       ? null
                       : (selection) {
+                          FocusManager.instance.primaryFocus?.unfocus();
                           setState(() => _channel = selection.first);
                         },
                 ),
                 const SizedBox(height: 24),
                 if (_channel == OtpChannel.email)
                   TextFormField(
+                    key: const ValueKey('login-email'),
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     autofillHints: const [AutofillHints.email],
                     decoration: const InputDecoration(
                       labelText: 'Email address',
@@ -160,8 +165,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   )
                 else
                   TextFormField(
+                    key: const ValueKey('login-phone'),
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.done,
                     autofillHints: const [AutofillHints.telephoneNumber],
                     decoration: const InputDecoration(
                       labelText: 'Mobile number',

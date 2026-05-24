@@ -81,12 +81,20 @@ export default function LoginPage() {
         await supabase.auth.signOut();
         throw new Error(
           err?.error?.message
-            ?? 'This account does not have access to the facility portal. Ask an administrator to grant access, then try again.',
+            ?? 'This account does not have access to the facility portal. Claim your practitioner profile or ask an administrator for access.',
         );
       }
 
-      router.push('/');
-      router.refresh();
+      const profileData = await profileRes.json();
+      const portalMode = profileData.profile?.portalMode as string | undefined;
+      const hasMemberships = (profileData.profile?.facilities?.length ?? 0) > 0;
+
+      if (portalMode === 'provider' || !hasMemberships) {
+        window.location.assign('/provider/facilities');
+      } else {
+        router.push('/');
+        router.refresh();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -164,9 +172,13 @@ export default function LoginPage() {
         )}
 
         <p className="mt-6 text-center text-sm text-[var(--muted)]">
-          Own a facility or practice?{' '}
-          <a href="/claim" className="font-medium text-teal-600 hover:underline">
-            Claim your listing
+          Practitioner in the MDPCZ registry?{' '}
+          <a href="/claim/profile" className="font-medium text-teal-600 hover:underline">
+            Claim your profile
+          </a>
+          {' · '}
+          <a href="/claim?mode=legacy" className="font-medium text-teal-600 hover:underline">
+            Manual claim
           </a>
         </p>
       </form>

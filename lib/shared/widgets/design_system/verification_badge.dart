@@ -17,15 +17,20 @@ class VerificationBadge extends StatelessWidget {
     this.style = VerificationBadgeStyle.standard,
     this.label,
     this.source = 'MDPCZ',
+    this.verified = true,
   });
 
   final VerificationBadgeSize size;
   final VerificationBadgeStyle style;
   final String? label;
   final String source;
+  final bool verified;
 
   @override
   Widget build(BuildContext context) {
+    if (!verified) {
+      return const UnverifiedListingBadge();
+    }
     if (style == VerificationBadgeStyle.source) {
       return _SourceBadge(source: source, label: label);
     }
@@ -111,6 +116,44 @@ class _SourceBadge extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: HomeDashboardColors.secondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Amber badge for registry listings not yet verified by the owner.
+class UnverifiedListingBadge extends StatelessWidget {
+  const UnverifiedListingBadge({super.key, this.label = 'Not verified'});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFFB45309);
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(DesignSystemMetrics.radiusPill),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Symbols.info, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: color,
               ),
             ),
           ],

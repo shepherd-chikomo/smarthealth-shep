@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { getAuthenticatedUser } from '../lib/auth.js';
+import { query } from '../lib/db.js';
 import { ForbiddenError, UnauthorizedError } from '../lib/errors.js';
-import { isStaffRole, requireAdmin, requireStaff, requireSuperAdmin } from '../lib/rbac.js';
+import { isAdminRole, isStaffRole, requireAdmin, requireStaff, requireSuperAdmin } from '../lib/rbac.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -22,9 +23,39 @@ async function attachUser(request: FastifyRequest, reply: FastifyReply): Promise
   }
 }
 
+/** JWT is minted before post-verify role updates; fall back to profiles.primary_role. */
+async function syncRoleFromDatabase(request: FastifyRequest): Promise<void> {
+  const user = request.user!;
+  if (isStaffRole(user.role)) return;
+
+  const result = await query<{ primary_role: string }>(
+    `SELECT primary_role::text FROM public.profiles WHERE id = $1`,
+    [user.id],
+  );
+  const dbRole = result.rows[0]?.primary_role;
+  if (dbRole && isStaffRole(dbRole)) {
+    request.user = { ...user, role: dbRole };
+  }
+}
+
+async function syncAdminRoleFromDatabase(request: FastifyRequest): Promise<void> {
+  const user = request.user!;
+  if (isAdminRole(user.role)) return;
+
+  const result = await query<{ primary_role: string }>(
+    `SELECT primary_role::text FROM public.profiles WHERE id = $1`,
+    [user.id],
+  );
+  const dbRole = result.rows[0]?.primary_role;
+  if (dbRole && isAdminRole(dbRole)) {
+    request.user = { ...user, role: dbRole };
+  }
+}
+
 export async function requireStaffAuth(request: FastifyRequest, reply: FastifyReply) {
   if (!(await attachUser(request, reply))) return;
   try {
+    await syncRoleFromDatabase(request);
     requireStaff(request.user!);
   } catch (error) {
     if (error instanceof ForbiddenError) {
@@ -37,6 +68,7 @@ export async function requireStaffAuth(request: FastifyRequest, reply: FastifyRe
 export async function requireAdminAuth(request: FastifyRequest, reply: FastifyReply) {
   if (!(await attachUser(request, reply))) return;
   try {
+    await syncAdminRoleFromDatabase(request);
     requireAdmin(request.user!);
   } catch (error) {
     if (error instanceof ForbiddenError) {

@@ -9,11 +9,15 @@ class CategoryIcon extends StatelessWidget {
     required this.assetPath,
     this.size = 18,
     this.color = HomeDashboardColors.primary,
+    this.applyTint = true,
+    this.fit = BoxFit.contain,
   });
 
   final String assetPath;
   final double size;
   final Color color;
+  final bool applyTint;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +25,10 @@ class CategoryIcon extends StatelessWidget {
       assetPath,
       width: size,
       height: size,
-      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      fit: fit,
+      colorFilter: applyTint
+          ? ColorFilter.mode(color, BlendMode.srcIn)
+          : null,
     );
   }
 }

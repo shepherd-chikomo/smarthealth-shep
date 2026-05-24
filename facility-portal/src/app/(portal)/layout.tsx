@@ -1,16 +1,53 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PortalShell } from '@/components/portal-shell';
 import { useFacility } from '@/lib/facility-context';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  const { facilityId } = useFacility();
+  const router = useRouter();
+  const { facilityId, hasActiveFacility, loading, profile, portalMode } = useFacility();
 
-  if (!facilityId) {
+  const needsProviderPortal =
+    portalMode === 'provider' || !hasActiveFacility || !facilityId;
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!profile) {
+      router.replace('/login');
+      return;
+    }
+
+    if (needsProviderPortal) {
+      router.replace('/provider/facilities');
+    }
+  }, [loading, profile, authError, needsProviderPortal, router]);
+
+  useEffect(() => {
+    if (loading || !needsProviderPortal) return;
+
+    const timeout = window.setTimeout(() => {
+      window.location.assign('/provider/facilities');
+    }, 1500);
+
+    return () => window.clearTimeout(timeout);
+  }, [loading, needsProviderPortal]);
+
+  if (loading) {
     return (
-      <PortalShell>
-        <p className="text-[var(--muted)]">No facility assigned to your account.</p>
-      </PortalShell>
+      <div className="flex min-h-screen items-center justify-center text-[var(--muted)]">
+        Loading…
+      </div>
+    );
+  }
+
+  if (needsProviderPortal) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-[var(--muted)]">
+        Redirecting to your facilities…
+      </div>
     );
   }
 

@@ -16,7 +16,13 @@ import { createClient } from '@/lib/supabase/client';
 
 type ClaimType = 'facility' | 'provider';
 
-function evidenceFromFiles(files: UploadedFile[]) {
+function evidenceFromFiles(files: UploadedFile[], skipDocuments = false) {
+  if (skipDocuments) {
+    return {
+      registryEmailMatch: true,
+      documentUploadSkipped: true,
+    };
+  }
   return {
     documents: files.map((f) => ({
       name: f.name,
@@ -72,6 +78,35 @@ export function ClaimWizard() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [skipDocuments, setSkipDocuments] = useState(false);
+
+  const applyRegistryMatch = useCallback(async () => {
+    try {
+      const match = await claimApi.registryEmailMatch();
+      if (match.matched && match.provider) {
+        setSkipDocuments(true);
+        setClaimType('provider');
+        setEmailVerified(true);
+        setSelectedProvider({
+          id: match.provider.id,
+          name: match.provider.name,
+          specialty: match.provider.specialty ?? undefined,
+          facilityId: match.linkedFacilities?.[0]?.id ?? null,
+          facilityName: match.linkedFacilities?.[0]?.name ?? 'No facility linked',
+          isClaimed: false,
+          pendingClaims: 0,
+        });
+        if (match.provider.registrationNumber) {
+          setMdpczNumber(match.provider.registrationNumber);
+        }
+        return true;
+      }
+      setSkipDocuments(false);
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
 
   const checkAuth = useCallback(async () => {
     const supabase = createClient();
@@ -81,6 +116,7 @@ export function ClaimWizard() {
     if (authed) {
       setPhoneVerified(true);
       setStep((s) => (s === 'account' ? 'verify' : s));
+      await applyRegistryMatch();
       try {
         const mine = await claimApi.myClaims();
         const pending = [...mine.facilityClaims, ...mine.providerClaims].find((c) =>
@@ -96,7 +132,7 @@ export function ClaimWizard() {
         /* ignore — user may not have claims yet */
       }
     }
-  }, []);
+  }, [applyRegistryMatch]);
 
   useEffect(() => {
     void checkAuth();
@@ -112,7 +148,7 @@ export function ClaimWizard() {
           if (match) {
             setSelectedFacility(match);
             setClaimType('facility');
-            setStep('upload');
+            setStep(skipDocuments ? 'select' : 'upload');
           }
         } else {
           const { providers: list } = await claimApi.searchProviders('');
@@ -120,14 +156,14 @@ export function ClaimWizard() {
           if (match) {
             setSelectedProvider(match);
             setClaimType('provider');
-            setStep('upload');
+            setStep(skipDocuments ? 'select' : 'upload');
           }
         }
       } catch {
         /* deep link target may not be in first page */
       }
     })();
-  }, [initialTargetId, initialType, isAuthed]);
+  }, [initialTargetId, initialType, isAuthed, skipDocuments]);
 
   async function sendOtp(e: FormEvent, usePhone = false) {
     e.preventDefault();
@@ -187,6 +223,7 @@ export function ClaimWizard() {
       });
       setIsAuthed(true);
       setPhoneVerified(true);
+      await applyRegistryMatch();
       setStep('verify');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -223,7 +260,7 @@ export function ClaimWizard() {
     setLoading(true);
     setError('');
     try {
-      const evidence = evidenceFromFiles(files);
+      const evidence = evidenceFromFiles(files, skipDocuments);
       if (claimType === 'facility' && selectedFacility) {
         const { claim } = await claimApi.createFacilityClaim({
           facilityId: selectedFacility.id,
@@ -256,7 +293,7 @@ export function ClaimWizard() {
     setLoading(true);
     setError('');
     try {
-      const evidence = evidenceFromFiles(files);
+      const evidence = evidenceFromFiles(files, skipDocuments);
       if (activeClaim.type === 'facility') {
         await claimApi.updateFacilityClaim(activeClaim.id, {
           businessRegistrationNumber: regNumber || undefined,
@@ -293,7 +330,7 @@ export function ClaimWizard() {
           Verify ownership to manage hours, providers, appointments, and queue settings.
         </p>
         <div className="mt-4">
-          <ClaimStepper current={step} />
+          <ClaimStepper current={step} skipDocuments={skipDocuments} />
         </div>
       </header>
 
@@ -377,6 +414,13 @@ export function ClaimWizard() {
           <p className="text-sm text-[var(--muted)]">
             Confirm how we can reach you about this claim.
           </p>
+          {skipDocuments && selectedProvider && (
+            <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-800 dark:bg-teal-950 dark:text-teal-200">
+              Your login email matches our registry record for{' '}
+              <strong>{selectedProvider.name}</strong>. Document upload is not required — you can
+              proceed directly to confirm your listing.
+            </p>
+          )}
           <label className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-3">
             <input
               type="checkbox"
@@ -398,7 +442,7 @@ export function ClaimWizard() {
             type="button"
             className="btn-primary w-full justify-center"
             disabled={!phoneVerified}
-            onClick={() => setStep('upload')}
+            onClick={() => setStep(skipDocuments ? 'select' : 'upload')}
           >
             Continue
           </button>
@@ -425,23 +469,32 @@ export function ClaimWizard() {
 
       {step === 'select' && (
         <div className="card space-y-4">
-          <h2 className="text-lg font-semibold">4. Select listing</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className={claimType === 'facility' ? 'btn-primary' : 'btn-secondary'}
-              onClick={() => setClaimType('facility')}
-            >
-              <Building2 className="h-4 w-4" /> Facility
-            </button>
-            <button
-              type="button"
-              className={claimType === 'provider' ? 'btn-primary' : 'btn-secondary'}
-              onClick={() => setClaimType('provider')}
-            >
-              <Stethoscope className="h-4 w-4" /> Practitioner
-            </button>
-          </div>
+          <h2 className="text-lg font-semibold">
+            {skipDocuments ? '3. Confirm your listing' : '4. Select listing'}
+          </h2>
+          {skipDocuments && (
+            <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-800 dark:bg-teal-950 dark:text-teal-200">
+              Verified via registry email — no proof documents needed.
+            </p>
+          )}
+          {!skipDocuments && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={claimType === 'facility' ? 'btn-primary' : 'btn-secondary'}
+                onClick={() => setClaimType('facility')}
+              >
+                <Building2 className="h-4 w-4" /> Facility
+              </button>
+              <button
+                type="button"
+                className={claimType === 'provider' ? 'btn-primary' : 'btn-secondary'}
+                onClick={() => setClaimType('provider')}
+              >
+                <Stethoscope className="h-4 w-4" /> Practitioner
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <input
               className="input flex-1"
@@ -549,7 +602,11 @@ export function ClaimWizard() {
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-[var(--muted)]">Documents</dt>
-              <dd>{files.length} file(s)</dd>
+              <dd>
+                {skipDocuments
+                  ? 'Skipped (registry email verified)'
+                  : `${files.length} file(s)`}
+              </dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-[var(--muted)]">Status</dt>

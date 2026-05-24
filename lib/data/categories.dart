@@ -13,18 +13,17 @@ class AppCategory {
   final String iconAsset;
 }
 
-/// Category chips shown on Home and Search filters.
-const categories = <AppCategory>[
-  AppCategory(id: 'near_me', labelKey: 'nearMe', iconAsset: AppAssets.categoryGp),
+/// Service-type tiles on the home dashboard.
+const homeServiceCategories = <AppCategory>[
   AppCategory(
-    id: 'general',
-    labelKey: 'generalPractice',
-    iconAsset: AppAssets.categoryGp,
+    id: 'near_me',
+    labelKey: 'nearMe',
+    iconAsset: AppAssets.categoryNearMe,
   ),
   AppCategory(
-    id: 'pediatrics',
-    labelKey: 'pediatrics',
-    iconAsset: AppAssets.categoryPediatric,
+    id: 'general',
+    labelKey: 'general',
+    iconAsset: AppAssets.categoryGp,
   ),
   AppCategory(
     id: 'dental',
@@ -32,16 +31,33 @@ const categories = <AppCategory>[
     iconAsset: AppAssets.categoryDentist,
   ),
   AppCategory(
-    id: 'cardiology',
-    labelKey: 'cardiology',
+    id: 'pharmacy',
+    labelKey: 'pharmacy',
+    iconAsset: AppAssets.categoryPharmacy,
+  ),
+  AppCategory(
+    id: 'lab',
+    labelKey: 'lab',
+    iconAsset: AppAssets.categoryLab,
+  ),
+  AppCategory(
+    id: 'pediatrics',
+    labelKey: 'pediatrics',
+    iconAsset: AppAssets.categoryPediatric,
+  ),
+  AppCategory(
+    id: 'specialist',
+    labelKey: 'specialist',
     iconAsset: AppAssets.categorySpecialist,
   ),
-  AppCategory(id: 'more', labelKey: 'more', iconAsset: AppAssets.categoryLab),
 ];
+
+/// Legacy horizontal chips (search filters).
+const categories = homeServiceCategories;
 
 /// Full directory taxonomy used in search/browse.
 const directoryCategories = <AppCategory>[
-  AppCategory(id: 'gp', labelKey: 'generalPractice', iconAsset: AppAssets.categoryGp),
+  AppCategory(id: 'gp', labelKey: 'general', iconAsset: AppAssets.categoryGp),
   AppCategory(id: 'dentist', labelKey: 'dental', iconAsset: AppAssets.categoryDentist),
   AppCategory(
     id: 'pharmacy',

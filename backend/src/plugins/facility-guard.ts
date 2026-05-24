@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { ForbiddenError, UnauthorizedError } from '../lib/errors.js';
 import { getAuthenticatedUser } from '../lib/auth.js';
+import { query } from '../lib/db.js';
 import { isStaffRole } from '../lib/rbac.js';
 
 declare module 'fastify' {
@@ -54,7 +55,19 @@ export async function requireFacilityStaffAuth(request: FastifyRequest, reply: F
   if (!(await attachUser(request, reply))) return;
 
   try {
-    if (!isStaffRole(request.user!.role)) {
+    let user = request.user!;
+    if (!isStaffRole(user.role)) {
+      const result = await query<{ primary_role: string }>(
+        `SELECT primary_role::text FROM public.profiles WHERE id = $1`,
+        [user.id],
+      );
+      const dbRole = result.rows[0]?.primary_role;
+      if (dbRole && isStaffRole(dbRole)) {
+        user = { ...user, role: dbRole };
+        request.user = user;
+      }
+    }
+    if (!isStaffRole(user.role)) {
       throw new ForbiddenError('Staff access required');
     }
   } catch (error) {

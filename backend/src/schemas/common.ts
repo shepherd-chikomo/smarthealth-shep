@@ -13,7 +13,7 @@ export const authTokensSchema = z.object({
   tokenType: z.literal('Bearer').default('Bearer'),
 });
 
-export const otpContextSchema = z.enum(['staff', 'mobile', 'recovery']);
+export const otpContextSchema = z.enum(['staff', 'mobile', 'recovery', 'practitioner']);
 
 export const otpChannelSchema = z.enum(['email', 'phone']);
 
@@ -48,6 +48,24 @@ export const otpVerifyResponseSchema = z.object({
     phone: z.string().optional(),
     email: z.string().optional(),
   }),
+  practitionerClaim: z
+    .object({
+      providerId: z.string().uuid(),
+      providerName: z.string(),
+      alreadyClaimed: z.boolean(),
+      linkedFacilities: z.array(
+        z.object({
+          id: z.string().uuid(),
+          name: z.string(),
+          city: z.string().nullable(),
+          isClaimed: z.boolean(),
+          isVerified: z.boolean(),
+          canClaimOwnership: z.boolean(),
+          isOwnedByMe: z.boolean().optional(),
+        }),
+      ),
+    })
+    .optional(),
 });
 
 export type OtpSendBody = z.infer<typeof otpSendBodySchema>;

@@ -77,6 +77,10 @@ class ProviderCard extends StatelessWidget {
                               source: provider.verificationSource ?? 'MDPCZ',
                             ),
                           ],
+                          if (provider.rating != null) ...[
+                            const SizedBox(width: 6),
+                            _RatingBadge(rating: provider.rating!),
+                          ],
                         ],
                       ),
                       if (provider.specialty != null) ...[
@@ -202,6 +206,42 @@ class _OperationalBadges extends StatelessWidget {
   }
 }
 
+class _RatingBadge extends StatelessWidget {
+  const _RatingBadge({required this.rating});
+
+  final double rating;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: HomeDashboardColors.primary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.star_rounded,
+            size: 14,
+            color: HomeDashboardColors.primary,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            rating.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: HomeDashboardColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Thumbnail extends StatelessWidget {
   const _Thumbnail({this.imageSource});
 
@@ -216,13 +256,16 @@ class _Thumbnail extends StatelessWidget {
       width: size,
       height: size,
       fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(size / 2),
       memCacheWidth: 144,
       memCacheHeight: 144,
       placeholder: Container(
         width: size,
         height: size,
-        color: HomeDashboardColors.skeleton,
+        decoration: BoxDecoration(
+          color: HomeDashboardColors.skeleton,
+          borderRadius: BorderRadius.circular(size / 2),
+        ),
         child: const Center(
           child: SizedBox(
             width: 20,
@@ -236,7 +279,7 @@ class _Thumbnail extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           color: HomeDashboardColors.background,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(size / 2),
         ),
         child: const Icon(
           Icons.local_hospital_outlined,

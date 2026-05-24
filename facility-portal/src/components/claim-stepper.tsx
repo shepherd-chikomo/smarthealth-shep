@@ -15,14 +15,16 @@ export type ClaimStepId = (typeof STEPS)[number]['id'];
 
 interface ClaimStepperProps {
   current: ClaimStepId;
+  skipDocuments?: boolean;
 }
 
-export function ClaimStepper({ current }: ClaimStepperProps) {
-  const currentIdx = STEPS.findIndex((s) => s.id === current);
+export function ClaimStepper({ current, skipDocuments = false }: ClaimStepperProps) {
+  const visibleSteps = skipDocuments ? STEPS.filter((s) => s.id !== 'upload') : STEPS;
+  const currentIdx = visibleSteps.findIndex((s) => s.id === current);
 
   return (
     <ol className="flex flex-wrap gap-2">
-      {STEPS.map((step, idx) => {
+      {visibleSteps.map((step, idx) => {
         const done = idx < currentIdx;
         const active = idx === currentIdx;
         return (

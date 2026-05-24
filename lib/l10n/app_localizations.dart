@@ -163,7 +163,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search doctors, clinics, hospitals…'**
+  /// **'Search doctors, hospitals, pharmacies'**
   String get homeSearchHint;
 
   /// No description provided for @homeChangeLocation.
@@ -171,6 +171,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change location'**
   String get homeChangeLocation;
+
+  /// No description provided for @homeGoodMorning.
+  ///
+  /// In en, this message translates to:
+  /// **'Good morning'**
+  String get homeGoodMorning;
+
+  /// No description provided for @homeGoodAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get homeGoodAfternoon;
+
+  /// No description provided for @homeGoodEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get homeGoodEvening;
+
+  /// No description provided for @homeNearbyProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby providers'**
+  String get homeNearbyProviders;
+
+  /// No description provided for @homeSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get homeSeeAll;
 
   /// No description provided for @homeNearbyFacilities.
   ///
@@ -181,13 +211,13 @@ abstract class AppLocalizations {
   /// No description provided for @homeEmergencyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Emergency Hub'**
+  /// **'Emergency assistance'**
   String get homeEmergencyTitle;
 
   /// No description provided for @homeEmergencySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Ambulance, police & urgent care numbers'**
+  /// **'Ambulance • Police • Fire • Rescue'**
   String get homeEmergencySubtitle;
 
   /// No description provided for @homeCategoryNearMe.
@@ -195,6 +225,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Near Me'**
   String get homeCategoryNearMe;
+
+  /// No description provided for @homeCategoryGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get homeCategoryGeneral;
 
   /// No description provided for @homeCategoryGeneralPractice.
   ///
@@ -205,14 +241,32 @@ abstract class AppLocalizations {
   /// No description provided for @homeCategoryPediatrics.
   ///
   /// In en, this message translates to:
-  /// **'Pediatrics'**
+  /// **'Pediatric'**
   String get homeCategoryPediatrics;
 
   /// No description provided for @homeCategoryDental.
   ///
   /// In en, this message translates to:
-  /// **'Dental'**
+  /// **'Dentist'**
   String get homeCategoryDental;
+
+  /// No description provided for @homeCategoryPharmacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Pharmacy'**
+  String get homeCategoryPharmacy;
+
+  /// No description provided for @homeCategoryLaboratory.
+  ///
+  /// In en, this message translates to:
+  /// **'Laboratory'**
+  String get homeCategoryLaboratory;
+
+  /// No description provided for @homeCategorySpecialists.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialists'**
+  String get homeCategorySpecialists;
 
   /// No description provided for @homeCategoryCardiology.
   ///

@@ -1,17 +1,25 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { useFacility } from '@/lib/facility-context';
+import { MyFacilitiesPanel } from '@/components/facility-tabs';
 import { QuickActionsGrid } from '@/components/dashboard/quick-actions';
 import { QueueOverviewPanel } from '@/components/dashboard/queue-overview';
 import { SectionCard } from '@/components/dashboard/section-card';
+import { api } from '@/lib/api';
+import { claimApi } from '@/lib/claim-api';
+import { refreshAuthSession } from '@/lib/auth-session';
+import { useFacility } from '@/lib/facility-context';
 import { ErrorState, LoadingState, PageHeader, StatCard, StatGrid } from '@/components/ui';
 
 type QueueEntry = Record<string, unknown>;
 
 export default function DashboardPage() {
-  const { facilityId } = useFacility();
+  const router = useRouter();
+  const { facilityId, linkedFacilities, loadFacility, refresh, activateFacility } = useFacility();
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [facilityError, setFacilityError] = useState('');
 
   const dashboard = useQuery({
     queryKey: ['dashboard', facilityId],
@@ -34,6 +42,39 @@ export default function DashboardPage() {
     refetchInterval: 10_000,
   });
 
+  useEffect(() => {
+    if (linkedFacilities.length > 0) {
+      void refresh();
+    }
+  }, [linkedFacilities.length, refresh]);
+
+  async function claimFacility(id: string) {
+    setClaimingId(id);
+    setFacilityError('');
+    try {
+      await claimApi.instantClaimFacility(id);
+      await refreshAuthSession();
+      const ok = await activateFacility(id);
+      if (!ok) {
+        throw new Error('Facility claimed but could not activate it. Refresh the page.');
+      }
+    } catch (err) {
+      setFacilityError(err instanceof Error ? err.message : 'Could not claim facility');
+    } finally {
+      setClaimingId(null);
+    }
+  }
+
+  function manageFacility(id: string) {
+    loadFacility(id);
+    router.refresh();
+  }
+
+  function switchFacility(id: string) {
+    loadFacility(id);
+    router.refresh();
+  }
+
   const stats = dashboard.data?.stats as Record<string, unknown> | undefined;
   const queueEntries = (queue.data?.queue as QueueEntry[] | undefined) ?? [];
   const nowServing =
@@ -50,6 +91,27 @@ export default function DashboardPage() {
         title="Operations dashboard"
         description="Today's activity, queue status, and quick actions — refreshes automatically"
       />
+
+      {linkedFacilities.length > 0 && (
+        <SectionCard
+          title="My facilities"
+          description="All registry-linked sites — claim ownership or switch the active facility"
+        >
+          {facilityError && (
+            <p className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+              {facilityError}
+            </p>
+          )}
+          <MyFacilitiesPanel
+            facilities={linkedFacilities}
+            activeFacilityId={facilityId}
+            claimingId={claimingId}
+            onClaim={(id) => void claimFacility(id)}
+            onManage={manageFacility}
+            onSwitch={switchFacility}
+          />
+        </SectionCard>
+      )}
 
       {isLoading && <LoadingState />}
       {dashboard.error && <ErrorState message={(dashboard.error as Error).message} />}

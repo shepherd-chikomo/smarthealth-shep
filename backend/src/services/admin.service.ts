@@ -574,15 +574,20 @@ export async function moderateQueueEntry(
 export async function listProvidersAdmin(user: AuthenticatedUser, opts: AdminListQuery) {
   const params: unknown[] = [];
   let idx = 1;
-  const conditions = ['p.is_active = true'];
+  const conditions = ['p.is_active = true', 'p.deleted_at IS NULL'];
 
   if (!isSuperAdmin(user)) {
-    conditions.push(`p.facility_id IN (
-      SELECT facility_id FROM public.facility_memberships WHERE user_id = $${idx++}
+    conditions.push(`EXISTS (
+      SELECT 1 FROM public.provider_facility_links pfl
+      JOIN public.facility_memberships fm ON fm.facility_id = pfl.facility_id
+      WHERE pfl.provider_id = p.id AND fm.user_id = $${idx++}
     )`);
     params.push(user.id);
   } else if (opts.facilityId) {
-    conditions.push(`p.facility_id = $${idx++}`);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM public.provider_facility_links pfl
+      WHERE pfl.provider_id = p.id AND pfl.facility_id = $${idx++}
+    )`);
     params.push(opts.facilityId);
   }
 
@@ -590,7 +595,20 @@ export async function listProvidersAdmin(user: AuthenticatedUser, opts: AdminLis
   if (opts.status === 'unverified') conditions.push('p.is_verified = false');
   if (opts.status === 'suspended') conditions.push("p.metadata->>'suspended' = 'true'");
 
-  const search = buildSearchClause(['p.name', 'p.specialty', 'p.mdpcz_number'], opts.q, params, idx);
+  const search = buildSearchClause(
+    [
+      'p.name',
+      'p.first_name',
+      'p.last_name',
+      'p.specialty',
+      'p.mdpcz_number',
+      'p.registration_number',
+      'p.email',
+    ],
+    opts.q,
+    params,
+    idx,
+  );
   idx = search.nextIdx;
   conditions.push(search.clause);
 
@@ -603,19 +621,29 @@ export async function listProvidersAdmin(user: AuthenticatedUser, opts: AdminLis
   );
 
   const rows = await query(
-    `SELECT p.id, p.name, p.specialty, p.is_verified, p.is_accepting_bookings,
-            p.mdpcz_number, p.facility_id, f.name AS facility_name,
+    `SELECT p.id, p.name, p.title, p.first_name, p.last_name, p.specialty, p.gender::text AS gender,
+            p.qualification, p.email, p.phone, p.registration_number, p.mdpcz_number,
+            p.is_verified, p.is_accepting_bookings, p.verified_status, p.import_source,
+            hpaf.facility_id AS hpa_facility_id, hpaf.facility_name AS hpa_facility_name,
             COALESCE(pr.avg_rating, 0) AS avg_rating,
             COALESCE(pr.review_count, 0)::int AS review_count,
             p.metadata, p.updated_at
      FROM public.providers p
-     JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN LATERAL (
+       SELECT f.id AS facility_id, f.name AS facility_name
+       FROM public.provider_facility_links pfl
+       JOIN public.facilities f ON f.id = pfl.facility_id
+         AND f.deleted_at IS NULL AND f.import_source = 'HPA'
+       WHERE pfl.provider_id = p.id
+       ORDER BY pfl.is_primary DESC, pfl.is_facility_role_holder DESC, pfl.created_at ASC
+       LIMIT 1
+     ) hpaf ON true
      LEFT JOIN (
        SELECT provider_id, AVG(rating)::numeric(3,2) AS avg_rating, COUNT(*) AS review_count
        FROM public.provider_reviews WHERE deleted_at IS NULL GROUP BY provider_id
      ) pr ON pr.provider_id = p.id
      WHERE ${where}
-     ORDER BY p.updated_at DESC
+     ORDER BY p.name ASC
      LIMIT $${idx++} OFFSET $${idx}`,
     [...params, opts.limit, offset],
   );
@@ -624,12 +652,22 @@ export async function listProvidersAdmin(user: AuthenticatedUser, opts: AdminLis
     providers: rows.rows.map((r) => ({
       id: r.id,
       name: r.name,
+      title: r.title,
+      firstName: r.first_name,
+      lastName: r.last_name,
       specialty: r.specialty,
-      isVerified: r.is_verified,
-      isAcceptingBookings: r.is_accepting_bookings,
+      gender: r.gender,
+      qualification: r.qualification,
+      email: r.email,
+      phone: r.phone,
+      registrationNumber: r.registration_number ?? r.mdpcz_number,
       mdpczNumber: r.mdpcz_number,
-      facilityId: r.facility_id,
-      facilityName: r.facility_name,
+      isVerified: r.is_verified,
+      verifiedStatus: r.verified_status,
+      importSource: r.import_source,
+      isAcceptingBookings: r.is_accepting_bookings,
+      facilityId: r.hpa_facility_id,
+      facilityName: r.hpa_facility_name ?? null,
       averageRating: Number(r.avg_rating),
       reviewCount: r.review_count,
       isSuspended: (r.metadata as Record<string, unknown>)?.suspended === true,
@@ -637,6 +675,82 @@ export async function listProvidersAdmin(user: AuthenticatedUser, opts: AdminLis
     })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+export async function updateProviderAdmin(
+  user: AuthenticatedUser,
+  id: string,
+  data: {
+    title?: string | null;
+    firstName?: string;
+    lastName?: string;
+    specialty?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    gender?: 'male' | 'female' | 'other' | null;
+    qualification?: string | null;
+    registrationNumber?: string | null;
+  },
+  context?: RequestContext,
+) {
+  const existing = await query<{ id: string; title: string | null; first_name: string | null; last_name: string | null }>(
+    `SELECT id, title, first_name, last_name FROM public.providers WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Provider', id);
+
+  const row = existing.rows[0];
+  const firstName = data.firstName?.trim() ?? row.first_name;
+  const lastName = data.lastName?.trim() ?? row.last_name;
+  const title = data.title !== undefined ? data.title : row.title;
+  const fullName = [title, firstName, lastName].filter(Boolean).join(' ');
+
+  const sets = ['name = $2', 'updated_at = now()'];
+  const values: unknown[] = [id, fullName];
+  let idx = 3;
+
+  if (data.title !== undefined) {
+    sets.push(`title = $${idx++}`);
+    values.push(data.title);
+  }
+  if (data.firstName !== undefined) {
+    sets.push(`first_name = $${idx++}`);
+    values.push(data.firstName.trim());
+  }
+  if (data.lastName !== undefined) {
+    sets.push(`last_name = $${idx++}`);
+    values.push(data.lastName.trim());
+  }
+  if (data.specialty !== undefined) {
+    sets.push(`specialty = $${idx++}`);
+    values.push(data.specialty);
+  }
+  if (data.email !== undefined) {
+    sets.push(`email = $${idx++}`);
+    values.push(data.email);
+  }
+  if (data.phone !== undefined) {
+    sets.push(`phone = $${idx++}`);
+    values.push(data.phone ? normalizeZimbabwePhone(data.phone) : null);
+  }
+  if (data.gender !== undefined) {
+    sets.push(`gender = $${idx++}::public.gender`);
+    values.push(data.gender);
+  }
+  if (data.qualification !== undefined) {
+    sets.push(`qualification = $${idx++}`);
+    values.push(data.qualification);
+  }
+  if (data.registrationNumber !== undefined) {
+    const reg = data.registrationNumber.trim().toUpperCase().replace(/\s+/g, '');
+    sets.push(`registration_number = $${idx++}`, `mdpcz_number = $${idx++}`);
+    values.push(reg, reg);
+  }
+
+  await query(`UPDATE public.providers SET ${sets.join(', ')} WHERE id = $1`, values);
+
+  await logAdminAudit(user.id, 'admin.provider.update', 'provider', id, context, data);
+  return { message: 'Updated' };
 }
 
 export async function verifyProvider(

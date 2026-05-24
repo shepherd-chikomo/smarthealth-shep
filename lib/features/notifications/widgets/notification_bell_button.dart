@@ -7,35 +7,45 @@ import 'package:smarthealth_shep/features/notifications/providers/notification_p
 
 /// Home header bell with unread badge.
 class NotificationBellButton extends ConsumerWidget {
-  const NotificationBellButton({super.key});
+  const NotificationBellButton({super.key, this.headerStyle = false});
+
+  final bool headerStyle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unreadAsync = ref.watch(unreadNotificationCountProvider);
     final unread = unreadAsync.maybeWhen(data: (c) => c, orElse: () => 0);
 
+    final iconColor =
+        headerStyle ? Colors.white : HomeDashboardColors.textPrimary;
+    final backgroundColor =
+        headerStyle ? Colors.white.withValues(alpha: 0.18) : HomeDashboardColors.surface;
+    final borderColor = headerStyle
+        ? Colors.white.withValues(alpha: 0.35)
+        : const Color(0xFFE5E8EE);
+
     return Semantics(
       button: true,
       label: unread > 0 ? 'Notifications, $unread unread' : 'Notifications',
       child: Material(
-        color: HomeDashboardColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        color: backgroundColor,
+        shape: const CircleBorder(),
         child: InkWell(
           onTap: () => context.push('/notifications'),
-          borderRadius: BorderRadius.circular(12),
+          customBorder: const CircleBorder(),
           child: Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              shape: BoxShape.circle,
+              border: Border.all(color: borderColor),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                const Icon(
+                Icon(
                   Symbols.notifications,
-                  color: HomeDashboardColors.textPrimary,
+                  color: iconColor,
                   size: 22,
                 ),
                 if (unread > 0)
@@ -43,24 +53,11 @@ class NotificationBellButton extends ConsumerWidget {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
+                      width: 8,
+                      height: 8,
                       decoration: const BoxDecoration(
                         color: HomeDashboardColors.emergency,
                         shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        unread > 9 ? '9+' : '$unread',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          height: 1,
-                        ),
                       ),
                     ),
                   ),

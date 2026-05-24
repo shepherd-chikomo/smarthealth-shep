@@ -24,6 +24,8 @@ abstract final class AppAssets {
   static const appIcon = 'assets/icon/app_icon.png';
   static const appIconForeground = 'assets/icon/app_icon_foreground.png';
   static const splashLogo = 'assets/icon/splash_logo.png';
+  static const headerLogo = 'assets/icon/header_logo.png';
+  static const headerLogoSvg = 'assets/icon/header_logo.svg';
 
   // Placeholders
   static const avatarPlaceholder =
@@ -32,6 +34,7 @@ abstract final class AppAssets {
       'assets/images/placeholders/provider_placeholder.jpg';
 
   // Category icons
+  static const categoryNearMe = 'assets/icons/categories/near_me.svg';
   static const categoryGp = 'assets/icons/categories/gp.svg';
   static const categoryDentist = 'assets/icons/categories/dentist.svg';
   static const categoryPharmacy = 'assets/icons/categories/pharmacy.svg';

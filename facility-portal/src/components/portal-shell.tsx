@@ -138,6 +138,9 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
               {profile.firstName} {profile.lastName} · {currentFacility?.role}
             </p>
           </div>
+          <Link href="/provider/facilities" className="btn-secondary mr-2 hidden sm:inline-flex">
+            Provider portal
+          </Link>
           <button type="button" className="btn-secondary" onClick={logout}>
             <LogOut className="h-4 w-4" />
             Sign out

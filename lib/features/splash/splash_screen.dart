@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
 import 'package:smarthealth_shep/core/auth/secure_storage.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
@@ -38,6 +39,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!completed) {
       context.go('/onboarding');
+      return;
+    }
+
+    if (AppConfig.skipAuthForTesting) {
+      await ref.read(authControllerProvider.notifier).refresh();
+      if (!mounted) return;
+      context.go('/home');
       return;
     }
 

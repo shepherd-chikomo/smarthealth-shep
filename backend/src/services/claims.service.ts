@@ -1,4 +1,4 @@
-import { query } from '../lib/db.js';
+import { query, withTransaction } from '../lib/db.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { buildPaginationMeta, paginationOffset } from '../lib/pagination.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
@@ -112,7 +112,9 @@ export async function searchClaimableProviders(opts: {
   ];
 
   if (opts.q?.trim()) {
-    conditions.push(`(p.name ILIKE $${idx} OR p.specialty ILIKE $${idx} OR f.name ILIKE $${idx})`);
+    conditions.push(
+      `(p.name ILIKE $${idx} OR p.specialty ILIKE $${idx} OR f.name ILIKE $${idx} OR hpaf.facility_name ILIKE $${idx})`,
+    );
     params.push(`%${opts.q.trim()}%`);
     idx++;
   }
@@ -123,17 +125,34 @@ export async function searchClaimableProviders(opts: {
   const count = await query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
      FROM public.providers p
-     JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN LATERAL (
+       SELECT f2.name AS facility_name
+       FROM public.provider_facility_links pfl
+       JOIN public.facilities f2 ON f2.id = pfl.facility_id
+       WHERE pfl.provider_id = p.id
+       LIMIT 1
+     ) hpaf ON true
      WHERE ${where}`,
     params,
   );
 
   const result = await query(
-    `SELECT p.id, p.name, p.specialty, f.id AS facility_id, f.name AS facility_name, p.is_claimed,
+    `SELECT p.id, p.name, p.specialty, p.facility_id, p.is_claimed,
+            COALESCE(f.name, hpaf.facility_name) AS facility_name,
+            COALESCE(p.facility_id, hpaf.facility_id) AS linked_facility_id,
             (SELECT COUNT(*)::int FROM public.provider_claims pc
              WHERE pc.provider_id = p.id AND pc.status IN ('submitted', 'under_review')) AS pending_claims
      FROM public.providers p
-     JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN LATERAL (
+       SELECT f2.id AS facility_id, f2.name AS facility_name
+       FROM public.provider_facility_links pfl
+       JOIN public.facilities f2 ON f2.id = pfl.facility_id AND f2.deleted_at IS NULL
+       WHERE pfl.provider_id = p.id
+       ORDER BY pfl.is_primary DESC, pfl.is_facility_role_holder DESC
+       LIMIT 1
+     ) hpaf ON true
      WHERE ${where}
      ORDER BY p.name ASC
      LIMIT $${idx} OFFSET $${idx + 1}`,
@@ -145,8 +164,8 @@ export async function searchClaimableProviders(opts: {
       id: row.id,
       name: row.name,
       specialty: row.specialty,
-      facilityId: row.facility_id,
-      facilityName: row.facility_name,
+      facilityId: row.linked_facility_id ?? row.facility_id,
+      facilityName: row.facility_name ?? 'No facility linked',
       isClaimed: row.is_claimed,
       pendingClaims: row.pending_claims,
     })),
@@ -163,6 +182,9 @@ export async function createFacilityClaim(
     evidence?: Record<string, unknown>;
   },
 ) {
+  const { assertPrimaryRoleHolder } = await import('./practitioner-claim.service.js');
+  await assertPrimaryRoleHolder(userId, data.facilityId);
+
   const facility = await query<{ id: string; is_claimed: boolean; name: string }>(
     `SELECT id, is_claimed, name FROM public.facilities
      WHERE id = $1 AND is_active = true AND deleted_at IS NULL`,
@@ -214,12 +236,12 @@ export async function createProviderClaim(
     id: string;
     is_claimed: boolean;
     name: string;
-    facility_id: string;
-    facility_name: string;
+    facility_id: string | null;
+    facility_name: string | null;
   }>(
     `SELECT p.id, p.is_claimed, p.name, p.facility_id, f.name AS facility_name
      FROM public.providers p
-     JOIN public.facilities f ON f.id = p.facility_id
+     LEFT JOIN public.facilities f ON f.id = p.facility_id
      WHERE p.id = $1 AND p.is_active = true AND p.deleted_at IS NULL`,
     [data.providerId],
   );
@@ -576,6 +598,103 @@ export async function reviewClaim(
   );
 
   return { status: newStatus };
+}
+
+export async function instantClaimFacilityForRoleHolder(userId: string, facilityId: string) {
+  const { assertPrimaryRoleHolder } = await import('./practitioner-claim.service.js');
+  await assertPrimaryRoleHolder(userId, facilityId);
+
+  const ownedProvider = await query<{ id: string }>(
+    `SELECT id FROM public.providers
+     WHERE owner_id = $1 AND is_claimed = true AND deleted_at IS NULL
+     LIMIT 1`,
+    [userId],
+  );
+  if (!ownedProvider.rows[0]) {
+    throw new ForbiddenError('Claim your practitioner profile before claiming a facility');
+  }
+
+  const facility = await query<{
+    id: string;
+    name: string;
+    city: string | null;
+    is_claimed: boolean;
+  }>(
+    `SELECT id, name, city, is_claimed FROM public.facilities
+     WHERE id = $1 AND is_active = true AND deleted_at IS NULL`,
+    [facilityId],
+  );
+  if (!facility.rows[0]) throw new NotFoundError('Facility', facilityId);
+  if (facility.rows[0].is_claimed) {
+    throw new ConflictError('This facility is already claimed');
+  }
+
+  const existingMembership = await query<{ id: string }>(
+    `SELECT id FROM public.facility_memberships
+     WHERE facility_id = $1 AND user_id = $2`,
+    [facilityId, userId],
+  );
+  if (existingMembership.rows[0]) {
+    return {
+      facility: {
+        id: facility.rows[0].id,
+        name: facility.rows[0].name,
+        city: facility.rows[0].city,
+        isClaimed: true,
+      },
+      alreadyClaimed: true,
+    };
+  }
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `UPDATE public.facilities SET
+         owner_id = $2,
+         is_claimed = true,
+         verification_status = 'verified'::public.verification_status,
+         verified_at = timezone('utc', now())
+       WHERE id = $1`,
+      [facilityId, userId],
+    );
+
+    await client.query(
+      `INSERT INTO public.facility_memberships (facility_id, user_id, role)
+       VALUES ($1, $2, 'facility_admin'::public.app_role)
+       ON CONFLICT (facility_id, user_id) DO UPDATE SET role = EXCLUDED.role`,
+      [facilityId, userId],
+    );
+
+    await client.query(
+      `UPDATE public.profiles SET primary_role = 'facility_admin'::public.app_role
+       WHERE id = $1 AND primary_role IN ('patient'::public.app_role, 'doctor'::public.app_role)`,
+      [userId],
+    );
+
+    const existingClaim = await client.query<{ id: string }>(
+      `SELECT id FROM public.facility_claims
+       WHERE facility_id = $1 AND claimant_id = $2 AND status = 'approved'::public.claim_status
+       LIMIT 1`,
+      [facilityId, userId],
+    );
+    if (!existingClaim.rows[0]) {
+      await client.query(
+        `INSERT INTO public.facility_claims (
+           facility_id, tenant_id, claimant_id, status, evidence, submitted_at, reviewed_at
+         ) VALUES ($1, $1, $2, 'approved'::public.claim_status, $3::jsonb, now(), now())`,
+        [facilityId, userId, JSON.stringify({ registryRoleHolder: true, instantClaim: true })],
+      );
+    }
+  });
+
+  return {
+    facility: {
+      id: facility.rows[0].id,
+      name: facility.rows[0].name,
+      city: facility.rows[0].city,
+      isClaimed: true,
+    },
+    alreadyClaimed: false,
+  };
 }
 
 export async function getClaimHistory(entityId: string, type: ClaimType) {

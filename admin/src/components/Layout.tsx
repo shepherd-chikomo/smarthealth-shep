@@ -27,6 +27,8 @@ const nav = [
   { to: '/facility-admins', label: 'Facility Admins', icon: Users, superOnly: true },
   { to: '/queue', label: 'Queue', icon: Activity },
   { to: '/providers', label: 'Providers', icon: Stethoscope },
+  { to: '/facilities', label: 'Facilities', icon: Building2, superOnly: true },
+  { to: '/registry-changes', label: 'Registry Changes', icon: FileText, superOnly: true },
   { to: '/claims', label: 'Claims', icon: BadgeCheck },
   { to: '/import', label: 'Data Import', icon: Upload, superOnly: true },
   { to: '/appointments', label: 'Appointments', icon: Calendar },
@@ -44,17 +46,20 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen lg:flex">
-      <aside className="w-full border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:fixed lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
-        <div className="flex items-center justify-between px-4 py-4 lg:block">
+      <aside className="flex w-full flex-col border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 lg:fixed lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
+        <div className="flex shrink-0 items-center justify-between px-4 py-4">
           <div>
             <p className="text-lg font-bold text-teal-600">SmartHealth</p>
             <p className="text-xs text-slate-500">Admin Dashboard</p>
           </div>
           <div className="flex items-center gap-2 lg:hidden">
             <ThemeToggle />
+            <button type="button" className="btn-secondary" onClick={logout} aria-label="Logout">
+              <LogOut className="h-4 w-4" />
+            </button>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-2 pb-3 lg:flex-col lg:overflow-visible lg:px-3">
+        <nav className="flex min-h-0 flex-1 gap-1 overflow-x-auto overflow-y-auto px-2 pb-3 lg:flex-col lg:overflow-x-visible lg:px-3">
           {nav.filter((n) => !n.superOnly || isSuper).map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -74,15 +79,16 @@ export function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="hidden border-t border-slate-200 p-4 dark:border-slate-800 lg:block">
-          <div className="mb-3 text-sm">
+        <div className="mt-auto shrink-0 border-t border-slate-200 p-4 dark:border-slate-800">
+          <div className="mb-3 hidden text-sm lg:block">
             <p className="font-medium">{profile?.firstName} {profile?.lastName}</p>
             <p className="text-xs text-slate-500 capitalize">{profile?.role?.replace('_', ' ')}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="hidden gap-2 lg:flex">
             <ThemeToggle />
-            <button type="button" className="btn-secondary flex-1" onClick={logout}>
-              <LogOut className="h-4 w-4" /> Logout
+            <button type="button" className="btn-secondary flex flex-1 items-center justify-center gap-2" onClick={logout}>
+              <LogOut className="h-4 w-4" />
+              Logout
             </button>
           </div>
         </div>

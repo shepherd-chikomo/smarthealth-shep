@@ -29,6 +29,7 @@ import {
   initiateAccountRecovery,
   verifyAccountRecovery,
 } from '../services/account-recovery.service.js';
+import { claimProviderByVerifiedEmail } from '../services/practitioner-claim.service.js';
 import {
   authTokensSchema,
   otpSendBodySchema,
@@ -125,13 +126,41 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
           channel: resolved.channel,
           identifier: resolved.channel === 'email' ? resolved.identifier : `${resolved.identifier.slice(0, 6)}****`,
         });
-        return {
+
+        const response: {
+          accessToken: string;
+          refreshToken: string;
+          expiresIn: number;
+          tokenType: 'Bearer';
+          user: typeof result.user;
+          practitionerClaim?: Awaited<ReturnType<typeof claimProviderByVerifiedEmail>>;
+        } = {
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           expiresIn: result.expiresIn,
-          tokenType: 'Bearer' as const,
+          tokenType: 'Bearer',
           user: result.user,
         };
+
+        if ((otpContext ?? 'mobile') === 'practitioner' && resolved.channel === 'email') {
+          response.practitionerClaim = await claimProviderByVerifiedEmail(
+            result.user.id,
+            resolved.identifier,
+          );
+          const refreshed = await refreshTokens(result.refreshToken);
+          await revokeRefreshToken(result.refreshToken);
+          response.accessToken = refreshed.accessToken;
+          response.refreshToken = refreshed.refreshToken;
+          response.expiresIn = refreshed.expiresIn;
+          await registerRefreshToken(
+            result.user.id,
+            refreshed.refreshToken,
+            context,
+            refreshed.expiresIn * 7,
+          );
+        }
+
+        return response;
       } catch (error) {
         await recordLoginAttempt(attemptKey, 'otp_verify', false, context);
         await logSecurityEvent({

@@ -6,6 +6,9 @@ import { requireAdminAuth, requireStaffAuth, requireSuperAdminAuth } from '../pl
 import * as admin from '../services/admin.service.js';
 import * as audit from '../services/audit.service.js';
 import * as importSvc from '../services/import.service.js';
+import * as facilitiesAdmin from '../services/facilities-admin.service.js';
+import * as registryDiff from '../services/registry-diff.service.js';
+import * as practitionerClaim from '../services/practitioner-claim.service.js';
 
 const moderateBodySchema = z.object({
   action: z.enum(['cancel', 'flag', 'priority']),
@@ -193,6 +196,35 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       );
       return { message: 'Updated' };
     },
+  );
+
+  app.patch(
+    '/admin/providers/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          title: z.string().nullable().optional(),
+          firstName: z.string().min(1).optional(),
+          lastName: z.string().min(1).optional(),
+          specialty: z.string().nullable().optional(),
+          email: z.string().email().nullable().optional(),
+          phone: z.string().nullable().optional(),
+          gender: z.enum(['male', 'female', 'other']).nullable().optional(),
+          qualification: z.string().nullable().optional(),
+          registrationNumber: z.string().min(1).optional(),
+        }),
+      },
+    },
+    async (request) =>
+      admin.updateProviderAdmin(
+        request.user!,
+        request.params.id,
+        request.body,
+        getRequestContext(request),
+      ),
   );
 
   app.get(
@@ -499,6 +531,192 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         request.params.id,
         request.body.verified,
         getRequestContext(request),
+      ),
+  );
+
+  // Facilities registry admin
+  app.get(
+    '/admin/facilities',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        querystring: adminListQuerySchema.extend({
+          queue: z
+            .enum([
+              'all',
+              'ambiguous_facility',
+              'manual_association',
+              'unlinked_practitioner',
+              'no_email_practitioner',
+            ])
+            .optional(),
+        }),
+      },
+    },
+    async (request) => facilitiesAdmin.listFacilities(request.user!, request.query),
+  );
+
+  app.get(
+    '/admin/import-review-queue',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        querystring: adminListQuerySchema.extend({
+          queueType: z
+            .enum([
+              'all',
+              'ambiguous_facility',
+              'manual_association',
+              'unlinked_practitioner',
+              'no_email_practitioner',
+            ])
+            .optional(),
+        }),
+      },
+    },
+    async (request) => facilitiesAdmin.listImportReviewQueue(request.user!, request.query),
+  );
+
+  app.post(
+    '/admin/facilities/associate',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        body: z.object({
+          facilityId: z.string().uuid(),
+          providerId: z.string().uuid(),
+          queueItemId: z.string().uuid().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.associatePractitionerWithFacility(
+        request.user!,
+        request.body,
+        getRequestContext(request),
+      ),
+  );
+
+  app.post(
+    '/admin/facilities/resolve-ambiguous',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        body: z.object({
+          queueItemId: z.string().uuid(),
+          facilityName: z.string().min(1),
+          address: z.string().min(1),
+          city: z.string().optional(),
+          practitionerFirstName: z.string().optional(),
+          practitionerLastName: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.resolveAmbiguousFacility(
+        request.user!,
+        request.body.queueItemId,
+        request.body,
+        getRequestContext(request),
+      ),
+  );
+
+  app.get(
+    '/admin/providers/search-for-association',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin', 'Facilities'], querystring: adminListQuerySchema },
+    },
+    async (request) => facilitiesAdmin.searchProvidersForAssociation(request.user!, request.query),
+  );
+
+  // Registry diff (monthly refresh)
+  app.get(
+    '/admin/registry-changes',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin', 'Registry'], querystring: adminListQuerySchema },
+    },
+    async (request) => registryDiff.listRegistryDiffRuns(request.user!, request.query),
+  );
+
+  app.get(
+    '/admin/registry-changes/:runId/items',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Registry'],
+        params: z.object({ runId: z.string().uuid() }),
+        querystring: adminListQuerySchema.extend({ status: z.string().optional() }),
+      },
+    },
+    async (request) =>
+      registryDiff.listRegistryDiffItems(request.user!, request.params.runId, request.query),
+  );
+
+  app.post(
+    '/admin/registry-changes/items/:id/review',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Registry'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          action: z.enum(['approve', 'ignore']),
+          reviewNotes: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      registryDiff.reviewRegistryDiffItem(
+        request.user!,
+        request.params.id,
+        request.body.action,
+        request.body.reviewNotes,
+        getRequestContext(request),
+      ),
+  );
+
+  // Manual validation tickets
+  app.get(
+    '/admin/manual-validation',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Claims'],
+        querystring: adminListQuerySchema.extend({ status: z.string().optional() }),
+      },
+    },
+    async (request) =>
+      practitionerClaim.listManualValidationTickets({
+        page: request.query.page,
+        limit: request.query.limit,
+        status: request.query.status,
+      }),
+  );
+
+  app.post(
+    '/admin/manual-validation/:id/approve',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Claims'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          claimantId: z.string().uuid(),
+          mdpczNotes: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      practitionerClaim.approveManualValidationTicket(
+        request.user!.id,
+        request.params.id,
+        request.body,
       ),
   );
 };

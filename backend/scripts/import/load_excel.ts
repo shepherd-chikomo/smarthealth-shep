@@ -10,8 +10,16 @@ const HEADER_ALIASES: Record<string, string[]> = {
     'practitioner name', 'name', 'doctor name', 'provider name', 'practitioner',
     'full name', 'doctor', 'physician name', 'healthcare provider',
   ],
+  practitionerFirstName: [
+    'practitioner first name', 'practitioner_first_name', 'first name', 'firstname',
+  ],
+  practitionerLastName: [
+    'practitioner last name', 'practitioner_last_name', 'last name', 'lastname', 'surname',
+  ],
+  gender: ['gender', 'sex'],
+  qualification: ['qualification', 'qualifications', 'degree'],
   facilityName: [
-    'facility name', 'facility', 'practice', 'hospital', 'clinic name',
+    'facility name', 'facility_name', 'facility', 'practice', 'hospital', 'clinic name',
     'workplace', 'institution', 'place of work', 'employer',
   ],
   registrationNumber: [
@@ -21,9 +29,9 @@ const HEADER_ALIASES: Record<string, string[]> = {
   mdpczNumber: ['mdpcz number', 'mdpcz no', 'mdpcz', 'mdpcz registration'],
   specialty: ['specialty', 'speciality', 'specialization', 'specialisation', 'discipline'],
   profession: ['profession', 'professional category', 'cadre', 'type'],
-  address: ['address', 'physical address', 'street address', 'location address'],
+  address: ['address', 'physical address', 'physical_address', 'street address', 'location address'],
   province: ['province', 'state', 'region'],
-  city: ['city', 'town', 'district', 'location'],
+  city: ['city', 'physical city', 'physical_city', 'town', 'district', 'location'],
   phone: ['phone', 'phone number', 'telephone', 'mobile', 'cell', 'contact number'],
   phone2: ['phone 2', 'alternate phone', 'secondary phone', 'mobile 2'],
   email: ['email', 'email address', 'e-mail'],

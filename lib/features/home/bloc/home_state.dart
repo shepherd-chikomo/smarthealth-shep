@@ -2,6 +2,29 @@ import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
+bool homeCategoryMatches(String providerCategoryId, String filterId) {
+  return switch (filterId) {
+    'general' => providerCategoryId == 'general' || providerCategoryId == 'gp',
+    'dental' =>
+      providerCategoryId == 'dental' || providerCategoryId == 'dentist',
+    'pharmacy' => providerCategoryId == 'pharmacy',
+    'lab' => providerCategoryId == 'lab',
+    'pediatrics' =>
+      providerCategoryId == 'pediatrics' || providerCategoryId == 'pediatric',
+    'specialist' => !const {
+      'general',
+      'gp',
+      'dental',
+      'dentist',
+      'pharmacy',
+      'lab',
+      'pediatrics',
+      'pediatric',
+    }.contains(providerCategoryId),
+    _ => providerCategoryId == filterId,
+  };
+}
+
 sealed class HomeState extends Equatable {
   const HomeState();
 
@@ -41,7 +64,7 @@ final class HomeLoaded extends HomeState {
       return providers;
     }
     return providers
-        .where((p) => p.categoryId == selectedCategoryId)
+        .where((p) => homeCategoryMatches(p.categoryId, selectedCategoryId!))
         .toList();
   }
 
@@ -100,7 +123,7 @@ final class HomeOffline extends HomeState {
       return providers;
     }
     return providers
-        .where((p) => p.categoryId == selectedCategoryId)
+        .where((p) => homeCategoryMatches(p.categoryId, selectedCategoryId!))
         .toList();
   }
 

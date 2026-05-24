@@ -88,7 +88,8 @@ function mapProviderRow(row: ProviderSearchRow) {
 
 const BASE_FROM = `
   FROM public.providers p
-  JOIN public.facilities f ON f.id = p.facility_id
+  INNER JOIN public.provider_facility_links pfl ON pfl.provider_id = p.id AND pfl.is_primary = true
+  JOIN public.facilities f ON f.id = pfl.facility_id
   LEFT JOIN (
     SELECT provider_id,
            AVG(rating)::numeric(3,2) AS avg_rating,
@@ -103,6 +104,7 @@ export async function searchProvidersRanked(options: ProviderSearchOptions) {
   const q = normalizeSearchQuery(options.q);
   const conditions = [
     'p.is_active = true',
+    'p.is_verified = true',
     'f.is_active = true',
     'f.deleted_at IS NULL',
   ];

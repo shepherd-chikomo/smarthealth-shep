@@ -1,8 +1,8 @@
 import { query } from './db.js';
-import { ForbiddenError, ValidationError } from './errors.js';
+import { ConflictError, ForbiddenError, ValidationError } from './errors.js';
 import { normalizeEmail, normalizeZimbabwePhone } from './supabase-auth.js';
 
-export type OtpContext = 'staff' | 'mobile' | 'recovery';
+export type OtpContext = 'staff' | 'mobile' | 'recovery' | 'practitioner';
 export type OtpChannel = 'email' | 'phone';
 export type OtpDeliveryChannel = 'email' | 'sms';
 
@@ -77,8 +77,43 @@ function assertExistingProfile(profile: ProfileRow | null): ProfileRow {
   return profile;
 }
 
+async function assertPractitionerRegistryEmail(email: string): Promise<void> {
+  const result = await query<{ is_claimed: boolean }>(
+    `SELECT is_claimed FROM public.providers
+     WHERE LOWER(email) = $1
+       AND deleted_at IS NULL
+       AND is_active = true
+       AND import_source = 'MDPCZ'
+     ORDER BY name
+     LIMIT 1`,
+    [email],
+  );
+  if (!result.rows[0]) {
+    throw new ForbiddenError('No practitioner profile found for this email address');
+  }
+  if (result.rows[0].is_claimed) {
+    throw new ConflictError(
+      'This practitioner profile is already claimed. Use facility portal login instead.',
+    );
+  }
+}
+
 export async function resolveOtpSend(input: OtpSendInput): Promise<ResolvedOtpSend> {
   const requestedChannel = input.channel ?? (input.context === 'mobile' ? undefined : 'email');
+
+  if (input.context === 'practitioner') {
+    if (!input.email) {
+      throw new ValidationError('Email is required');
+    }
+    const email = normalizeEmail(input.email);
+    await assertPractitionerRegistryEmail(email);
+    return {
+      channel: 'email',
+      identifier: email,
+      maskedDestination: maskEmail(email),
+      createUser: true,
+    };
+  }
 
   if (input.context === 'staff') {
     if (requestedChannel === 'phone') {

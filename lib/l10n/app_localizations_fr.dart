@@ -37,31 +37,58 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navProfile => 'Profil';
 
   @override
-  String get homeSearchHint => 'Search doctors, clinics, hospitals…';
+  String get homeSearchHint => 'Search doctors, hospitals, pharmacies';
 
   @override
   String get homeChangeLocation => 'Change location';
 
   @override
+  String get homeGoodMorning => 'Good morning';
+
+  @override
+  String get homeGoodAfternoon => 'Good afternoon';
+
+  @override
+  String get homeGoodEvening => 'Good evening';
+
+  @override
+  String get homeNearbyProviders => 'Nearby providers';
+
+  @override
+  String get homeSeeAll => 'See all';
+
+  @override
   String get homeNearbyFacilities => 'Nearby Facilities';
 
   @override
-  String get homeEmergencyTitle => 'Emergency Hub';
+  String get homeEmergencyTitle => 'Emergency assistance';
 
   @override
-  String get homeEmergencySubtitle => 'Ambulance, police & urgent care numbers';
+  String get homeEmergencySubtitle => 'Ambulance • Police • Fire • Rescue';
 
   @override
   String get homeCategoryNearMe => 'Near Me';
 
   @override
+  String get homeCategoryGeneral => 'General';
+
+  @override
   String get homeCategoryGeneralPractice => 'General Practice';
 
   @override
-  String get homeCategoryPediatrics => 'Pediatrics';
+  String get homeCategoryPediatrics => 'Pediatric';
 
   @override
-  String get homeCategoryDental => 'Dental';
+  String get homeCategoryDental => 'Dentist';
+
+  @override
+  String get homeCategoryPharmacy => 'Pharmacy';
+
+  @override
+  String get homeCategoryLaboratory => 'Laboratory';
+
+  @override
+  String get homeCategorySpecialists => 'Specialists';
 
   @override
   String get homeCategoryCardiology => 'Cardiology';
