@@ -32,6 +32,22 @@ export async function registerErrorHandler(app: FastifyInstance) {
       });
     }
 
+    const statusCode =
+      'statusCode' in error && typeof error.statusCode === 'number'
+        ? error.statusCode
+        : undefined;
+
+    if (statusCode === 429) {
+      request.log.warn({ err: error, requestId }, 'Rate limit exceeded');
+      return reply.status(429).send({
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: error.message || 'Too many requests. Please wait a moment and try again.',
+          requestId,
+        },
+      });
+    }
+
     request.log.error({ err: error, requestId }, 'Unhandled error');
     return reply.status(500).send({
       error: {

@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { query } from '../lib/db.js';
+import { buildSearchClause } from '../lib/admin-query.js';
 import { ConflictError, NotFoundError, ForbiddenError } from '../lib/errors.js';
 import { sendEmailOtp, verifyEmailOtp } from '../lib/supabase-auth.js';
+import { buildProviderRegistryKey, normalizeMdpczNumber } from '../lib/registry-keys.js';
+import {
+  hasManualValidationRejected,
+  hasProviderManualClaimAllowed,
+  upsertImportResolutionRule,
+} from './import-resolution.service.js';
 
 export interface LinkedFacilitySummary {
   id: string;
@@ -310,13 +317,24 @@ export async function validatePractitionerClaimCredentials(data: {
   const provider = result.rows[0];
   if (!provider) throw new NotFoundError('Provider', reg);
   if (provider.is_claimed) throw new ConflictError('This practitioner profile is already claimed');
-  if (!provider.email) {
-    throw new ConflictError(
-      'No email on file. Please contact validation@smarthealth.co.zw for manual verification.',
-    );
+
+  if (await hasManualValidationRejected(reg)) {
+    throw new ConflictError('Manual validation was rejected for this registration number');
   }
-  if (provider.email.toLowerCase() !== email) {
-    throw new ConflictError('Email does not match our records');
+
+  const registryKey = buildProviderRegistryKey(reg);
+  const manualClaimAllowed = await hasProviderManualClaimAllowed(registryKey);
+
+  if (!provider.email) {
+    if (!manualClaimAllowed) {
+      throw new ConflictError(
+        'No email on file. Please contact validation@smarthealth.co.zw for manual verification.',
+      );
+    }
+  } else if (provider.email.toLowerCase() !== email) {
+    if (!manualClaimAllowed) {
+      throw new ConflictError('Email does not match our records');
+    }
   }
 
   const specOk = await specialtyMatches(provider.specialty, provider.specialty_id, data.specialty);
@@ -482,7 +500,7 @@ export async function submitManualValidationTicket(data: {
 }
 
 export async function listManualValidationTickets(
-  opts: { page: number; limit: number; status?: string },
+  opts: { page: number; limit: number; status?: string; q?: string },
 ) {
   const offset = (opts.page - 1) * opts.limit;
   const params: unknown[] = [];
@@ -492,6 +510,15 @@ export async function listManualValidationTickets(
     conditions.push(`mvt.status = $${idx++}`);
     params.push(opts.status);
   }
+
+  const search = buildSearchClause(
+    ['mvt.registration_number', 'mvt.specialty', 'mvt.submitter_name', 'mvt.submitter_email', 'p.name'],
+    opts.q,
+    params,
+    idx,
+  );
+  idx = search.nextIdx;
+  conditions.push(search.clause);
 
   const rows = await query(
     `SELECT mvt.*, p.name AS provider_name
@@ -556,7 +583,42 @@ export async function approveManualValidationTicket(
     [ticketId, data.mdpczNotes ?? null, adminUserId, data.claimantId],
   );
 
+  await upsertImportResolutionRule({
+    resolutionType: 'manual_validation_approved',
+    stableKey: normalizeMdpczNumber(ticket.rows[0].registration_number),
+    providerId,
+    payload: { ticketId, claimantId: data.claimantId },
+    createdBy: adminUserId,
+  });
+
   return { providerId };
+}
+
+export async function rejectManualValidationTicket(
+  adminUserId: string,
+  ticketId: string,
+  data: { mdpczNotes?: string },
+): Promise<void> {
+  const ticket = await query<{ registration_number: string; provider_id: string | null }>(
+    `SELECT registration_number, provider_id FROM public.manual_validation_tickets WHERE id = $1`,
+    [ticketId],
+  );
+  if (!ticket.rows[0]) throw new NotFoundError('Ticket', ticketId);
+
+  await query(
+    `UPDATE public.manual_validation_tickets SET
+       status = 'rejected', mdpcz_notes = $2, reviewed_by = $3, reviewed_at = timezone('utc', now())
+     WHERE id = $1`,
+    [ticketId, data.mdpczNotes ?? null, adminUserId],
+  );
+
+  await upsertImportResolutionRule({
+    resolutionType: 'manual_validation_rejected',
+    stableKey: normalizeMdpczNumber(ticket.rows[0].registration_number),
+    providerId: ticket.rows[0].provider_id,
+    payload: { ticketId, notes: data.mdpczNotes ?? null },
+    createdBy: adminUserId,
+  });
 }
 
 export async function getMyPrimaryFacilities(userId: string) {

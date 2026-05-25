@@ -1,5 +1,8 @@
 import { createHash } from 'node:crypto';
-import { collapseWhitespace, toTitleCase } from './normalize_data.js';
+
+function collapseWhitespace(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
+}
 
 const ADDRESS_ABBREVIATIONS: Record<string, string> = {
   st: 'street',
@@ -33,13 +36,6 @@ export function buildFullNameKey(firstName: string | null, lastName: string | nu
   return normalizePersonName([firstName, lastName].filter(Boolean).join(' '));
 }
 
-/** HPA uses first-last while MDPCZ register often lists last-first — try both orderings. */
-export function reverseNameKey(key: string): string {
-  const parts = normalizePersonName(key).split(' ').filter(Boolean);
-  if (parts.length < 2) return key;
-  return parts.reverse().join(' ');
-}
-
 export function buildFacilityRegistryKey(
   name: string,
   address: string | null,
@@ -53,7 +49,6 @@ export function buildFacilityRegistryKey(
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 32);
 }
 
-/** Location dedup key used when detecting ambiguous HPA facility groups. */
 export function buildLocationDedupKey(
   facilityName: string,
   address: string,
@@ -62,7 +57,6 @@ export function buildLocationDedupKey(
   return `${normalizeAddress(facilityName)}|${normalizeAddress(address)}|${normalizeAddress(city ?? '')}`;
 }
 
-/** Registry key when the same address hosts multiple distinct role-holders. */
 export function buildFacilityRegistryKeyWithRoleHolder(
   name: string,
   address: string | null,
@@ -92,41 +86,38 @@ export function buildProviderRegistryKey(registrationNumber: string): string {
     .slice(0, 32);
 }
 
-export function formatFacilityName(raw: string): string {
-  return toTitleCase(raw);
+export function parseHpaRawRow(raw: Record<string, unknown>): {
+  facilityName: string;
+  address: string;
+  city: string | null;
+  practitionerFirstName: string | null;
+  practitionerLastName: string | null;
+  normalizedNameKey: string;
+} {
+  const facilityName = raw.facilityName ? String(raw.facilityName).trim() : '';
+  const address = raw.address ? String(raw.address).trim() : '';
+  const city = raw.city ? String(raw.city).trim() : null;
+  const practitionerFirstName = raw.practitionerFirstName
+    ? String(raw.practitionerFirstName).trim()
+    : raw.practitionerName
+      ? String(raw.practitionerName).split(/\s+/)[0] ?? null
+      : null;
+  const practitionerLastName = raw.practitionerLastName
+    ? String(raw.practitionerLastName).trim()
+    : null;
+  return {
+    facilityName,
+    address,
+    city,
+    practitionerFirstName,
+    practitionerLastName,
+    normalizedNameKey: buildFullNameKey(practitionerFirstName, practitionerLastName),
+  };
 }
 
-export function formatCity(raw: string | null): string | null {
-  if (!raw) return null;
-  return toTitleCase(raw);
-}
-
-const CITY_TO_PROVINCE: Record<string, string> = {
-  harare: 'Harare',
-  chitungwiza: 'Harare',
-  epworth: 'Harare',
-  bulawayo: 'Bulawayo',
-  mutare: 'Manicaland',
-  rusape: 'Manicaland',
-  bindura: 'Mashonaland Central',
-  chinhoyi: 'Mashonaland West',
-  kadoma: 'Mashonaland West',
-  norton: 'Mashonaland West',
-  marondera: 'Mashonaland East',
-  gweru: 'Midlands',
-  kwekwe: 'Midlands',
-  masvingo: 'Masvingo',
-  'victoria falls': 'Matabeleland North',
-  hwange: 'Matabeleland North',
-  beitbridge: 'Matabeleland South',
-};
-
-export function inferProvinceFromCity(city: string | null): string {
-  if (!city) return 'Harare';
-  const key = city.trim().toLowerCase();
-  return CITY_TO_PROVINCE[key] ?? 'Harare';
-}
-
-export function requireCity(city: string | null): string {
-  return city?.trim() ? toTitleCase(city) : 'Unknown';
+export function locationDedupKeyFromRawRows(rawRows: Record<string, unknown>[]): string | null {
+  if (rawRows.length === 0) return null;
+  const first = parseHpaRawRow(rawRows[0]);
+  if (!first.facilityName || !first.address) return null;
+  return buildLocationDedupKey(first.facilityName, first.address, first.city);
 }

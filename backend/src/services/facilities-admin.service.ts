@@ -1,11 +1,20 @@
 import { query } from '../lib/db.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
-import { ConflictError, ForbiddenError, NotFoundError } from '../lib/errors.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { isSuperAdmin } from '../lib/rbac.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
 import { logAdminAudit } from '../lib/audit-log.js';
 import type { RequestContext } from '../lib/request-context.js';
+import {
+  buildFacilityRegistryKey,
+  buildFacilityRegistryKeyWithRoleHolder,
+  buildFullNameKey,
+  buildProviderRegistryKey,
+  locationDedupKeyFromRawRows,
+  parseHpaRawRow,
+} from '../lib/registry-keys.js';
+import { upsertImportResolutionRule } from './import-resolution.service.js';
 
 function requireSuperAdmin(user: AuthenticatedUser): void {
   if (!isSuperAdmin(user)) throw new ForbiddenError('Super admin access required');
@@ -46,7 +55,21 @@ export async function listFacilities(
 
   const search = buildSearchClause(['f.name', 'f.city', 'f.address_line1'], opts.q, params, idx);
   idx = search.nextIdx;
-  conditions.push(search.clause);
+  if (opts.q?.trim()) {
+    const pattern = `%${opts.q.trim()}%`;
+    conditions.push(`(
+      ${search.clause}
+      OR EXISTS (
+        SELECT 1 FROM public.facility_role_holder_intents frih
+        WHERE frih.facility_id = f.id
+          AND (frih.practitioner_first_name || ' ' || COALESCE(frih.practitioner_last_name, '')) ILIKE $${idx}
+      )
+    )`);
+    params.push(pattern);
+    idx++;
+  } else {
+    conditions.push(search.clause);
+  }
 
   if (opts.queue && opts.queue !== 'all') {
     conditions.push(`EXISTS (
@@ -101,11 +124,24 @@ export async function listImportReviewQueue(
     params.push(opts.queueType);
   }
 
+  const search = buildSearchClause(
+    ['f.name', 'f.city', 'p.name', 'p.registration_number', 'irq.notes'],
+    opts.q,
+    params,
+    idx,
+  );
+  idx = search.nextIdx;
+  conditions.push(search.clause);
+
   const where = conditions.join(' AND ');
   const offset = adminOffset(opts.page, opts.limit);
+  const fromClause = `
+     FROM public.import_review_queue irq
+     LEFT JOIN public.facilities f ON f.id = irq.facility_id
+     LEFT JOIN public.providers p ON p.id = irq.provider_id`;
 
   const count = await query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM public.import_review_queue irq WHERE ${where}`,
+    `SELECT COUNT(*)::text AS count${fromClause} WHERE ${where}`,
     params,
   );
 
@@ -114,9 +150,7 @@ export async function listImportReviewQueue(
             irq.raw_data, irq.notes, irq.created_at,
             f.name AS facility_name, f.city AS facility_city,
             p.name AS provider_name, p.registration_number
-     FROM public.import_review_queue irq
-     LEFT JOIN public.facilities f ON f.id = irq.facility_id
-     LEFT JOIN public.providers p ON p.id = irq.provider_id
+     ${fromClause}
      WHERE ${where}
      ORDER BY irq.created_at DESC
      LIMIT $${idx++} OFFSET $${idx}`,
@@ -136,10 +170,103 @@ export async function listImportReviewQueue(
       rowNumber: r.row_number,
       rawData: r.raw_data,
       notes: r.notes,
-      createdAt: r.created_at,
+      createdAt: (r.created_at as Date).toISOString(),
     })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+function mapQueueItem(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    queueType: row.queue_type,
+    facilityId: row.facility_id,
+    facilityName: row.facility_name,
+    facilityCity: row.facility_city,
+    providerId: row.provider_id,
+    providerName: row.provider_name,
+    registrationNumber: row.registration_number,
+    rowNumber: row.row_number,
+    rawData: row.raw_data,
+    notes: row.notes,
+    createdAt: row.created_at ? (row.created_at as Date).toISOString() : null,
+  };
+}
+
+export async function getImportReviewQueueItem(user: AuthenticatedUser, id: string) {
+  requireSuperAdmin(user);
+  const rows = await query(
+    `SELECT irq.id, irq.queue_type, irq.facility_id, irq.provider_id, irq.row_number,
+            irq.raw_data, irq.notes, irq.created_at, irq.status,
+            f.name AS facility_name, f.city AS facility_city,
+            p.name AS provider_name, p.registration_number, p.email AS provider_email
+     FROM public.import_review_queue irq
+     LEFT JOIN public.facilities f ON f.id = irq.facility_id
+     LEFT JOIN public.providers p ON p.id = irq.provider_id
+     WHERE irq.id = $1`,
+    [id],
+  );
+  if (!rows.rows[0]) throw new NotFoundError('Queue item', id);
+  return { item: mapQueueItem(rows.rows[0]) };
+}
+
+async function resolveQueueItem(queueItemId: string, userId: string, notes: string, facilityId?: string) {
+  await query(
+    `UPDATE public.import_review_queue SET
+       status = 'resolved',
+       resolved_at = timezone('utc', now()),
+       resolved_by = $2,
+       resolution_notes = $3,
+       facility_id = COALESCE($4, facility_id)
+     WHERE id = $1`,
+    [queueItemId, userId, notes, facilityId ?? null],
+  );
+}
+
+async function upsertFacilityFromFields(opts: {
+  facilityName: string;
+  address: string;
+  city: string | null;
+  registryKey: string;
+  practitionerFirstName?: string | null;
+  practitionerLastName?: string | null;
+  normalizedNameKey?: string;
+}): Promise<string> {
+  const slug = opts.facilityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
+  const insert = await query<{ id: string }>(
+    `INSERT INTO public.facilities (
+       name, slug, facility_type, address_line1, city, province,
+       is_verified, is_claimed, verification_status, import_source, registry_key
+     ) VALUES (
+       $1, $2, 'clinic', $3, $4, 'Harare'::public.zimbabwe_province,
+       false, false, 'draft', 'HPA', $5
+     )
+     ON CONFLICT (registry_key) WHERE registry_key IS NOT NULL AND deleted_at IS NULL
+     DO UPDATE SET
+       name = EXCLUDED.name,
+       address_line1 = EXCLUDED.address_line1,
+       city = EXCLUDED.city
+     RETURNING id`,
+    [opts.facilityName, slug, opts.address, opts.city, opts.registryKey],
+  );
+  const facilityId = insert.rows[0].id;
+  const nameKey = opts.normalizedNameKey ?? buildFullNameKey(
+    opts.practitionerFirstName ?? null,
+    opts.practitionerLastName ?? null,
+  );
+  if (nameKey) {
+    await query(
+      `INSERT INTO public.facility_role_holder_intents (
+         facility_id, practitioner_first_name, practitioner_last_name, normalized_full_name
+       ) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (facility_id) DO UPDATE SET
+         practitioner_first_name = EXCLUDED.practitioner_first_name,
+         practitioner_last_name = EXCLUDED.practitioner_last_name,
+         normalized_full_name = EXCLUDED.normalized_full_name`,
+      [facilityId, opts.practitionerFirstName ?? null, opts.practitionerLastName ?? null, nameKey],
+    );
+  }
+  return facilityId;
 }
 
 export async function associatePractitionerWithFacility(
@@ -177,13 +304,43 @@ export async function associatePractitionerWithFacility(
   );
 
   if (data.queueItemId) {
-    await query(
-      `UPDATE public.import_review_queue SET
-         status = 'resolved', resolved_at = timezone('utc', now()), resolved_by = $2,
-         resolution_notes = 'Manual association by admin'
-       WHERE id = $1`,
-      [data.queueItemId, user.id],
-    );
+    await resolveQueueItem(data.queueItemId, user.id, 'Manual association by admin', data.facilityId);
+  }
+
+  const intent = await query<{ normalized_full_name: string | null }>(
+    `SELECT normalized_full_name FROM public.facility_role_holder_intents WHERE facility_id = $1 LIMIT 1`,
+    [data.facilityId],
+  );
+  if (intent.rows[0]?.normalized_full_name) {
+    await upsertImportResolutionRule({
+      resolutionType: 'practitioner_facility_link',
+      stableKey: intent.rows[0].normalized_full_name,
+      facilityId: data.facilityId,
+      providerId: data.providerId,
+      payload: { providerId: data.providerId, facilityId: data.facilityId },
+      sourceQueueId: data.queueItemId ?? null,
+      createdBy: user.id,
+    });
+  }
+
+  const providerReg = await query<{ registration_number: string | null; registry_key: string | null }>(
+    `SELECT registration_number, registry_key FROM public.providers WHERE id = $1`,
+    [data.providerId],
+  );
+  const regKey = providerReg.rows[0]?.registry_key
+    ?? (providerReg.rows[0]?.registration_number
+      ? buildProviderRegistryKey(providerReg.rows[0].registration_number)
+      : null);
+  if (regKey) {
+    await upsertImportResolutionRule({
+      resolutionType: 'practitioner_facility_link',
+      stableKey: regKey,
+      facilityId: data.facilityId,
+      providerId: data.providerId,
+      payload: { providerId: data.providerId, facilityId: data.facilityId },
+      sourceQueueId: data.queueItemId ?? null,
+      createdBy: user.id,
+    });
   }
 
   await logAdminAudit(user.id, 'admin.facility.associate_practitioner', 'facility', data.facilityId, ctx, {
@@ -196,51 +353,231 @@ export async function associatePractitionerWithFacility(
 export async function resolveAmbiguousFacility(
   user: AuthenticatedUser,
   queueItemId: string,
-  data: { facilityName: string; address: string; city?: string; practitionerFirstName?: string; practitionerLastName?: string },
+  data: {
+    mode: 'merged' | 'distinct';
+    facilityName?: string;
+    address?: string;
+    city?: string;
+    practitionerFirstName?: string;
+    practitionerLastName?: string;
+  },
   ctx: RequestContext,
 ) {
   requireSuperAdmin(user);
 
-  const item = await query(
-    `SELECT * FROM public.import_review_queue WHERE id = $1 AND queue_type = 'ambiguous_facility'`,
+  const item = await query<{ raw_data: unknown }>(
+    `SELECT raw_data FROM public.import_review_queue
+     WHERE id = $1 AND queue_type = 'ambiguous_facility' AND status = 'pending'`,
     [queueItemId],
   );
   if (!item.rows[0]) throw new NotFoundError('Queue item', queueItemId);
 
-  const insert = await query<{ id: string }>(
-    `INSERT INTO public.facilities (
-       name, slug, facility_type, address_line1, city, verification_status, import_source
-     ) VALUES ($1, $2, 'clinic', $3, $4, 'draft', 'HPA')
-     RETURNING id`,
-    [
-      data.facilityName,
-      data.facilityName.toLowerCase().replace(/\s+/g, '-').slice(0, 80),
-      data.address,
-      data.city ?? null,
-    ],
-  );
+  const rawRows = Array.isArray(item.rows[0].raw_data)
+    ? (item.rows[0].raw_data as Record<string, unknown>[])
+    : [];
+  const locationKey = locationDedupKeyFromRawRows(rawRows);
+  if (!locationKey) throw new ValidationError('Queue item has no valid raw facility rows');
 
-  const facilityId = insert.rows[0].id;
+  if (data.mode === 'merged') {
+    if (!data.facilityName?.trim() || !data.address?.trim()) {
+      throw new ValidationError('facilityName and address are required for merged resolution');
+    }
+    const registryKey = buildFacilityRegistryKey(data.facilityName, data.address, data.city ?? null);
+    const facilityId = await upsertFacilityFromFields({
+      facilityName: data.facilityName.trim(),
+      address: data.address.trim(),
+      city: data.city?.trim() ?? null,
+      registryKey,
+      practitionerFirstName: data.practitionerFirstName ?? null,
+      practitionerLastName: data.practitionerLastName ?? null,
+    });
 
-  if (data.practitionerFirstName) {
-    const fullName = [data.practitionerFirstName, data.practitionerLastName].filter(Boolean).join(' ').toLowerCase();
-    await query(
-      `INSERT INTO public.facility_role_holder_intents (
-         facility_id, practitioner_first_name, practitioner_last_name, normalized_full_name
-       ) VALUES ($1, $2, $3, $4)`,
-      [facilityId, data.practitionerFirstName, data.practitionerLastName ?? null, fullName],
-    );
+    await upsertImportResolutionRule({
+      resolutionType: 'ambiguous_merged',
+      stableKey: locationKey,
+      facilityId,
+      payload: {
+        facilityName: data.facilityName,
+        address: data.address,
+        city: data.city ?? null,
+        practitionerFirstName: data.practitionerFirstName ?? null,
+        practitionerLastName: data.practitionerLastName ?? null,
+        registryKey,
+      },
+      sourceQueueId: queueItemId,
+      createdBy: user.id,
+    });
+
+    await resolveQueueItem(queueItemId, user.id, 'Ambiguous facility merged by admin', facilityId);
+    await logAdminAudit(user.id, 'admin.facility.resolve_ambiguous', 'facility', facilityId, ctx, { mode: 'merged' });
+    return { mode: 'merged' as const, facilityId, facilityIds: [facilityId] };
   }
 
-  await query(
-    `UPDATE public.import_review_queue SET status = 'resolved', resolved_at = timezone('utc', now()),
-       resolved_by = $2, resolution_notes = $3, facility_id = $4
-     WHERE id = $1`,
-    [queueItemId, user.id, 'Resolved ambiguous facility manually', facilityId],
+  const facilityIds: string[] = [];
+  for (const raw of rawRows) {
+    const parsed = parseHpaRawRow(raw);
+    if (!parsed.facilityName || !parsed.address) continue;
+    const registryKey = buildFacilityRegistryKeyWithRoleHolder(
+      parsed.facilityName,
+      parsed.address,
+      parsed.city,
+      parsed.normalizedNameKey || 'unknown',
+    );
+    const facilityId = await upsertFacilityFromFields({
+      facilityName: parsed.facilityName,
+      address: parsed.address,
+      city: parsed.city,
+      registryKey,
+      practitionerFirstName: parsed.practitionerFirstName,
+      practitionerLastName: parsed.practitionerLastName,
+      normalizedNameKey: parsed.normalizedNameKey,
+    });
+    facilityIds.push(facilityId);
+  }
+
+  await upsertImportResolutionRule({
+    resolutionType: 'ambiguous_distinct',
+    stableKey: locationKey,
+    payload: { distinct: true, facilityIds },
+    sourceQueueId: queueItemId,
+    createdBy: user.id,
+  });
+
+  await resolveQueueItem(
+    queueItemId,
+    user.id,
+    `Ambiguous facility accepted as ${facilityIds.length} distinct site(s)`,
+    facilityIds[0],
+  );
+  await logAdminAudit(user.id, 'admin.facility.resolve_ambiguous', 'facility', facilityIds[0], ctx, {
+    mode: 'distinct',
+    count: facilityIds.length,
+  });
+  return { mode: 'distinct' as const, facilityIds };
+}
+
+export async function resolveUnlinkedPractitioner(
+  user: AuthenticatedUser,
+  queueItemId: string,
+  data: { action: 'associate' | 'no_link'; facilityId?: string; reason?: string },
+  ctx: RequestContext,
+) {
+  requireSuperAdmin(user);
+  const item = await query<{ provider_id: string; registration_number: string | null; registry_key: string | null }>(
+    `SELECT irq.provider_id, p.registration_number, p.registry_key
+     FROM public.import_review_queue irq
+     JOIN public.providers p ON p.id = irq.provider_id
+     WHERE irq.id = $1 AND irq.queue_type = 'unlinked_practitioner' AND irq.status = 'pending'`,
+    [queueItemId],
+  );
+  if (!item.rows[0]?.provider_id) throw new NotFoundError('Queue item', queueItemId);
+
+  const providerId = item.rows[0].provider_id;
+  const stableKey = item.rows[0].registry_key
+    ?? (item.rows[0].registration_number
+      ? buildProviderRegistryKey(item.rows[0].registration_number)
+      : providerId);
+
+  if (data.action === 'associate') {
+    if (!data.facilityId) throw new ValidationError('facilityId is required');
+    await associatePractitionerWithFacility(
+      user,
+      { facilityId: data.facilityId, providerId, queueItemId },
+      ctx,
+    );
+    return { action: 'associate' as const, facilityId: data.facilityId, providerId };
+  }
+
+  await upsertImportResolutionRule({
+    resolutionType: 'practitioner_no_link',
+    stableKey,
+    providerId,
+    payload: { reason: data.reason ?? null },
+    sourceQueueId: queueItemId,
+    createdBy: user.id,
+  });
+  await resolveQueueItem(queueItemId, user.id, data.reason ?? 'No facility link expected');
+  await logAdminAudit(user.id, 'admin.import.resolve_unlinked', 'provider', providerId, ctx);
+  return { action: 'no_link' as const, providerId };
+}
+
+export async function resolveNoEmailPractitioner(
+  user: AuthenticatedUser,
+  queueItemId: string,
+  data: { action: 'set_email' | 'manual_claim_only'; email?: string; notes?: string },
+  ctx: RequestContext,
+) {
+  requireSuperAdmin(user);
+  const item = await query<{ provider_id: string; registration_number: string | null; registry_key: string | null }>(
+    `SELECT irq.provider_id, p.registration_number, p.registry_key
+     FROM public.import_review_queue irq
+     JOIN public.providers p ON p.id = irq.provider_id
+     WHERE irq.id = $1 AND irq.queue_type = 'no_email_practitioner' AND irq.status = 'pending'`,
+    [queueItemId],
+  );
+  if (!item.rows[0]?.provider_id) throw new NotFoundError('Queue item', queueItemId);
+
+  const providerId = item.rows[0].provider_id;
+  const stableKey = item.rows[0].registry_key
+    ?? (item.rows[0].registration_number
+      ? buildProviderRegistryKey(item.rows[0].registration_number)
+      : providerId);
+
+  if (data.action === 'set_email') {
+    if (!data.email?.trim()) throw new ValidationError('email is required');
+    const email = data.email.trim().toLowerCase();
+    await query(`UPDATE public.providers SET email = $2 WHERE id = $1`, [providerId, email]);
+    await upsertImportResolutionRule({
+      resolutionType: 'provider_email_override',
+      stableKey,
+      providerId,
+      payload: { email },
+      sourceQueueId: queueItemId,
+      createdBy: user.id,
+    });
+    await resolveQueueItem(queueItemId, user.id, `Email set to ${email}`);
+  } else {
+    await upsertImportResolutionRule({
+      resolutionType: 'provider_manual_claim_allowed',
+      stableKey,
+      providerId,
+      payload: { notes: data.notes ?? null },
+      sourceQueueId: queueItemId,
+      createdBy: user.id,
+    });
+    await resolveQueueItem(queueItemId, user.id, data.notes ?? 'Manual claim allowed without email');
+  }
+
+  await logAdminAudit(user.id, 'admin.import.resolve_no_email', 'provider', providerId, ctx, data);
+  return { providerId, action: data.action };
+}
+
+export async function searchFacilitiesForAssociation(
+  user: AuthenticatedUser,
+  opts: AdminListQuery,
+) {
+  requireSuperAdmin(user);
+  const params: unknown[] = [];
+  const search = buildSearchClause(['f.name', 'f.city', 'f.address_line1'], opts.q, params, 1);
+  const offset = adminOffset(opts.page, opts.limit);
+
+  const rows = await query(
+    `SELECT f.id, f.name, f.city, f.address_line1
+     FROM public.facilities f
+     WHERE f.deleted_at IS NULL AND ${search.clause}
+     ORDER BY f.name ASC
+     LIMIT $${search.nextIdx++} OFFSET $${search.nextIdx}`,
+    [...params, opts.limit, offset],
   );
 
-  await logAdminAudit(user.id, 'admin.facility.resolve_ambiguous', 'facility', facilityId, ctx);
-  return { facilityId };
+  return {
+    facilities: rows.rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      city: r.city,
+      address: r.address_line1,
+    })),
+  };
 }
 
 export async function searchProvidersForAssociation(

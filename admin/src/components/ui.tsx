@@ -1,5 +1,35 @@
 import type { ReactNode } from 'react';
 
+export function Modal({
+  title,
+  children,
+  onClose,
+  maxWidth = 'max-w-lg',
+}: {
+  title: string;
+  children: ReactNode;
+  onClose?: () => void;
+  maxWidth?: string;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onClose ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}
+      role="presentation"
+    >
+      <div
+        className={`card w-full ${maxWidth} p-6`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <h2 id="modal-title" className="mb-4 text-lg font-semibold">{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function PageHeader({ title, description, actions }: {
   title: string;
   description?: string;

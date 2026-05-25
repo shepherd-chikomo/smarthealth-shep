@@ -176,7 +176,7 @@ export function ClaimsPage() {
 
           <div className="lg:col-span-2">
             {selected ? (
-              <div className="card space-y-4">
+              <div className="card space-y-4 p-6">
                 <h2 className="font-semibold">{claimTitle(selected)}</h2>
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between">
@@ -292,7 +292,7 @@ export function ClaimsPage() {
             )}
 
             {historyEntity && history.data && (
-              <div className="card mt-4 space-y-3">
+              <div className="card mt-4 space-y-3 p-6">
                 <h3 className="font-medium">Verification history · {historyEntity.title}</h3>
                 <ul className="space-y-2 text-sm">
                   {(history.data.history as Record<string, unknown>[]).map((h) => (

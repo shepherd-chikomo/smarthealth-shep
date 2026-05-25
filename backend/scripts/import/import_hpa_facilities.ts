@@ -10,7 +10,10 @@ import {
   inferProvinceFromCity,
   normalizeAddress,
   requireCity,
+  buildLocationDedupKey,
+  buildFacilityRegistryKeyWithRoleHolder,
 } from './normalize_registry.js';
+import { fetchImportResolutionRule } from './import_resolution_rules.js';
 import { generateFacilitySlug, ensureUniqueSlug } from './generate_slugs.js';
 import type { RawSpreadsheetRow } from './types.js';
 
@@ -144,7 +147,152 @@ export async function importHpaFacilities(
     );
   }
 
+  const slugUsed = new Set<string>();
+
   for (const group of ambiguous) {
+    const locationKey = buildLocationDedupKey(
+      group[0].facilityName,
+      group[0].address,
+      group[0].city,
+    );
+
+    const mergedRule = await fetchImportResolutionRule(client, 'ambiguous_merged', locationKey);
+    if (mergedRule?.payload) {
+      const p = mergedRule.payload as Record<string, unknown>;
+      const facilityName = String(p.facilityName ?? group[0].facilityName);
+      const address = String(p.address ?? group[0].address);
+      const city = p.city ? String(p.city) : group[0].city;
+      const registryKey = String(p.registryKey ?? buildFacilityRegistryKey(facilityName, address, city));
+      const slug = ensureUniqueSlug(
+        generateFacilitySlug({
+          key: registryKey,
+          name: facilityName,
+          slug: '',
+          facilityType: 'clinic',
+          address,
+          province: null,
+          city,
+          phone: null,
+          email: null,
+          facilityCategory: null,
+          ownershipType: null,
+          latitude: null,
+          longitude: null,
+          formattedAddress: null,
+          searchKeywords: [],
+          sourceRows: [group[0].rowNumber],
+        }),
+        slugUsed,
+      );
+      const insert = await client.query<{ id: string }>(
+        `INSERT INTO public.facilities (
+           name, slug, facility_type, address_line1, city, province,
+           is_verified, is_claimed, verification_status,
+           import_batch_id, import_source, registry_key
+         ) VALUES ($1, $2, 'clinic', $3, $4, $5::public.zimbabwe_province, false, false, 'draft', $6, 'HPA', $7)
+         ON CONFLICT (registry_key) WHERE registry_key IS NOT NULL AND deleted_at IS NULL
+         DO UPDATE SET name = EXCLUDED.name, address_line1 = EXCLUDED.address_line1, city = EXCLUDED.city
+         RETURNING id`,
+        [facilityName, slug, address, city, inferProvinceFromCity(city), batchId, registryKey],
+      );
+      const facilityId = insert.rows[0].id;
+      const firstName = p.practitionerFirstName ? String(p.practitionerFirstName) : null;
+      const lastName = p.practitionerLastName ? String(p.practitionerLastName) : null;
+      const nameKey = buildFullNameKey(firstName, lastName);
+      if (nameKey) {
+        await client.query(
+          `INSERT INTO public.facility_role_holder_intents (
+             facility_id, practitioner_first_name, practitioner_last_name, normalized_full_name, import_batch_id
+           ) VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (facility_id) DO UPDATE SET
+             practitioner_first_name = EXCLUDED.practitioner_first_name,
+             practitioner_last_name = EXCLUDED.practitioner_last_name,
+             normalized_full_name = EXCLUDED.normalized_full_name`,
+          [facilityId, firstName, lastName, nameKey, batchId],
+        );
+      }
+      facilityIds.set(registryKey, facilityId);
+      created++;
+      continue;
+    }
+
+    const distinctRule = await fetchImportResolutionRule(client, 'ambiguous_distinct', locationKey);
+    if (distinctRule) {
+      for (const row of group) {
+        const scopedKey = buildFacilityRegistryKeyWithRoleHolder(
+          row.facilityName,
+          row.address,
+          row.city,
+          row.normalizedNameKey || 'unknown',
+        );
+        const slug = ensureUniqueSlug(
+          generateFacilitySlug({
+            key: scopedKey,
+            name: row.facilityName,
+            slug: '',
+            facilityType: 'clinic',
+            address: row.address,
+            province: null,
+            city: row.city,
+            phone: null,
+            email: null,
+            facilityCategory: null,
+            ownershipType: null,
+            latitude: null,
+            longitude: null,
+            formattedAddress: null,
+            searchKeywords: [],
+            sourceRows: [row.rowNumber],
+          }),
+          slugUsed,
+        );
+        const insert = await client.query<{ id: string }>(
+          `INSERT INTO public.facilities (
+             name, slug, facility_type, address_line1, city, province,
+             is_verified, is_claimed, verification_status,
+             import_batch_id, import_source, import_row_hash, registry_key, search_keywords
+           ) VALUES ($1, $2, 'clinic', $3, $4, $5::public.zimbabwe_province, false, false, 'draft', $6, 'HPA', $7, $8, $9)
+           ON CONFLICT (registry_key) WHERE registry_key IS NOT NULL AND deleted_at IS NULL
+           DO UPDATE SET name = EXCLUDED.name, address_line1 = EXCLUDED.address_line1, city = EXCLUDED.city
+           RETURNING id`,
+          [
+            row.facilityName,
+            slug,
+            row.address,
+            row.city,
+            row.province,
+            batchId,
+            row.rowHash,
+            scopedKey,
+            [row.facilityName.toLowerCase(), row.city.toLowerCase()].filter(Boolean),
+          ],
+        );
+        const facilityId = insert.rows[0].id;
+        facilityIds.set(scopedKey, facilityId);
+        created++;
+        if (row.normalizedNameKey) {
+          await client.query(
+            `INSERT INTO public.facility_role_holder_intents (
+               facility_id, practitioner_first_name, practitioner_last_name,
+               normalized_full_name, import_batch_id
+             ) VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (facility_id) DO UPDATE SET
+               practitioner_first_name = EXCLUDED.practitioner_first_name,
+               practitioner_last_name = EXCLUDED.practitioner_last_name,
+               normalized_full_name = EXCLUDED.normalized_full_name`,
+            [
+              facilityId,
+              row.practitionerFirstName,
+              row.practitionerLastName,
+              row.normalizedNameKey,
+              batchId,
+            ],
+          );
+        }
+      }
+      continue;
+    }
+
     await client.query(
       `INSERT INTO public.import_review_queue (
          queue_type, import_batch_id, row_number, raw_data, notes
@@ -157,8 +305,6 @@ export async function importHpaFacilities(
       ],
     );
   }
-
-  const slugUsed = new Set<string>();
 
   for (const row of valid) {
     const slug = ensureUniqueSlug(

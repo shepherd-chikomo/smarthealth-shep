@@ -98,6 +98,9 @@ export function LoginPage() {
               required
               autoFocus
             />
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              Local dev: open <a href="http://localhost:54324" className="text-teal-600 hover:underline" target="_blank" rel="noreferrer">Inbucket</a> (mailbox: first part of your email) if you did not receive the code
+            </p>
           </>
         )}
 

@@ -9,6 +9,27 @@ import * as importSvc from '../services/import.service.js';
 import * as facilitiesAdmin from '../services/facilities-admin.service.js';
 import * as registryDiff from '../services/registry-diff.service.js';
 import * as practitionerClaim from '../services/practitioner-claim.service.js';
+import * as platformBroadcast from '../services/platform-broadcast.service.js';
+
+const emergencyServiceBodySchema = z.object({
+  name: z.string().min(1),
+  serviceType: z.enum([
+    'ambulance', 'fire', 'police', 'hospital_er', 'poison_control',
+    'mental_health_crisis', 'disaster_response', 'other',
+  ]),
+  phone: z.string().min(1),
+  alternatePhone: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  city: z.string().min(1),
+  province: z.enum([
+    'Bulawayo', 'Harare', 'Manicaland', 'Mashonaland Central', 'Mashonaland East',
+    'Mashonaland West', 'Masvingo', 'Matabeleland North', 'Matabeleland South', 'Midlands',
+  ]),
+  latitude: z.number(),
+  longitude: z.number(),
+  is24Hours: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
 
 const moderateBodySchema = z.object({
   action: z.enum(['cancel', 'flag', 'priority']),
@@ -282,6 +303,66 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     '/admin/content/emergency',
     { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
     async (request) => admin.listEmergencyServicesAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/emergency',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], body: emergencyServiceBodySchema },
+    },
+    async (request, reply) => {
+      const result = await admin.createEmergencyService(request.body);
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.put(
+    '/admin/content/emergency/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: emergencyServiceBodySchema.partial(),
+      },
+    },
+    async (request) => admin.updateEmergencyService(request.params.id, request.body),
+  );
+
+  app.delete(
+    '/admin/content/emergency/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) => admin.deleteEmergencyService(request.params.id),
+  );
+
+  app.post(
+    '/admin/notifications/broadcast',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        body: z.object({
+          title: z.string().min(1),
+          body: z.string().min(1),
+          actionUrl: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      platformBroadcast.broadcastToAllUsers(request.user!.id, request.body),
+  );
+
+  app.get(
+    '/admin/notifications/broadcasts',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], querystring: adminListQuerySchema },
+    },
+    async (request) => platformBroadcast.listPlatformBroadcasts(request.query),
   );
 
   app.get(
@@ -579,6 +660,18 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => facilitiesAdmin.listImportReviewQueue(request.user!, request.query),
   );
 
+  app.get(
+    '/admin/import-review-queue/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        params: z.object({ id: z.string().uuid() }),
+      },
+    },
+    async (request) => facilitiesAdmin.getImportReviewQueueItem(request.user!, request.params.id),
+  );
+
   app.post(
     '/admin/facilities/associate',
     {
@@ -608,8 +701,9 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Admin', 'Facilities'],
         body: z.object({
           queueItemId: z.string().uuid(),
-          facilityName: z.string().min(1),
-          address: z.string().min(1),
+          mode: z.enum(['merged', 'distinct']),
+          facilityName: z.string().min(1).optional(),
+          address: z.string().min(1).optional(),
           city: z.string().optional(),
           practitionerFirstName: z.string().optional(),
           practitionerLastName: z.string().optional(),
@@ -623,6 +717,61 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         request.body,
         getRequestContext(request),
       ),
+  );
+
+  app.post(
+    '/admin/import-review-queue/:id/resolve-unlinked',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          action: z.enum(['associate', 'no_link']),
+          facilityId: z.string().uuid().optional(),
+          reason: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.resolveUnlinkedPractitioner(
+        request.user!,
+        request.params.id,
+        request.body,
+        getRequestContext(request),
+      ),
+  );
+
+  app.post(
+    '/admin/import-review-queue/:id/resolve-no-email',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          action: z.enum(['set_email', 'manual_claim_only']),
+          email: z.string().email().optional(),
+          notes: z.string().optional(),
+        }),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.resolveNoEmailPractitioner(
+        request.user!,
+        request.params.id,
+        request.body,
+        getRequestContext(request),
+      ),
+  );
+
+  app.get(
+    '/admin/facilities/search-for-association',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin', 'Facilities'], querystring: adminListQuerySchema },
+    },
+    async (request) => facilitiesAdmin.searchFacilitiesForAssociation(request.user!, request.query),
   );
 
   app.get(
@@ -696,6 +845,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         page: request.query.page,
         limit: request.query.limit,
         status: request.query.status,
+        q: request.query.q,
       }),
   );
 
@@ -718,5 +868,25 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
         request.params.id,
         request.body,
       ),
+  );
+
+  app.post(
+    '/admin/manual-validation/:id/reject',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Claims'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({ mdpczNotes: z.string().optional() }),
+      },
+    },
+    async (request) => {
+      await practitionerClaim.rejectManualValidationTicket(
+        request.user!.id,
+        request.params.id,
+        request.body,
+      );
+      return { status: 'rejected' };
+    },
   );
 };

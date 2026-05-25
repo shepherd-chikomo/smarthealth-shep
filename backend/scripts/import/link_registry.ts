@@ -1,6 +1,7 @@
 import type pg from 'pg';
 import { logger } from './logger.js';
-import { reverseNameKey } from './normalize_registry.js';
+import { reverseNameKey, buildProviderRegistryKey } from './normalize_registry.js';
+import { fetchImportResolutionRule } from './import_resolution_rules.js';
 
 export async function linkRegistryDirectMatch(
   client: pg.PoolClient,
@@ -23,6 +24,34 @@ export async function linkRegistryDirectMatch(
   let manualAssociation = 0;
 
   for (const intent of intents.rows) {
+    const linkRule = await fetchImportResolutionRule(
+      client,
+      'practitioner_facility_link',
+      intent.normalized_full_name,
+    );
+    if (linkRule?.payload?.providerId && linkRule.payload?.facilityId) {
+      const providerId = String(linkRule.payload.providerId);
+      const facilityId = String(linkRule.payload.facilityId);
+      if (!dryRun) {
+        await client.query(
+          `INSERT INTO public.provider_facility_links (
+             provider_id, facility_id, link_type, is_primary, is_facility_role_holder,
+             match_confidence, import_batch_id
+           ) VALUES ($1, $2, 'primary', true, true, 'HIGH', $3)
+           ON CONFLICT (provider_id, facility_id) DO UPDATE SET
+             link_type = 'primary', is_facility_role_holder = true, is_primary = true`,
+          [providerId, facilityId, batchId],
+        );
+        await client.query(
+          `UPDATE public.providers SET facility_id = COALESCE(facility_id, $2), tenant_id = COALESCE(tenant_id, $2)
+           WHERE id = $1`,
+          [providerId, facilityId],
+        );
+      }
+      linked++;
+      continue;
+    }
+
     const providerId =
       providerNameIndex.get(intent.normalized_full_name) ??
       providerNameIndex.get(reverseNameKey(intent.normalized_full_name));
@@ -89,8 +118,8 @@ export async function linkRegistryDirectMatch(
   let unlinkedPractitioners = 0;
 
   if (!dryRun) {
-    const unlinked = await client.query<{ id: string }>(
-      `SELECT p.id FROM public.providers p
+    const unlinked = await client.query<{ id: string; registration_number: string | null; registry_key: string | null }>(
+      `SELECT p.id, p.registration_number, p.registry_key FROM public.providers p
        WHERE p.import_batch_id = $1
          AND p.deleted_at IS NULL
          AND NOT EXISTS (
@@ -100,6 +129,23 @@ export async function linkRegistryDirectMatch(
     );
 
     for (const row of unlinked.rows) {
+      const stableKey = row.registry_key
+        ?? (row.registration_number ? buildProviderRegistryKey(row.registration_number) : row.id);
+      const noLinkRule = await fetchImportResolutionRule(client, 'practitioner_no_link', stableKey);
+      if (noLinkRule) continue;
+
+      const linkRule = await fetchImportResolutionRule(client, 'practitioner_facility_link', stableKey);
+      if (linkRule?.payload?.facilityId && linkRule.payload?.providerId) {
+        await client.query(
+          `INSERT INTO public.provider_facility_links (
+             provider_id, facility_id, link_type, is_primary, is_facility_role_holder, match_confidence
+           ) VALUES ($1, $2, 'primary', true, true, 'HIGH')
+           ON CONFLICT (provider_id, facility_id) DO NOTHING`,
+          [String(linkRule.payload.providerId), String(linkRule.payload.facilityId)],
+        );
+        continue;
+      }
+
       unlinkedPractitioners++;
       await client.query(
         `INSERT INTO public.import_review_queue (

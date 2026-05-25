@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { ErrorState, LoadingState, PageHeader, PaginationBar } from '../components/ui';
+import type { ImportReviewQueueItem } from '../lib/api';
+import { ErrorState, LoadingState, Modal, PageHeader, PaginationBar, SearchBar } from '../components/ui';
+import { AmbiguousFacilityPanel } from '../components/import-queue/AmbiguousFacilityPanel';
+import { UnlinkedPractitionerPanel } from '../components/import-queue/UnlinkedPractitionerPanel';
+import { NoEmailPractitionerPanel } from '../components/import-queue/NoEmailPractitionerPanel';
+import { ManualValidationPanel } from '../components/import-queue/ManualValidationPanel';
 
 type Tab = 'facilities' | 'manual_association' | 'ambiguous_facility' | 'unlinked_practitioner' | 'no_email_practitioner' | 'manual_validation';
 
@@ -16,28 +21,30 @@ export function FacilitiesPage() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('facilities');
   const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [associateFacilityId, setAssociateFacilityId] = useState<string | null>(null);
   const [providerSearch, setProviderSearch] = useState('');
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedQueueId, setSelectedQueueId] = useState<string | undefined>();
 
   const facilities = useQuery({
-    queryKey: ['admin-facilities', page],
-    queryFn: () => api.adminFacilities({ page, limit: 20 }),
+    queryKey: ['admin-facilities', page, q],
+    queryFn: () => api.adminFacilities({ page, limit: 20, q: q || undefined }),
     enabled: tab === 'facilities',
   });
 
   const queueType = tab !== 'facilities' && tab !== 'manual_validation' ? tab : undefined;
 
   const queue = useQuery({
-    queryKey: ['import-review-queue', page, queueType],
-    queryFn: () => api.importReviewQueue({ page, limit: 20, queueType }),
+    queryKey: ['import-review-queue', page, queueType, q],
+    queryFn: () => api.importReviewQueue({ page, limit: 20, queueType, q: q || undefined }),
     enabled: !!queueType,
   });
 
   const validation = useQuery({
-    queryKey: ['manual-validation', page],
-    queryFn: () => api.manualValidationTickets({ page, limit: 20, status: 'submitted' }),
+    queryKey: ['manual-validation', page, q],
+    queryFn: () => api.manualValidationTickets({ page, limit: 20, status: 'submitted', q: q || undefined }),
     enabled: tab === 'manual_validation',
   });
 
@@ -72,6 +79,31 @@ export function FacilitiesPage() {
     { id: 'manual_validation', label: 'Manual Validation' },
   ];
 
+  function queueTitle(item: ImportReviewQueueItem): string {
+    if (item.facilityName) return item.facilityName;
+    if (item.providerName) return item.providerName;
+    if (Array.isArray(item.rawData) && item.rawData.length > 0) {
+      const raw = item.rawData[0] as Record<string, unknown>;
+      if (raw.facilityName) return String(raw.facilityName);
+    }
+    return 'Review item';
+  }
+
+  function renderQueuePanel(item: ImportReviewQueueItem) {
+    if (expandedId !== item.id) return null;
+    const onDone = () => setExpandedId(null);
+    if (item.queueType === 'ambiguous_facility') {
+      return <AmbiguousFacilityPanel item={item} onDone={onDone} />;
+    }
+    if (item.queueType === 'unlinked_practitioner') {
+      return <UnlinkedPractitionerPanel item={item} onDone={onDone} />;
+    }
+    if (item.queueType === 'no_email_practitioner') {
+      return <NoEmailPractitionerPanel item={item} onDone={onDone} />;
+    }
+    return null;
+  }
+
   return (
     <div>
       <PageHeader
@@ -85,11 +117,19 @@ export function FacilitiesPage() {
             key={t.id}
             type="button"
             className={tab === t.id ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => { setTab(t.id); setPage(1); }}
+            onClick={() => { setTab(t.id); setPage(1); setExpandedId(null); }}
           >
             {t.label}
           </button>
         ))}
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <SearchBar
+          value={q}
+          onChange={(v) => { setQ(v); setPage(1); }}
+          placeholder="Search name, city, role-holder, reg no…"
+        />
       </div>
 
       {tab === 'facilities' && (
@@ -133,30 +173,46 @@ export function FacilitiesPage() {
           {queue.isLoading && <LoadingState />}
           {queue.error && <ErrorState message={(queue.error as Error).message} />}
           {queue.data && (
-            <div className="card space-y-3">
+            <div className="card space-y-3 p-5">
               <p className="text-sm text-slate-500">{queueLabels[queueType] ?? queueType}</p>
               {queue.data.items.length === 0 && (
                 <p className="text-sm text-slate-500">No pending items.</p>
               )}
               {queue.data.items.map((item) => (
                 <div key={item.id} className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-                  <p className="font-medium">{item.facilityName ?? item.providerName ?? 'Review item'}</p>
-                  <p className="text-xs text-slate-500">{item.notes}</p>
-                  {item.registrationNumber && (
-                    <p className="text-xs text-slate-500">Reg: {item.registrationNumber}</p>
-                  )}
-                  {item.facilityId && tab === 'manual_association' && (
-                    <button
-                      type="button"
-                      className="btn-primary mt-2"
-                      onClick={() => {
-                        setAssociateFacilityId(item.facilityId);
-                        setSelectedQueueId(item.id);
-                      }}
-                    >
-                      Associate practitioner
-                    </button>
-                  )}
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{queueTitle(item)}</p>
+                      <p className="text-xs text-slate-500">{item.notes}</p>
+                      {item.registrationNumber && (
+                        <p className="text-xs text-slate-500">Reg: {item.registrationNumber}</p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      {item.queueType === 'manual_association' && item.facilityId && (
+                        <button
+                          type="button"
+                          className="btn-primary text-xs"
+                          onClick={() => {
+                            setAssociateFacilityId(item.facilityId);
+                            setSelectedQueueId(item.id);
+                          }}
+                        >
+                          Associate practitioner
+                        </button>
+                      )}
+                      {['ambiguous_facility', 'unlinked_practitioner', 'no_email_practitioner'].includes(item.queueType) && (
+                        <button
+                          type="button"
+                          className="btn-secondary text-xs"
+                          onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                        >
+                          {expandedId === item.id ? 'Close' : 'Review & resolve'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {renderQueuePanel(item)}
                 </div>
               ))}
               <PaginationBar page={page} totalPages={queue.data.pagination.totalPages} onPage={setPage} />
@@ -169,14 +225,31 @@ export function FacilitiesPage() {
         <>
           {validation.isLoading && <LoadingState />}
           {validation.data && (
-            <div className="card space-y-3">
+            <div className="card space-y-3 p-5">
+              {validation.data.tickets.length === 0 && (
+                <p className="text-sm text-slate-500">No pending tickets.</p>
+              )}
               {validation.data.tickets.map((t) => (
                 <div key={t.id} className="rounded-lg border p-4">
-                  <p className="font-medium">{t.registrationNumber} — {t.specialty}</p>
-                  <p className="text-sm text-slate-500">
-                    {t.submitterName ?? 'Unknown'} · {t.submitterEmail ?? 'No email'}
-                  </p>
-                  <p className="text-xs text-slate-400">Status: {t.status}</p>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{t.registrationNumber} — {t.specialty}</p>
+                      <p className="text-sm text-slate-500">
+                        {t.submitterName ?? 'Unknown'} · {t.submitterEmail ?? 'No email'}
+                      </p>
+                      <p className="text-xs text-slate-400">Status: {t.status}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-secondary text-xs"
+                      onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
+                    >
+                      {expandedId === t.id ? 'Close' : 'Review'}
+                    </button>
+                  </div>
+                  {expandedId === t.id && (
+                    <ManualValidationPanel ticket={t} onDone={() => setExpandedId(null)} />
+                  )}
                 </div>
               ))}
             </div>
@@ -185,9 +258,12 @@ export function FacilitiesPage() {
       )}
 
       {associateFacilityId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="card w-full max-w-md space-y-3">
-            <h3 className="font-semibold">Associate practitioner</h3>
+        <Modal
+          title="Associate practitioner"
+          onClose={() => setAssociateFacilityId(null)}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-3">
             <input
               className="input w-full"
               placeholder="Search by name or registration number…"
@@ -223,7 +299,7 @@ export function FacilitiesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

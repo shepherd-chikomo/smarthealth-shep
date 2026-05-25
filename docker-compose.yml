@@ -297,6 +297,7 @@ services:
     logging: *default-logging
     environment:
       NODE_ENV: production
+      ENVIRONMENT: ${ENVIRONMENT:-local}
       PORT: 3000
       API_PREFIX: /v1
       LOG_LEVEL: info

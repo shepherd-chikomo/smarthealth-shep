@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import { ErrorState, LoadingState, PageHeader, PaginationBar, SearchBar } from '../components/ui';
+import { ErrorState, LoadingState, Modal, PageHeader, PaginationBar, SearchBar } from '../components/ui';
 
 interface AdminProvider {
   id: string;
@@ -187,10 +187,8 @@ function EditProviderModal({
   const [registrationNumber, setRegistrationNumber] = useState(provider.registrationNumber ?? '');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="card w-full max-w-lg">
-        <h2 className="mb-4 text-lg font-semibold">Edit practitioner</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+    <Modal title="Edit practitioner" onClose={onClose}>
+      <div className="grid gap-3 sm:grid-cols-2">
           <label className="block sm:col-span-2">
             <span className="text-sm text-gray-600">Title</span>
             <input className="input mt-1 w-full" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -235,32 +233,31 @@ function EditProviderModal({
           <p className="text-sm text-gray-500 sm:col-span-2">
             HPA facility: {provider.facilityName ?? 'Not linked — use Facilities tab to associate'}
           </p>
-        </div>
-        {error && <p className="mt-3 text-sm text-red-600">{error.message}</p>}
-        <div className="mt-6 flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={saving || !firstName.trim() || !lastName.trim()}
-            onClick={() =>
-              onSave({
-                title: title.trim() || null,
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                specialty: specialty.trim() || null,
-                email: email.trim() || null,
-                phone: phone.trim() || null,
-                gender: (gender as 'male' | 'female' | 'other') || null,
-                qualification: qualification.trim() || null,
-                registrationNumber: registrationNumber.trim() || undefined,
-              })
-            }
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
       </div>
-    </div>
+      {error && <p className="mt-3 text-sm text-red-600">{error.message}</p>}
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={saving || !firstName.trim() || !lastName.trim()}
+          onClick={() =>
+            onSave({
+              title: title.trim() || null,
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+              specialty: specialty.trim() || null,
+              email: email.trim() || null,
+              phone: phone.trim() || null,
+              gender: (gender as 'male' | 'female' | 'other') || null,
+              qualification: qualification.trim() || null,
+              registrationNumber: registrationNumber.trim() || undefined,
+            })
+          }
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </Modal>
   );
 }

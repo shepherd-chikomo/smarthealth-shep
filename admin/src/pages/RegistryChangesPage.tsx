@@ -38,7 +38,7 @@ export function RegistryChangesPage() {
 
       {runs.data && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="card">
+          <div className="card p-5">
             <h2 className="mb-3 font-semibold">Diff runs</h2>
             <ul className="space-y-2">
               {runs.data.runs.map((run) => (
@@ -64,7 +64,7 @@ export function RegistryChangesPage() {
             <PaginationBar page={page} totalPages={runs.data.pagination.totalPages} onPage={setPage} />
           </div>
 
-          <div className="card">
+          <div className="card p-5">
             <h2 className="mb-3 font-semibold">Pending changes</h2>
             {!selectedRunId && <p className="text-sm text-slate-500">Select a diff run.</p>}
             {items.isLoading && selectedRunId && <LoadingState />}

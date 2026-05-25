@@ -1,13 +1,30 @@
 # SmartHealth local UAT — web dev servers (requires Docker stack running)
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $Root
+$RepoRoot = Split-Path -Parent $Root
+$NodePath = "C:\Program Files\nodejs"
+$DockerPath = "C:\Program Files\Docker\Docker\resources\bin"
+$env:Path = "$NodePath;$DockerPath;" + $env:Path
+
+Write-Host "Checking Docker stack..."
+$running = docker ps --format "{{.Names}}" 2>$null | Select-String -Quiet "smarthealth-api"
+if (-not $running) {
+  Write-Host "Starting Docker services (db, auth, kong, api)..."
+  Set-Location $RepoRoot
+  docker compose up -d db redis auth rest storage meta kong inbucket smarthealth-migrate smarthealth-api
+}
+
+$devEnv = @"
+`$env:Path = '$NodePath;' + `$env:Path
+`$env:API_URL = 'http://localhost:3000'
+`$env:NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8000'
+"@
 
 Write-Host "Starting Admin UI (http://localhost:5173/admin/)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$Root\admin'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "$devEnv; cd '$RepoRoot\admin'; npm.cmd run dev"
 
 Write-Host "Starting Facility Portal (http://localhost:3001)..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$Root\facility-portal'; `$env:API_URL='http://localhost:3000'; `$env:NEXT_PUBLIC_SUPABASE_URL='http://localhost:8000'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "$devEnv; cd '$RepoRoot\facility-portal'; npm.cmd run dev"
 
 Write-Host ""
 Write-Host "UAT URLs:"
@@ -19,5 +36,4 @@ Write-Host "  Facility portal: http://localhost:3001"
 Write-Host "  Studio:          http://localhost:54323"
 Write-Host ""
 Write-Host "Test OTP: phone 0771234567 / code 123456"
-Write-Host "  1. Click Send OTP, then enter code and Sign in"
-Write-Host "  2. First login only: run scripts\setup-dev-admin.ps1 to grant super_admin"
+Write-Host "  First login only: run scripts\setup-dev-admin.ps1 then sign in again"

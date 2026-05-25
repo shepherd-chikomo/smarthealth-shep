@@ -1002,7 +1002,8 @@ export async function listEmergencyServicesAdmin(opts: AdminListQuery) {
   );
 
   const rows = await query(
-    `SELECT id, name, service_type, phone, city, province, is_24_hours, is_active
+    `SELECT id, name, service_type, phone, alternate_phone, address, city, province,
+            latitude, longitude, is_24_hours, is_active
      FROM public.emergency_services
      WHERE deleted_at IS NULL AND ${search.clause}
      ORDER BY name LIMIT $${search.nextIdx++} OFFSET $${search.nextIdx}`,
@@ -1010,9 +1011,128 @@ export async function listEmergencyServicesAdmin(opts: AdminListQuery) {
   );
 
   return {
-    services: rows.rows,
+    services: rows.rows.map(mapEmergencyServiceRow),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+function mapEmergencyServiceRow(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    name: row.name,
+    serviceType: row.service_type,
+    phone: row.phone,
+    alternatePhone: row.alternate_phone ?? null,
+    address: row.address ?? null,
+    city: row.city,
+    province: row.province,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    is24Hours: row.is_24_hours,
+    isActive: row.is_active,
+  };
+}
+
+export async function createEmergencyService(data: {
+  name: string;
+  serviceType: string;
+  phone: string;
+  alternatePhone?: string | null;
+  address?: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  is24Hours?: boolean;
+  isActive?: boolean;
+}) {
+  const result = await query(
+    `INSERT INTO public.emergency_services (
+       name, service_type, phone, alternate_phone, address, city, province,
+       latitude, longitude, is_24_hours, is_active
+     ) VALUES ($1, $2::public.emergency_service_type, $3, $4, $5, $6, $7::public.zimbabwe_province,
+               $8, $9, $10, $11)
+     RETURNING id, name, service_type, phone, alternate_phone, address, city, province,
+               latitude, longitude, is_24_hours, is_active`,
+    [
+      data.name.trim(),
+      data.serviceType,
+      data.phone.trim(),
+      data.alternatePhone?.trim() ?? null,
+      data.address?.trim() ?? null,
+      data.city.trim(),
+      data.province,
+      data.latitude,
+      data.longitude,
+      data.is24Hours ?? true,
+      data.isActive ?? true,
+    ],
+  );
+  return { service: mapEmergencyServiceRow(result.rows[0]) };
+}
+
+export async function updateEmergencyService(
+  id: string,
+  data: {
+    name?: string;
+    serviceType?: string;
+    phone?: string;
+    alternatePhone?: string | null;
+    address?: string | null;
+    city?: string;
+    province?: string;
+    latitude?: number;
+    longitude?: number;
+    is24Hours?: boolean;
+    isActive?: boolean;
+  },
+) {
+  const existing = await query(`SELECT id FROM public.emergency_services WHERE id = $1 AND deleted_at IS NULL`, [id]);
+  if (!existing.rows[0]) throw new NotFoundError('Emergency service', id);
+
+  const result = await query(
+    `UPDATE public.emergency_services SET
+       name = COALESCE($2, name),
+       service_type = COALESCE($3::public.emergency_service_type, service_type),
+       phone = COALESCE($4, phone),
+       alternate_phone = $5,
+       address = $6,
+       city = COALESCE($7, city),
+       province = COALESCE($8::public.zimbabwe_province, province),
+       latitude = COALESCE($9, latitude),
+       longitude = COALESCE($10, longitude),
+       is_24_hours = COALESCE($11, is_24_hours),
+       is_active = COALESCE($12, is_active),
+       updated_at = timezone('utc', now())
+     WHERE id = $1
+     RETURNING id, name, service_type, phone, alternate_phone, address, city, province,
+               latitude, longitude, is_24_hours, is_active`,
+    [
+      id,
+      data.name?.trim(),
+      data.serviceType,
+      data.phone?.trim(),
+      data.alternatePhone?.trim() ?? null,
+      data.address?.trim() ?? null,
+      data.city?.trim(),
+      data.province,
+      data.latitude,
+      data.longitude,
+      data.is24Hours,
+      data.isActive,
+    ],
+  );
+  return { service: mapEmergencyServiceRow(result.rows[0]) };
+}
+
+export async function deleteEmergencyService(id: string) {
+  const result = await query(
+    `UPDATE public.emergency_services SET deleted_at = timezone('utc', now())
+     WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+    [id],
+  );
+  if (!result.rows[0]) throw new NotFoundError('Emergency service', id);
+  return { id };
 }
 
 export async function listRevenueReports(user: AuthenticatedUser, opts: AdminListQuery) {

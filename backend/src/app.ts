@@ -68,8 +68,15 @@ export async function buildApp() {
 
   await app.register(rateLimit, {
     global: true,
-    max: env.RATE_LIMIT_MAX,
+    max:
+      process.env.ENVIRONMENT === 'local' || env.NODE_ENV === 'development'
+        ? 1000
+        : env.RATE_LIMIT_MAX,
     timeWindow: env.RATE_LIMIT_WINDOW_MS,
+    allowList: (request) => {
+      const path = request.url.split('?')[0];
+      return path === '/health' || path.endsWith('/health');
+    },
     addHeaders: {
       'x-ratelimit-limit': true,
       'x-ratelimit-remaining': true,

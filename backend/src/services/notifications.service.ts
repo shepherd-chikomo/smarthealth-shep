@@ -13,6 +13,7 @@ interface NotificationRow {
   action_url: string | null;
   payload: Record<string, unknown>;
   read_at: Date | null;
+  dismissed_at: Date | null;
   created_at: Date;
 }
 
@@ -27,6 +28,7 @@ function mapNotification(row: NotificationRow) {
     actionUrl: row.action_url,
     payload: row.payload,
     readAt: row.read_at?.toISOString() ?? null,
+    dismissedAt: row.dismissed_at?.toISOString() ?? null,
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -61,7 +63,7 @@ export async function listNotifications(
   const total = Number(countResult.rows[0]?.count ?? 0);
 
   const result = await query<NotificationRow>(
-    `SELECT id, title, body, channel, status, category::text, action_url, payload, read_at, created_at
+    `SELECT id, title, body, channel, status, category::text, action_url, payload, read_at, dismissed_at, created_at
      FROM public.notifications
      WHERE ${where}
      ORDER BY created_at DESC
@@ -80,7 +82,7 @@ export async function markNotificationRead(userId: string, notificationId: strin
     `UPDATE public.notifications
      SET read_at = timezone('utc', now()), status = 'read'
      WHERE id = $1 AND user_id = $2
-     RETURNING id, title, body, channel, status, category::text, action_url, payload, read_at, created_at`,
+     RETURNING id, title, body, channel, status, category::text, action_url, payload, read_at, dismissed_at, created_at`,
     [notificationId, userId],
   );
 
@@ -214,4 +216,34 @@ export async function getUnreadCount(userId: string): Promise<number> {
     [userId],
   );
   return Number(result.rows[0]?.count ?? 0);
+}
+
+export async function getActiveDashboardBanner(userId: string) {
+  const result = await query<NotificationRow>(
+    `SELECT id, title, body, channel, status, category::text, action_url, payload, read_at, dismissed_at, created_at
+     FROM public.notifications
+     WHERE user_id = $1
+       AND dismissed_at IS NULL
+       AND (payload->>'requiresDashboardDismiss')::boolean IS TRUE
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId],
+  );
+  const row = result.rows[0];
+  if (!row) return { banner: null };
+  return { banner: mapNotification(row) };
+}
+
+export async function dismissNotification(userId: string, notificationId: string) {
+  const result = await query<NotificationRow>(
+    `UPDATE public.notifications
+     SET dismissed_at = timezone('utc', now()),
+         read_at = COALESCE(read_at, timezone('utc', now())),
+         status = CASE WHEN status = 'pending' THEN 'read' ELSE status END
+     WHERE id = $1 AND user_id = $2
+     RETURNING id, title, body, channel, status, category::text, action_url, payload, read_at, dismissed_at, created_at`,
+    [notificationId, userId],
+  );
+  if (!result.rows[0]) throw new NotFoundError('Notification', notificationId);
+  return mapNotification(result.rows[0]);
 }

@@ -83,6 +83,60 @@ export interface ListParams {
   to?: string;
 }
 
+export interface EmergencyServiceRecord {
+  id: string;
+  name: string;
+  serviceType: string;
+  phone: string;
+  alternatePhone: string | null;
+  address: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  is24Hours: boolean;
+  isActive: boolean;
+}
+
+export interface EmergencyServiceInput {
+  name: string;
+  serviceType: string;
+  phone: string;
+  alternatePhone?: string | null;
+  address?: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  is24Hours?: boolean;
+  isActive?: boolean;
+}
+
+export interface PlatformBroadcast {
+  id: string;
+  title: string;
+  body: string;
+  actionUrl: string | null;
+  recipientCount: number;
+  createdAt: string;
+  createdByEmail: string | null;
+}
+
+export interface ImportReviewQueueItem {
+  id: string;
+  queueType: string;
+  facilityId: string | null;
+  facilityName: string | null;
+  facilityCity?: string | null;
+  providerId: string | null;
+  providerName: string | null;
+  registrationNumber: string | null;
+  rowNumber?: number | null;
+  rawData?: unknown;
+  notes: string | null;
+  createdAt?: string | null;
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/v1';
 
 import {
@@ -257,7 +311,35 @@ export const api = {
     request('/admin/hours', { method: 'PUT', body: JSON.stringify(body) }),
 
   emergencyServices: (params?: ListParams) =>
-    request<{ services: unknown[]; pagination: PaginationMeta }>(`/admin/content/emergency${qs(params)}`),
+    request<{ services: EmergencyServiceRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/emergency${qs(params)}`,
+    ),
+
+  createEmergencyService: (body: EmergencyServiceInput) =>
+    request<{ service: EmergencyServiceRecord }>('/admin/content/emergency', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateEmergencyService: (id: string, body: Partial<EmergencyServiceInput>) =>
+    request<{ service: EmergencyServiceRecord }>(`/admin/content/emergency/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteEmergencyService: (id: string) =>
+    request(`/admin/content/emergency/${id}`, { method: 'DELETE' }),
+
+  broadcastNotification: (body: { title: string; body: string; actionUrl?: string }) =>
+    request<{ broadcastId: string; recipientCount: number }>('/admin/notifications/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  listBroadcasts: (params?: ListParams) =>
+    request<{ broadcasts: PlatformBroadcast[]; pagination: PaginationMeta }>(
+      `/admin/notifications/broadcasts${qs(params)}`,
+    ),
 
   settings: (scope: string) =>
     request<{ settings: unknown[] }>(`/admin/content/settings/${scope}`),
@@ -385,23 +467,53 @@ export const api = {
     }>; pagination: PaginationMeta }>(`/admin/facilities${qs(params)}`),
 
   importReviewQueue: (params?: ListParams & { queueType?: string }) =>
-    request<{ items: Array<{
-      id: string;
-      queueType: string;
-      facilityId: string | null;
-      facilityName: string | null;
-      providerId: string | null;
-      providerName: string | null;
-      registrationNumber: string | null;
-      notes: string | null;
-    }>; pagination: PaginationMeta }>(`/admin/import-review-queue${qs(params)}`),
+    request<{ items: ImportReviewQueueItem[]; pagination: PaginationMeta }>(
+      `/admin/import-review-queue${qs(params)}`,
+    ),
+
+  getImportReviewQueueItem: (id: string) =>
+    request<{ item: ImportReviewQueueItem }>(`/admin/import-review-queue/${id}`),
 
   associatePractitioner: (body: { facilityId: string; providerId: string; queueItemId?: string }) =>
     request('/admin/facilities/associate', { method: 'POST', body: JSON.stringify(body) }),
 
+  resolveAmbiguousFacility: (body: {
+    queueItemId: string;
+    mode: 'merged' | 'distinct';
+    facilityName?: string;
+    address?: string;
+    city?: string;
+    practitionerFirstName?: string;
+    practitionerLastName?: string;
+  }) =>
+    request('/admin/facilities/resolve-ambiguous', { method: 'POST', body: JSON.stringify(body) }),
+
+  resolveUnlinkedPractitioner: (
+    id: string,
+    body: { action: 'associate' | 'no_link'; facilityId?: string; reason?: string },
+  ) =>
+    request(`/admin/import-review-queue/${id}/resolve-unlinked`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  resolveNoEmailPractitioner: (
+    id: string,
+    body: { action: 'set_email' | 'manual_claim_only'; email?: string; notes?: string },
+  ) =>
+    request(`/admin/import-review-queue/${id}/resolve-no-email`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   searchProvidersForAssociation: (params?: ListParams) =>
     request<{ providers: Array<{ id: string; name: string; registrationNumber: string | null }> }>(
       `/admin/providers/search-for-association${qs(params)}`,
+    ),
+
+  searchFacilitiesForAssociation: (params?: ListParams) =>
+    request<{ facilities: Array<{ id: string; name: string; city: string | null; address: string | null }> }>(
+      `/admin/facilities/search-for-association${qs(params)}`,
     ),
 
   registryDiffRuns: (params?: ListParams) =>
@@ -440,5 +552,13 @@ export const api = {
       submitterName: string | null;
       submitterEmail: string | null;
       status: string;
+      providerName?: string | null;
+      mdpczNotes?: string | null;
     }> }>(`/admin/manual-validation${qs(params)}`),
+
+  approveManualValidation: (id: string, body: { claimantId: string; mdpczNotes?: string }) =>
+    request(`/admin/manual-validation/${id}/approve`, { method: 'POST', body: JSON.stringify(body) }),
+
+  rejectManualValidation: (id: string, body?: { mdpczNotes?: string }) =>
+    request(`/admin/manual-validation/${id}/reject`, { method: 'POST', body: JSON.stringify(body ?? {}) }),
 };

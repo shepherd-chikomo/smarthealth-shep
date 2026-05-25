@@ -108,6 +108,43 @@ export const notificationsRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => notificationsService.markAllNotificationsRead(request.user!.id),
   );
 
+  app.get(
+    '/notifications/dashboard-banner',
+    {
+      schema: {
+        tags: ['Notifications'],
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: z.object({
+            banner: notificationSchema.extend({
+              dismissedAt: z.string().nullable().optional(),
+            }).nullable(),
+          }),
+        },
+      },
+    },
+    async (request) => notificationsService.getActiveDashboardBanner(request.user!.id),
+  );
+
+  app.patch(
+    '/notifications/:id/dismiss',
+    {
+      schema: {
+        tags: ['Notifications'],
+        summary: 'Dismiss dashboard banner notification',
+        security: [{ bearerAuth: [] }],
+        params: z.object({ id: z.string().uuid() }),
+        response: { 200: z.object({ notification: notificationSchema }) },
+      },
+    },
+    async (request) => ({
+      notification: await notificationsService.dismissNotification(
+        request.user!.id,
+        request.params.id,
+      ),
+    }),
+  );
+
   app.patch(
     '/notifications/:id/read',
     {

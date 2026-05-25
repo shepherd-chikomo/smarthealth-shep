@@ -12,6 +12,7 @@ import {
 import { createSpecialtyMapper, loadSpecialtyData } from './specialty_mapper.js';
 import { generateProviderSlug, ensureUniqueSlug } from './generate_slugs.js';
 import { query } from './db.js';
+import { fetchImportResolutionRule } from './import_resolution_rules.js';
 import type { RawSpreadsheetRow, NormalizedProvider } from './types.js';
 
 export interface MdpczPractitionerRow {
@@ -251,13 +252,22 @@ export async function importMdpczPractitioners(
     }
 
     if (!row.email) {
-      noEmail++;
-      await client.query(
-        `INSERT INTO public.import_review_queue (
-           queue_type, provider_id, import_batch_id, row_number, raw_data, notes
-         ) VALUES ('no_email_practitioner', $1, $2, $3, $4, 'No email — manual claim only')`,
-        [providerId, batchId, row.rowNumber, JSON.stringify(row.raw)],
-      );
+      const emailRule = await fetchImportResolutionRule(client, 'provider_email_override', row.registryKey);
+      const manualRule = await fetchImportResolutionRule(client, 'provider_manual_claim_allowed', row.registryKey);
+      if (emailRule?.payload?.email) {
+        await client.query(`UPDATE public.providers SET email = $2 WHERE id = $1`, [
+          providerId,
+          String(emailRule.payload.email),
+        ]);
+      } else if (!manualRule) {
+        noEmail++;
+        await client.query(
+          `INSERT INTO public.import_review_queue (
+             queue_type, provider_id, import_batch_id, row_number, raw_data, notes
+           ) VALUES ('no_email_practitioner', $1, $2, $3, $4, 'No email — manual claim only')`,
+          [providerId, batchId, row.rowNumber, JSON.stringify(row.raw)],
+        );
+      }
     }
   }
 

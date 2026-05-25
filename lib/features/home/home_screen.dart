@@ -13,6 +13,7 @@ import 'package:smarthealth_shep/features/home/widgets/home_header_card.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.dart';
 import 'package:smarthealth_shep/features/home/widgets/service_category_grid.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
+import 'package:smarthealth_shep/features/notifications/widgets/home_broadcast_banner.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/queue_card.dart';
@@ -42,7 +43,9 @@ class _HomeDashboardView extends ConsumerWidget {
 
     return AppShellScaffold(
       backgroundColor: HomeDashboardColors.background,
-      body: MedicalTextureBackground(
+      body: Stack(
+        children: [
+          MedicalTextureBackground(
         baseColor: HomeDashboardColors.background,
         patternOpacity: HomeDashboardColors.textureOpacityBody,
         child: BlocBuilder<HomeBloc, HomeState>(
@@ -125,6 +128,9 @@ class _HomeDashboardView extends ConsumerWidget {
             );
           },
         ),
+      ),
+          const HomeBroadcastBanner(),
+        ],
       ),
     );
   }

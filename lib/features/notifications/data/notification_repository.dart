@@ -97,6 +97,33 @@ class NotificationRepository {
     }
   }
 
+  Future<AppNotification?> fetchDashboardBanner() async {
+    if (_mockEnabled) return null;
+
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/notifications/dashboard-banner',
+      );
+      final raw = response.data?['banner'];
+      if (raw == null) return null;
+      return AppNotification.fromJson(raw as Map<String, dynamic>);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('NotificationRepository.fetchDashboardBanner failed: $error');
+      }
+      return null;
+    }
+  }
+
+  Future<void> dismissNotification(String id) async {
+    if (_mockEnabled) {
+      MockNotifications.markRead(id);
+      return;
+    }
+
+    await _dio.patch('/notifications/$id/dismiss');
+  }
+
   Future<void> markAllRead() async {
     if (_mockEnabled) {
       MockNotifications.markAllRead();
