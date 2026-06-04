@@ -68,7 +68,7 @@ export function PractitionerClaimWizard() {
         );
       }
 
-      if (status.phase === 'ready') {
+      if (status.phase === 'has_facilities') {
         setStep('complete');
       } else {
         setStep('facilities');
@@ -185,7 +185,7 @@ export function PractitionerClaimWizard() {
         setProviderName(status.provider?.name ?? '');
         setProviderSpecialty(status.provider?.specialty ?? null);
         if (status.linkedFacilities) setLinkedFacilities(status.linkedFacilities);
-        setStep(status.phase === 'ready' ? 'complete' : 'facilities');
+        setStep(status.phase === 'has_facilities' ? 'complete' : 'facilities');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
@@ -206,7 +206,7 @@ export function PractitionerClaimWizard() {
         ),
       );
       const status = await claimApi.onboardingStatus();
-      if (status.phase === 'ready') {
+      if (status.phase === 'has_facilities') {
         setStep('complete');
       }
     } catch (err) {

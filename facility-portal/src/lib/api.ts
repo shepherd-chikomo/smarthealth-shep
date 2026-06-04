@@ -205,7 +205,8 @@ export const api = {
       fid,
     ),
 
-  queueStats: (fid: string) => request<{ stats: Record<string, unknown> }>(`/facility/queue/stats`, fid),
+  queueStats: (fid: string) =>
+    request<{ stats: Record<string, unknown>; paused: boolean }>(`/facility/queue/stats`, fid),
 
   registerWalkIn: (fid: string, body: Record<string, unknown>) =>
     request(`/facility/queue/walk-in`, fid, { method: 'POST', body: JSON.stringify(body) }),
