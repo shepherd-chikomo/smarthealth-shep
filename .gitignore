@@ -47,6 +47,7 @@ app.*.map.json
 !supabase/env/.env.local.example
 !supabase/env/.env.staging.example
 !supabase/env/.env.production.example
+!docker/.env.example
 
 # Backups
 backups/
