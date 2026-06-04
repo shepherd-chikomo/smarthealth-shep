@@ -287,9 +287,13 @@ export async function updateFacilityProfile(
 
 export async function listDoctors(user: AuthenticatedUser, facilityId: string, opts: AdminListQuery) {
   await assertFacilityAccess(user, facilityId);
+  // A provider belongs to this facility's roster if it is either homed here
+  // (providers.facility_id) or affiliated via provider_facility_links. The
+  // per-facility is_active / is_accepting_bookings flags come from the link
+  // (falling back to the provider-level defaults for manually-added doctors).
   const params: unknown[] = [facilityId];
   let idx = 2;
-  const conditions = ['p.facility_id = $1', 'p.is_active = true'];
+  const conditions = ['(p.facility_id = $1 OR pfl.facility_id = $1)', 'p.is_active = true'];
 
   const search = buildSearchClause(['p.name', 'p.specialty', 'p.mdpcz_number'], opts.q, params, idx);
   idx = search.nextIdx;
@@ -299,19 +303,27 @@ export async function listDoctors(user: AuthenticatedUser, facilityId: string, o
   const offset = adminOffset(opts.page, opts.limit);
 
   const count = await query<{ count: string }>(
-    `SELECT COUNT(*)::text AS count FROM public.providers p WHERE ${where}`,
+    `SELECT COUNT(DISTINCT p.id)::text AS count
+     FROM public.providers p
+     LEFT JOIN public.provider_facility_links pfl
+       ON pfl.provider_id = p.id AND pfl.facility_id = $1
+     WHERE ${where}`,
     params,
   );
 
   const rows = await query(
     `SELECT p.id, p.name, p.specialty, p.mdpcz_number, p.phone, p.email,
-            p.is_verified, p.is_accepting_bookings, p.created_at,
+            p.is_verified, p.created_at,
+            COALESCE(pfl.is_accepting_bookings, p.is_accepting_bookings) AS is_accepting_bookings,
+            COALESCE(pfl.is_active, p.is_active) AS facility_is_active,
             COALESCE(AVG(r.rating), 0) AS avg_rating,
             COUNT(r.id)::int AS review_count
      FROM public.providers p
+     LEFT JOIN public.provider_facility_links pfl
+       ON pfl.provider_id = p.id AND pfl.facility_id = $1
      LEFT JOIN public.provider_reviews r ON r.provider_id = p.id
      WHERE ${where}
-     GROUP BY p.id
+     GROUP BY p.id, pfl.is_accepting_bookings, pfl.is_active
      ORDER BY p.name ASC
      LIMIT $${idx++} OFFSET $${idx}`,
     [...params, opts.limit, offset],
@@ -326,6 +338,7 @@ export async function listDoctors(user: AuthenticatedUser, facilityId: string, o
       phone: r.phone,
       email: r.email,
       isVerified: r.is_verified,
+      isActive: r.facility_is_active,
       isAcceptingBookings: r.is_accepting_bookings,
       avgRating: Number(r.avg_rating),
       reviewCount: r.review_count,
@@ -333,6 +346,115 @@ export async function listDoctors(user: AuthenticatedUser, facilityId: string, o
     })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+function normalizeRegistrationNumber(value: string): string {
+  return value.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+/**
+ * Look up a provider already in the registry (e.g. MDPCZ) by registration /
+ * MDPCZ number so a facility admin can attach the existing record instead of
+ * creating a duplicate.
+ */
+export async function lookupRegisteredProvider(
+  user: AuthenticatedUser,
+  facilityId: string,
+  mdpczNumber: string,
+) {
+  await requireFacilityAdmin(user, facilityId);
+  const reg = normalizeRegistrationNumber(mdpczNumber);
+  if (!reg) return { found: false as const };
+
+  const result = await query<{
+    id: string;
+    name: string;
+    specialty: string | null;
+    registration_number: string | null;
+    mdpcz_number: string | null;
+    phone: string | null;
+    email: string | null;
+    is_active: boolean;
+    facility_id: string | null;
+  }>(
+    `SELECT id, name, specialty, registration_number, mdpcz_number, phone, email, is_active, facility_id
+     FROM public.providers
+     WHERE (UPPER(REPLACE(registration_number, ' ', '')) = $1
+            OR UPPER(REPLACE(mdpcz_number, ' ', '')) = $1)
+       AND deleted_at IS NULL
+     ORDER BY is_active DESC, created_at ASC
+     LIMIT 1`,
+    [reg],
+  );
+
+  const p = result.rows[0];
+  if (!p) return { found: false as const };
+
+  const link = await query<{ exists: boolean }>(
+    `SELECT EXISTS(
+       SELECT 1 FROM public.provider_facility_links WHERE provider_id = $1 AND facility_id = $2
+     ) AS exists`,
+    [p.id, facilityId],
+  );
+  const alreadyAtFacility = p.facility_id === facilityId || Boolean(link.rows[0]?.exists);
+
+  return {
+    found: true as const,
+    provider: {
+      id: p.id,
+      name: p.name,
+      specialty: p.specialty,
+      mdpczNumber: p.mdpcz_number ?? p.registration_number,
+      phone: p.phone,
+      email: p.email,
+      isActive: p.is_active,
+      alreadyAtFacility,
+    },
+  };
+}
+
+/**
+ * Attach an existing registry provider to this facility: assign the facility as
+ * its operational home (so it appears in the roster, hours, availability, etc.)
+ * and record an `affiliated` registry link. Never creates a duplicate.
+ */
+export async function attachDoctor(
+  user: AuthenticatedUser,
+  facilityId: string,
+  providerId: string,
+) {
+  await requireFacilityAdmin(user, facilityId);
+
+  const existing = await query<{ id: string; facility_id: string | null }>(
+    `SELECT id, facility_id FROM public.providers WHERE id = $1 AND deleted_at IS NULL`,
+    [providerId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Provider', providerId);
+
+  await withTransaction(async (client) => {
+    // Keep the provider's existing home facility (don't move them); only fill it
+    // in if they have none. The many-to-many link is the source of truth for
+    // "works at this facility".
+    await client.query(
+      `UPDATE public.providers SET
+         facility_id = COALESCE(facility_id, $2),
+         tenant_id = COALESCE(tenant_id, $2),
+         is_active = true,
+         updated_at = now()
+       WHERE id = $1`,
+      [providerId, facilityId],
+    );
+    await client.query(
+      `INSERT INTO public.provider_facility_links (
+         provider_id, facility_id, link_type, is_primary, match_confidence,
+         is_active, is_accepting_bookings
+       ) VALUES ($1, $2, 'affiliated', false, 'HIGH', true, true)
+       ON CONFLICT (provider_id, facility_id) DO UPDATE SET is_active = true`,
+      [providerId, facilityId],
+    );
+  });
+
+  return { id: providerId, attached: true };
 }
 
 export async function createDoctor(
@@ -348,6 +470,23 @@ export async function createDoctor(
   },
 ) {
   await requireFacilityAdmin(user, facilityId);
+
+  // If the MDPCZ number matches an existing registry record, attach it instead
+  // of creating a duplicate provider row.
+  if (data.mdpczNumber && data.mdpczNumber.trim()) {
+    const reg = normalizeRegistrationNumber(data.mdpczNumber);
+    const existing = await query<{ id: string }>(
+      `SELECT id FROM public.providers
+       WHERE (UPPER(REPLACE(registration_number, ' ', '')) = $1
+              OR UPPER(REPLACE(mdpcz_number, ' ', '')) = $1)
+         AND deleted_at IS NULL
+       LIMIT 1`,
+      [reg],
+    );
+    if (existing.rows[0]) {
+      return attachDoctor(user, facilityId, existing.rows[0].id);
+    }
+  }
 
   const result = await query(
     `INSERT INTO public.providers (
@@ -365,7 +504,7 @@ export async function createDoctor(
     ],
   );
 
-  return { id: result.rows[0].id };
+  return { id: result.rows[0].id, attached: false };
 }
 
 export async function updateDoctor(
@@ -384,32 +523,70 @@ export async function updateDoctor(
 ) {
   await requireFacilityAdmin(user, facilityId);
 
-  const result = await query(
-    `UPDATE public.providers SET
-       name = COALESCE($3, name),
-       specialty = COALESCE($4, specialty),
-       mdpcz_number = COALESCE($5, mdpcz_number),
-       phone = COALESCE($6, phone),
-       email = COALESCE($7, email),
-       is_accepting_bookings = COALESCE($8, is_accepting_bookings),
-       is_active = COALESCE($9, is_active),
-       updated_at = now()
-     WHERE id = $2 AND facility_id = $1
-     RETURNING id`,
-    [
-      facilityId,
-      doctorId,
-      data.name ?? null,
-      data.specialty ?? null,
-      data.mdpczNumber ?? null,
-      data.phone ?? null,
-      data.email ?? null,
-      data.isAcceptingBookings ?? null,
-      data.isActive ?? null,
-    ],
+  // The provider must belong to this facility's roster (homed here or linked).
+  const assoc = await query<{ id: string }>(
+    `SELECT p.id
+     FROM public.providers p
+     LEFT JOIN public.provider_facility_links pfl
+       ON pfl.provider_id = p.id AND pfl.facility_id = $1
+     WHERE p.id = $2 AND (p.facility_id = $1 OR pfl.facility_id = $1)
+       AND p.deleted_at IS NULL
+     LIMIT 1`,
+    [facilityId, doctorId],
   );
+  if (!assoc.rows[0]) throw new NotFoundError('Doctor', doctorId);
 
-  if (!result.rows[0]) throw new NotFoundError('Doctor', doctorId);
+  const hasShared =
+    data.name !== undefined ||
+    data.specialty !== undefined ||
+    data.mdpczNumber !== undefined ||
+    data.phone !== undefined ||
+    data.email !== undefined;
+  const hasPerFacility = data.isAcceptingBookings !== undefined || data.isActive !== undefined;
+
+  await withTransaction(async (client) => {
+    // Shared attributes live on the provider record (apply to all facilities).
+    if (hasShared) {
+      await client.query(
+        `UPDATE public.providers SET
+           name = COALESCE($2, name),
+           specialty = COALESCE($3, specialty),
+           mdpcz_number = COALESCE($4, mdpcz_number),
+           phone = COALESCE($5, phone),
+           email = COALESCE($6, email),
+           updated_at = now()
+         WHERE id = $1`,
+        [
+          doctorId,
+          data.name ?? null,
+          data.specialty ?? null,
+          data.mdpczNumber ?? null,
+          data.phone ?? null,
+          data.email ?? null,
+        ],
+      );
+    }
+
+    // Active / accepting-bookings state is per-facility, stored on the link.
+    if (hasPerFacility) {
+      await client.query(
+        `INSERT INTO public.provider_facility_links (
+           provider_id, facility_id, link_type, is_primary, match_confidence,
+           is_active, is_accepting_bookings
+         ) VALUES ($1, $2, 'affiliated', false, 'HIGH', true, true)
+         ON CONFLICT (provider_id, facility_id) DO NOTHING`,
+        [doctorId, facilityId],
+      );
+      await client.query(
+        `UPDATE public.provider_facility_links SET
+           is_active = COALESCE($3, is_active),
+           is_accepting_bookings = COALESCE($4, is_accepting_bookings)
+         WHERE provider_id = $1 AND facility_id = $2`,
+        [doctorId, facilityId, data.isActive ?? null, data.isAcceptingBookings ?? null],
+      );
+    }
+  });
+
   return { id: doctorId };
 }
 
@@ -476,7 +653,11 @@ export async function listProviderAvailability(
 ) {
   await assertFacilityAccess(user, facilityId);
   const params: unknown[] = [facilityId];
-  let clause = 'p.facility_id = $1';
+  let clause =
+    `(p.facility_id = $1 OR EXISTS (
+        SELECT 1 FROM public.provider_facility_links pfl
+        WHERE pfl.provider_id = p.id AND pfl.facility_id = $1
+      ))`;
   if (providerId) {
     params.push(providerId);
     clause += ` AND p.id = $${params.length}`;
@@ -504,7 +685,12 @@ export async function upsertProviderAvailability(
   await requireFacilityAdmin(user, facilityId);
 
   const check = await query(
-    `SELECT id FROM public.providers WHERE id = $1 AND facility_id = $2`,
+    `SELECT p.id FROM public.providers p
+     WHERE p.id = $1
+       AND (p.facility_id = $2 OR EXISTS (
+         SELECT 1 FROM public.provider_facility_links pfl
+         WHERE pfl.provider_id = p.id AND pfl.facility_id = $2
+       ))`,
     [providerId, facilityId],
   );
   if (!check.rows[0]) throw new NotFoundError('Doctor', providerId);

@@ -24,8 +24,11 @@ abstract final class AppAssets {
   static const appIcon = 'assets/icon/app_icon.png';
   static const appIconForeground = 'assets/icon/app_icon_foreground.png';
   static const splashLogo = 'assets/icon/splash_logo.png';
+  static const splashFullScreen = 'assets/splash/myhealth_splash_full.png';
+  static const splashBootNative = 'assets/splash/myhealth_boot_native.png';
   static const headerLogo = 'assets/icon/header_logo.png';
   static const headerLogoSvg = 'assets/icon/header_logo.svg';
+  static const headerCrossLogo = 'assets/icon/myhealth_header_cross.png';
 
   // Placeholders
   static const avatarPlaceholder =
@@ -33,15 +36,15 @@ abstract final class AppAssets {
   static const providerPlaceholder =
       'assets/images/placeholders/provider_placeholder.jpg';
 
-  // Category icons
-  static const categoryNearMe = 'assets/icons/categories/near_me.svg';
-  static const categoryGp = 'assets/icons/categories/gp.svg';
-  static const categoryDentist = 'assets/icons/categories/dentist.svg';
-  static const categoryPharmacy = 'assets/icons/categories/pharmacy.svg';
-  static const categoryLab = 'assets/icons/categories/lab.svg';
-  static const categoryPediatric = 'assets/icons/categories/pediatric.svg';
+  // Category icons (approved home mockup — colorful raster)
+  static const categoryNearMe = 'assets/icons/categories/near_me.png';
+  static const categoryGp = 'assets/icons/categories/gp.png';
+  static const categoryDentist = 'assets/icons/categories/dentist.png';
+  static const categoryPharmacy = 'assets/icons/categories/pharmacy.png';
+  static const categoryLab = 'assets/icons/categories/lab.png';
+  static const categoryPediatric = 'assets/icons/categories/pediatric.png';
   static const categorySpecialist =
-      'assets/icons/categories/specialist.svg';
+      'assets/icons/categories/specialist.png';
   static const categoryEmergency =
       'assets/icons/categories/emergency.svg';
 

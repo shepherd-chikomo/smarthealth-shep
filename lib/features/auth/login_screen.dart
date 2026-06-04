@@ -111,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 32),
                 Text(
-                  'Sign in to SmartHealth',
+                  'Sign in to MyHealth',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: HomeDashboardColors.textPrimary,

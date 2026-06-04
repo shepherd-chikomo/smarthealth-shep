@@ -20,7 +20,7 @@ class MedicalTextureBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: baseColor ?? const Color(0xFFD8D9DB),
+      color: baseColor ?? const Color(0xFFF0F1F3),
       child: CustomPaint(
         painter: _MedicalTexturePainter(
           color: (patternColor ?? const Color(0xFF9AA0A8))

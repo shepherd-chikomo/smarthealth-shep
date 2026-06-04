@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { env } from '../config.js';
-import { requireAdminAuth, requireStaffAuth, requireSuperAdminAuth } from '../plugins/admin-guard.js';
+import { requireStaffAuth, requireSuperAdminAuth } from '../plugins/admin-guard.js';
 import { requireFacilityStaffAuth } from '../plugins/facility-guard.js';
 import * as analytics from '../services/analytics.service.js';
 

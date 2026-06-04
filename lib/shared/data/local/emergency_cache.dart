@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_facility.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_hub_data.dart';
@@ -38,7 +39,14 @@ class EmergencyCache {
         // fall through to hardcoded fallback
       }
     }
-    return EmergencyFallbackData.hub();
+    if (AppConfig.allowMockFallbacks) {
+      return EmergencyFallbackData.hub();
+    }
+    return EmergencyHubData(
+      services: const [],
+      facilities: const [],
+      cachedAt: DateTime.now(),
+    );
   }
 
   List<EmergencyFacility> readFacilities() => readHub().facilities;

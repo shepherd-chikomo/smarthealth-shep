@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "SmartHealth",
+  "appTitle": "MyHealth",
   "@appTitle": {
     "description": "Application title"
   },
@@ -8,7 +8,8 @@
   "@offlineBannerMessage": {
     "description": "Persistent banner when device has no connectivity"
   },
-  "homeWelcome": "Welcome to SmartHealth",
+  "homeWelcome": "Welcome to MyHealth",
+  "homePoweredBySmartHealth": "Powered by SmartHealth",
   "splashLoading": "Loading…",
   "navHome": "Home",
   "navSearch": "Search",

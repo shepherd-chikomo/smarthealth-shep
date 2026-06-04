@@ -8,6 +8,11 @@ import 'package:smarthealth_shep/features/home/bloc/home_bloc.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
+import 'package:flutter/foundation.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/location/location_providers.dart';
+import 'package:smarthealth_shep/shared/data/category_repository.dart';
+import 'package:smarthealth_shep/shared/data/facility_repository.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_header_card.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.dart';
@@ -19,16 +24,23 @@ import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/queue_card.dart';
 import 'package:smarthealth_shep/shared/widgets/medical_texture_background.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
-import 'package:smarthealth_shep/shared/widgets/provider_card.dart';
+import 'package:smarthealth_shep/shared/models/service_category_model.dart';
+import 'package:smarthealth_shep/shared/widgets/facility_card.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nearMeLabel = AppLocalizations.of(context).homeCategoryNearMe;
     return BlocProvider(
-      create: (_) => HomeBloc(repository: HomeRepository())
-        ..add(const LoadHomeData()),
+      create: (_) => HomeBloc(
+        repository: HomeRepository(
+          facilityRepository: ref.read(facilityRepositoryProvider),
+          searchOrigin: ref.read(searchOriginResolverProvider),
+        ),
+        categoryRepository: ref.read(categoryRepositoryProvider),
+      )..add(LoadHomeData(nearMeLabel: nearMeLabel)),
       child: const _HomeDashboardView(),
     );
   }
@@ -79,17 +91,8 @@ class _HomeDashboardView extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ServiceCategoryGrid(
+                            categories: _categoriesFromState(state),
                             selectedId: _categoryFromState(state),
-                            labels: _categoryLabels(l10n),
-                          ),
-                          const SizedBox(height: 16),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _EmergencyBanner(
-                              title: l10n.homeEmergencyTitle,
-                              subtitle: l10n.homeEmergencySubtitle,
-                              onTap: () => context.go('/emergency'),
-                            ),
                           ),
                           if (_activeQueueFromState(state) != null) ...[
                             const SizedBox(height: 16),
@@ -106,11 +109,12 @@ class _HomeDashboardView extends ConsumerWidget {
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: HomeUpcomingAppointmentBanner(),
                           ),
+                          if (kDebugMode) _HomeDebugStatus(state: state),
                           const SizedBox(height: 20),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: _SectionHeader(
-                              title: l10n.homeNearbyProviders,
+                              title: l10n.homeNearbyFacilities,
                               trailing: TextButton(
                                 onPressed: () => context.go('/search'),
                                 child: Text(l10n.homeSeeAll),
@@ -154,14 +158,13 @@ class _HomeDashboardView extends ConsumerWidget {
         _ => null,
       };
 
-  Map<String, String> _categoryLabels(AppLocalizations l10n) => {
-        'nearMe': l10n.homeCategoryNearMe,
-        'general': l10n.homeCategoryGeneral,
-        'dental': l10n.homeCategoryDental,
-        'pharmacy': l10n.homeCategoryPharmacy,
-        'lab': l10n.homeCategoryLaboratory,
-        'pediatrics': l10n.homeCategoryPediatrics,
-        'specialist': l10n.homeCategorySpecialists,
+  List<ServiceCategoryModel> _categoriesFromState(HomeState state) =>
+      switch (state) {
+        HomeLoading(:final categories) => categories,
+        HomeLoaded(:final categories) => categories,
+        HomeOffline(:final categories) => categories,
+        HomeError(:final categories) => categories,
+        _ => const [],
       };
 
   Future<void> _showCityPicker(BuildContext context, HomeState state) async {
@@ -225,9 +228,9 @@ class _HomeDashboardView extends ConsumerWidget {
     }
 
     if (state is HomeLoaded || state is HomeOffline) {
-      final providers = state is HomeLoaded
-          ? state.visibleProviders
-          : (state as HomeOffline).visibleProviders;
+      final facilities = state is HomeLoaded
+          ? state.visibleFacilities
+          : (state as HomeOffline).visibleFacilities;
       final isRefreshing = state is HomeLoaded && state.isRefreshing;
 
       return [
@@ -240,27 +243,29 @@ class _HomeDashboardView extends ConsumerWidget {
           ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          sliver: providers.isEmpty
+          sliver: facilities.isEmpty
               ? SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(
-                      AppLocalizations.of(context).homeNoProviders,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: HomeDashboardColors.textSecondary,
-                      ),
+                    child: _HomeEmptyFacilities(
+                      state: state,
+                      onRetry: () => context
+                          .read<HomeBloc>()
+                          .add(const RefreshHomeData()),
+                      onClearCategory: () => context
+                          .read<HomeBloc>()
+                          .add(const SelectHomeCategory(null)),
                     ),
                   ),
                 )
               : SliverList.separated(
-                  itemCount: providers.length,
+                  itemCount: facilities.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final provider = providers[index];
-                    return ProviderCard(
-                      provider: provider,
-                      onTap: () => context.push('/provider/${provider.id}'),
+                    final facility = facilities[index];
+                    return FacilityCard(
+                      facility: facility,
+                      onTap: () => context.push('/facility/${facility.id}'),
                     );
                   },
                 ),
@@ -302,77 +307,122 @@ class _ActiveQueueBanner extends StatelessWidget {
   }
 }
 
-class _EmergencyBanner extends StatelessWidget {
-  const _EmergencyBanner({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class _HomeDebugStatus extends StatelessWidget {
+  const _HomeDebugStatus({required this.state});
 
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
+  final HomeState state;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: title,
-      child: Material(
-        color: HomeDashboardColors.emergency,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Symbols.emergency,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.9),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Symbols.chevron_right,
-                  color: Colors.white.withValues(alpha: 0.95),
-                ),
-              ],
-            ),
-          ),
+    final count = switch (state) {
+      HomeLoaded(:final facilities) => facilities.length,
+      HomeOffline(:final facilities) => facilities.length,
+      _ => 0,
+    };
+    final filter = _categoryFromState(state) ?? 'near_me';
+    final error = switch (state) {
+      HomeLoaded(:final loadError) => loadError,
+      _ => null,
+    };
+
+    final categoryCount = switch (state) {
+      HomeLoading(:final categories) => categories.length,
+      HomeLoaded(:final categories) => categories.length,
+      HomeOffline(:final categories) => categories.length,
+      HomeError(:final categories) => categories.length,
+      _ => 0,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Text(
+        'API: ${AppConfig.apiBaseUrl}\n'
+        'Loaded: $count · categories: $categoryCount · filter: $filter'
+        '${error != null ? '\n$error' : ''}',
+        style: const TextStyle(
+          fontSize: 10,
+          color: HomeDashboardColors.textSecondary,
         ),
       ),
+    );
+  }
+
+  String? _categoryFromState(HomeState state) => switch (state) {
+        HomeLoaded(:final selectedCategoryId) => selectedCategoryId,
+        HomeOffline(:final selectedCategoryId) => selectedCategoryId,
+        _ => null,
+      };
+}
+
+class _HomeEmptyFacilities extends StatelessWidget {
+  const _HomeEmptyFacilities({
+    required this.state,
+    required this.onRetry,
+    required this.onClearCategory,
+  });
+
+  final HomeState state;
+  final VoidCallback onRetry;
+  final VoidCallback onClearCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final total = switch (state) {
+      HomeLoaded(:final facilities) => facilities.length,
+      HomeOffline(:final facilities) => facilities.length,
+      _ => 0,
+    };
+    final filter = switch (state) {
+      HomeLoaded(:final selectedCategoryId) => selectedCategoryId,
+      HomeOffline(:final selectedCategoryId) => selectedCategoryId,
+      _ => null,
+    };
+    final loadError = switch (state) {
+      HomeLoaded(:final loadError) => loadError,
+      _ => null,
+    };
+
+    if (total > 0 && filter != null && filter != 'near_me') {
+      return Column(
+        children: [
+          Text(
+            l10n.homeNoProviders,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: HomeDashboardColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onClearCategory,
+            child: const Text('Show all nearby'),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Text(
+          loadError != null
+              ? 'Could not reach the server.\n${AppConfig.apiBaseUrl}'
+              : l10n.homeNoProviders,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: HomeDashboardColors.textSecondary),
+        ),
+        if (loadError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            loadError,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              color: HomeDashboardColors.textSecondary,
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        PrimaryButton(label: l10n.homeRetry, onPressed: onRetry),
+      ],
     );
   }
 }
@@ -441,8 +491,9 @@ class _HomeErrorView extends StatelessWidget {
           const SizedBox(height: 24),
           PrimaryButton(
             label: l10n.homeRetry,
-            onPressed: () =>
-                context.read<HomeBloc>().add(const LoadHomeData()),
+            onPressed: () => context
+                .read<HomeBloc>()
+                .add(const RefreshHomeData()),
           ),
         ],
       ),

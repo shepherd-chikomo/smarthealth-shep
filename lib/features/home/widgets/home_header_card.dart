@@ -7,7 +7,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/notifications/widgets/notification_bell_button.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/medical_texture_background.dart';
-import 'package:smarthealth_shep/shared/widgets/smarthealth_header_logo.dart';
+import 'package:smarthealth_shep/shared/widgets/my_health_header_brand.dart';
 
 class HomeHeaderCard extends ConsumerWidget {
   const HomeHeaderCard({
@@ -32,7 +32,7 @@ class HomeHeaderCard extends ConsumerWidget {
       orElse: () => null,
     );
 
-    final logoWidth = MediaQuery.sizeOf(context).width * 0.5;
+    final wordmarkWidth = MediaQuery.sizeOf(context).width * 0.42;
 
     return ClipRRect(
       borderRadius: const BorderRadius.only(
@@ -58,7 +58,10 @@ class HomeHeaderCard extends ConsumerWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Center(
-                    child: SmartHealthHeaderLogo(width: logoWidth),
+                    child: MyHealthHeaderBrand(
+                      wordmarkWidth: wordmarkWidth,
+                      poweredByText: l10n.homePoweredBySmartHealth,
+                    ),
                   ),
                   Align(
                     alignment: Alignment.centerRight,

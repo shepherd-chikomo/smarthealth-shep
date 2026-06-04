@@ -46,7 +46,9 @@ export const facilitiesRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Facilities'],
         summary: 'Find nearby facilities',
-        querystring: paginationQuerySchema.merge(geoQuerySchema),
+        querystring: paginationQuerySchema
+          .merge(geoQuerySchema)
+          .extend({ facilityType: z.string().optional() }),
         response: {
           200: z.object({
             facilities: z.array(facilitySchema),
@@ -56,8 +58,15 @@ export const facilitiesRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => {
-      const { page, limit, lat, lon, radiusKm } = request.query;
-      return facilitiesService.nearbyFacilities({ page, limit, lat, lon, radiusKm });
+      const { page, limit, lat, lon, radiusKm, facilityType } = request.query;
+      return facilitiesService.nearbyFacilities({
+        page,
+        limit,
+        lat,
+        lon,
+        radiusKm,
+        facilityType,
+      });
     },
   );
 

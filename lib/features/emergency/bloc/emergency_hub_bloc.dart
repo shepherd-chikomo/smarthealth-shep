@@ -2,7 +2,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_event.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_state.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_fallback_data.dart';
+import 'package:smarthealth_shep/features/emergency/models/emergency_hub_data.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_hub_repository.dart';
 
 class EmergencyHubBloc extends Bloc<EmergencyHubEvent, EmergencyHubState> {
@@ -65,7 +67,13 @@ class EmergencyHubBloc extends Bloc<EmergencyHubEvent, EmergencyHubState> {
         state.copyWith(
           status: EmergencyHubStatus.error,
           errorMessage: error.toString(),
-          data: EmergencyFallbackData.hub(),
+          data: AppConfig.allowMockFallbacks
+              ? EmergencyFallbackData.hub()
+              : EmergencyHubData(
+                  services: const [],
+                  facilities: const [],
+                  cachedAt: DateTime.now(),
+                ),
           isOffline: true,
         ),
       );

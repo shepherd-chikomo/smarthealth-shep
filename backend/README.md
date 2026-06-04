@@ -132,6 +132,89 @@ npm test             # Run tests
 npm run openapi:export  # Export openapi.json
 ```
 
+## Facility address formatting
+
+HPA spreadsheet addresses may lack spaces (`LaneBorowdale`, `11Madokero`). The import pipeline runs `formatAddressLine` before storage. To repair existing rows:
+
+```powershell
+cd backend
+npm run fix:addresses -- --dry-run              # preview (default: import_source HPA)
+npm run fix:addresses                           # update address_line1 in DB
+```
+
+## Facility geocoding
+
+Imported HPA facilities are geocoded on `import:dual` using OpenStreetMap Nominatim (Zimbabwe-only, ~1 request/second). The backfill CLI uses a **multi-strategy cascade** (structured street search, name+address, address-only, name+city) with scoring and city plausibility checks. Results are cached in `public.geocode_cache`; `facilities.geocode_quality` controls whether `/v1/facilities/nearby` returns `distanceKm` (`address`, `name`, `manual` only).
+
+**Fix bad distances:** reformat addresses, reset coordinates, and geocode again (no city-centre fallback by default on `--reset`):
+
+```powershell
+# From repo root (applies migration, fix:addresses, geocode, audit)
+.\scripts\regeocode-hpa.ps1
+
+# Or manually:
+cd backend
+npm run db:migrate:geocode-quality
+npm run fix:addresses
+npm run geocode:facilities -- --import-source HPA --reset --clear-cache --csv ../geocode-failures.csv
+npm run audit:geocode
+npm run geocode:import-csv -- --file manual-coords.csv   # optional overrides
+```
+
+**Backfill** existing rows missing coordinates (required for `/v1/facilities/nearby`):
+
+```powershell
+cd backend
+npm run geocode:facilities -- --city Harare --limit 50   # smoke test
+npm run geocode:facilities                              # full backfill (~45+ min first run)
+npm run geocode:facilities -- --dry-run                 # preview counts only
+npm run geocode:facilities -- --skip-remote             # cache + city-centre fallback only
+npm run geocode:facilities -- --csv failures.csv        # write unresolved rows to CSV
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--dry-run` | No database writes |
+| `--skip-remote` | Skip Nominatim; use cache and city-centre fallback |
+| `--reset` | Clear lat/lon/formatted_address before geocoding (default scope: HPA) |
+| `--no-city-fallback` | Skip city-centre fallback on failed lookups (default when `--reset`) |
+| `--allow-city-fallback` | Re-enable city-centre fallback during a reset run |
+| `--clear-cache` | Truncate `geocode_cache` (use with `--reset` after address fixes) |
+| `--import-source HPA` | Limit reset/geocode to one import source |
+| `--limit N` | Process at most N facilities |
+| `--city Harare` | Restrict to one city |
+| `--csv path` | Export facilities that could not be geocoded |
+
+**Other scripts:** `npm run audit:geocode` (coverage + duplicate coord report), `npm run geocode:import-csv -- --file coords.csv` (manual lat/lon).
+
+**Import options:** pass `--skip-geocoding` to `npm run import:dual` to skip remote geocoding during HPA import.
+
+Respect [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/): cache hits avoid repeat lookups; do not run multiple parallel backfills.
+
+## Facility type classification
+
+Home category tiles and search filters use `facilities.facility_type` (`hospital`, `clinic`, `pharmacy`, `laboratory`, `dental`, `optometry`, `imaging`, `other`). HPA import infers type from the facility name; practitioner import and the backfill CLI also use linked doctor specialties.
+
+**Backfill** rows still marked `clinic` after import:
+
+```powershell
+cd backend
+npm run classify:facilities -- --city Harare --dry-run   # preview changes
+npm run classify:facilities -- --city Harare             # update Harare facilities
+npm run classify:facilities -- --force                   # reclassify all types (not only clinic)
+npm run classify:facilities -- --csv reclassified.csv    # audit export
+```
+
+| Flag | Purpose |
+|------|---------|
+| `--dry-run` | No database writes |
+| `--city Harare` | Restrict to one city |
+| `--limit N` | Process at most N facilities |
+| `--force` | Update any row when inference differs (default: only `clinic` rows) |
+| `--csv path` | Export id, name, from_type, to_type for changed rows |
+
+Re-run after `npm run import:link` so specialty votes can refine generic surgery names. New HPA imports set `facility_type` on insert and upgrade `clinic` rows on re-import.
+
 ## Docker
 
 ```powershell

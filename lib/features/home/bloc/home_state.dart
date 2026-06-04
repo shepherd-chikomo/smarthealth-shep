@@ -1,29 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
-import 'package:smarthealth_shep/shared/models/provider_model.dart';
-
-bool homeCategoryMatches(String providerCategoryId, String filterId) {
-  return switch (filterId) {
-    'general' => providerCategoryId == 'general' || providerCategoryId == 'gp',
-    'dental' =>
-      providerCategoryId == 'dental' || providerCategoryId == 'dentist',
-    'pharmacy' => providerCategoryId == 'pharmacy',
-    'lab' => providerCategoryId == 'lab',
-    'pediatrics' =>
-      providerCategoryId == 'pediatrics' || providerCategoryId == 'pediatric',
-    'specialist' => !const {
-      'general',
-      'gp',
-      'dental',
-      'dentist',
-      'pharmacy',
-      'lab',
-      'pediatrics',
-      'pediatric',
-    }.contains(providerCategoryId),
-    _ => providerCategoryId == filterId,
-  };
-}
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
+import 'package:smarthealth_shep/shared/models/service_category_model.dart';
 
 sealed class HomeState extends Equatable {
   const HomeState();
@@ -37,100 +15,119 @@ final class HomeInitial extends HomeState {
 }
 
 final class HomeLoading extends HomeState {
-  const HomeLoading();
+  const HomeLoading({this.categories = const []});
+
+  final List<ServiceCategoryModel> categories;
+
+  @override
+  List<Object?> get props => [categories];
 }
 
 final class HomeLoaded extends HomeState {
   const HomeLoaded({
     required this.city,
-    required this.providers,
+    required this.facilities,
     required this.lastUpdated,
+    required this.categories,
     this.selectedCategoryId,
     this.isRefreshing = false,
     this.isOffline = false,
     this.activeQueue,
+    this.loadError,
   });
 
   final String city;
-  final List<ProviderModel> providers;
+  final List<FacilityModel> facilities;
   final DateTime lastUpdated;
+  final List<ServiceCategoryModel> categories;
   final String? selectedCategoryId;
   final bool isRefreshing;
   final bool isOffline;
   final QueueSession? activeQueue;
+  final String? loadError;
 
-  List<ProviderModel> get visibleProviders {
+  List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
-      return providers;
+      return facilities;
     }
-    return providers
-        .where((p) => homeCategoryMatches(p.categoryId, selectedCategoryId!))
+    return facilities
+        .where((f) => f.facilityType == selectedCategoryId)
         .toList();
   }
 
   HomeLoaded copyWith({
     String? city,
-    List<ProviderModel>? providers,
+    List<FacilityModel>? facilities,
     DateTime? lastUpdated,
+    List<ServiceCategoryModel>? categories,
     String? selectedCategoryId,
     bool? isRefreshing,
     bool? isOffline,
     QueueSession? activeQueue,
+    String? loadError,
     bool clearCategory = false,
     bool clearQueue = false,
+    bool clearLoadError = false,
   }) {
     return HomeLoaded(
       city: city ?? this.city,
-      providers: providers ?? this.providers,
+      facilities: facilities ?? this.facilities,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      categories: categories ?? this.categories,
       selectedCategoryId:
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isOffline: isOffline ?? this.isOffline,
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
+      loadError: clearLoadError ? null : (loadError ?? this.loadError),
     );
   }
 
   @override
   List<Object?> get props => [
         city,
-        providers,
+        facilities,
         lastUpdated,
+        categories,
         selectedCategoryId,
         isRefreshing,
         isOffline,
         activeQueue,
+        loadError,
       ];
 }
 
 final class HomeOffline extends HomeState {
   const HomeOffline({
     required this.city,
-    required this.providers,
+    required this.facilities,
     required this.lastUpdated,
+    required this.categories,
     this.selectedCategoryId,
     this.activeQueue,
   });
 
   final String city;
-  final List<ProviderModel> providers;
+  final List<FacilityModel> facilities;
   final DateTime lastUpdated;
+  final List<ServiceCategoryModel> categories;
   final String? selectedCategoryId;
   final QueueSession? activeQueue;
 
-  List<ProviderModel> get visibleProviders {
+  List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
-      return providers;
+      return facilities;
     }
-    return providers
-        .where((p) => homeCategoryMatches(p.categoryId, selectedCategoryId!))
+    return facilities
+        .where((f) => f.facilityType == selectedCategoryId)
         .toList();
   }
 
   HomeOffline copyWith({
     String? city,
-    List<ProviderModel>? providers,
+    List<FacilityModel>? facilities,
     DateTime? lastUpdated,
+    List<ServiceCategoryModel>? categories,
     String? selectedCategoryId,
     QueueSession? activeQueue,
     bool clearCategory = false,
@@ -138,8 +135,9 @@ final class HomeOffline extends HomeState {
   }) {
     return HomeOffline(
       city: city ?? this.city,
-      providers: providers ?? this.providers,
+      facilities: facilities ?? this.facilities,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      categories: categories ?? this.categories,
       selectedCategoryId:
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
@@ -148,23 +146,25 @@ final class HomeOffline extends HomeState {
 
   @override
   List<Object?> get props =>
-      [city, providers, lastUpdated, selectedCategoryId, activeQueue];
+      [city, facilities, lastUpdated, categories, selectedCategoryId, activeQueue];
 }
 
 final class HomeError extends HomeState {
   const HomeError({
     required this.message,
-    this.cachedProviders,
+    this.cachedFacilities,
     this.lastUpdated,
     this.city,
+    this.categories = const [],
   });
 
   final String message;
-  final List<ProviderModel>? cachedProviders;
+  final List<FacilityModel>? cachedFacilities;
   final DateTime? lastUpdated;
   final String? city;
+  final List<ServiceCategoryModel> categories;
 
   @override
   List<Object?> get props =>
-      [message, cachedProviders, lastUpdated, city];
+      [message, cachedFacilities, lastUpdated, city, categories];
 }

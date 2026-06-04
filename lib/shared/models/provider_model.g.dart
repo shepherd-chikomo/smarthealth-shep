@@ -11,7 +11,7 @@ _ProviderModel _$ProviderModelFromJson(
 ) => _ProviderModel(
   id: json['id'] as String,
   name: json['name'] as String,
-  categoryId: json['categoryId'] as String,
+  categoryId: json['categoryId'] as String? ?? 'general-practice',
   specialty: json['specialty'] as String?,
   specialtyId: json['specialtyId'] as String?,
   facilityName: json['facilityName'] as String?,

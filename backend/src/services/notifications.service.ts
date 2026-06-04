@@ -129,7 +129,14 @@ export async function deactivatePushToken(userId: string, token: string) {
 }
 
 export async function listPreferences(userId: string) {
-  const result = await query(
+  const result = await query<{
+    id: string;
+    channel: string;
+    category: string;
+    is_enabled: boolean;
+    quiet_hours_start: string | null;
+    quiet_hours_end: string | null;
+  }>(
     `SELECT id, tenant_id, channel::text, category, is_enabled,
             quiet_hours_start, quiet_hours_end, metadata
      FROM public.notification_preferences

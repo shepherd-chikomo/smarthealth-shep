@@ -9,13 +9,16 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'SmartHealth';
+  String get appTitle => 'MyHealth';
 
   @override
   String get offlineBannerMessage => 'You\'re offline · showing saved data';
 
   @override
-  String get homeWelcome => 'Welcome to SmartHealth';
+  String get homeWelcome => 'Welcome to MyHealth';
+
+  @override
+  String get homePoweredBySmartHealth => 'Powered by SmartHealth';
 
   @override
   String get splashLoading => 'Loading…';

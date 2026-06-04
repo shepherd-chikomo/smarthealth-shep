@@ -7,7 +7,12 @@ sealed class HomeEvent extends Equatable {
 }
 
 final class LoadHomeData extends HomeEvent {
-  const LoadHomeData();
+  const LoadHomeData({this.nearMeLabel = 'Near Me'});
+
+  final String nearMeLabel;
+
+  @override
+  List<Object?> get props => [nearMeLabel];
 }
 
 final class RefreshHomeData extends HomeEvent {

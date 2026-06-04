@@ -741,7 +741,7 @@ export async function updateProviderAdmin(
     sets.push(`qualification = $${idx++}`);
     values.push(data.qualification);
   }
-  if (data.registrationNumber !== undefined) {
+  if (data.registrationNumber != null) {
     const reg = data.registrationNumber.trim().toUpperCase().replace(/\s+/g, '');
     sets.push(`registration_number = $${idx++}`, `mdpcz_number = $${idx++}`);
     values.push(reg, reg);
@@ -968,7 +968,7 @@ export async function listAppSettings(scope: string, tenantId?: string | null) {
 export async function upsertAppSetting(data: {
   scope: string;
   key: string;
-  value: unknown;
+  value?: unknown;
   description?: string;
   isPublic?: boolean;
   tenantId?: string | null;

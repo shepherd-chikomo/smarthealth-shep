@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
 import 'package:smarthealth_shep/features/booking/data/booking_repository.dart';
 import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
@@ -30,8 +31,10 @@ class QueueRepository {
   Future<ProviderModel?> getProvider(String providerId) async {
     final local = await _providerDao.getById(providerId);
     if (local != null) return local;
-    for (final provider in MockData.providers) {
-      if (provider.id == providerId) return provider;
+    if (AppConfig.allowMockFallbacks) {
+      for (final provider in MockData.providers) {
+        if (provider.id == providerId) return provider;
+      }
     }
     return null;
   }

@@ -9,14 +9,17 @@ class AppLocalizationsSw extends AppLocalizations {
   AppLocalizationsSw([String locale = 'sw']) : super(locale);
 
   @override
-  String get appTitle => 'SmartHealth';
+  String get appTitle => 'MyHealth';
 
   @override
   String get offlineBannerMessage =>
       'Huna mtandao · tunaonyesha data iliyohifadhiwa';
 
   @override
-  String get homeWelcome => 'Karibu SmartHealth';
+  String get homeWelcome => 'Karibu MyHealth';
+
+  @override
+  String get homePoweredBySmartHealth => 'Inaendeshwa na SmartHealth';
 
   @override
   String get splashLoading => 'Inapakia…';

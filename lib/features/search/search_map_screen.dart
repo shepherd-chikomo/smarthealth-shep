@@ -24,7 +24,7 @@ class SearchMapScreen extends StatefulWidget {
 class _SearchMapScreenState extends State<SearchMapScreen> {
   String? _selectedId;
 
-  List<ProviderModel> get _mappableProviders => widget.criteria.results
+  List<ProviderModel> get _mappableProviders => widget.criteria.providers
       .where((p) => p.latitude != null && p.longitude != null)
       .toList();
 
@@ -43,7 +43,7 @@ class _SearchMapScreenState extends State<SearchMapScreen> {
 
   ProviderModel? get _selectedProvider {
     if (_selectedId == null) return null;
-    for (final provider in widget.criteria.results) {
+    for (final provider in widget.criteria.providers) {
       if (provider.id == _selectedId) return provider;
     }
     return null;

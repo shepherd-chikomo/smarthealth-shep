@@ -94,6 +94,44 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
+  app.get(
+    '/facility/doctors/lookup',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({
+          facilityId: z.string().uuid(),
+          mdpczNumber: z.string().min(1),
+        }),
+      },
+    },
+    async (request) =>
+      facility.lookupRegisteredProvider(
+        request.user!,
+        request.facilityId!,
+        request.query.mdpczNumber,
+      ),
+  );
+
+  app.post(
+    '/facility/doctors/attach',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ providerId: z.string().uuid() }),
+      },
+    },
+    async (request, reply) => {
+      const result = await facility.attachDoctor(
+        request.user!,
+        request.facilityId!,
+        request.body.providerId,
+      );
+      return reply.status(201).send(result);
+    },
+  );
+
   app.patch(
     '/facility/doctors/:id',
     {

@@ -201,6 +201,45 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
   return (await res.text()) as T;
 }
 
+export interface ImportUploadResult {
+  batchId: string;
+  sourceType: 'MDPCZ' | 'HPA';
+  dryRun: boolean;
+  created: number;
+  failed: number;
+  details: Record<string, number>;
+}
+
+async function uploadFile<T>(
+  path: string,
+  file: File,
+  retried = false,
+): Promise<T> {
+  const token = getAccessToken();
+  const form = new FormData();
+  form.append('file', file);
+
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', body: form, headers });
+  if (res.status === 401 && !retried) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) return uploadFile<T>(path, file, true);
+    clearTokens();
+    redirectToLogin();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 function qs(params?: ListParams): string {
   if (!params) return '';
   const sp = new URLSearchParams();
@@ -411,6 +450,18 @@ export const api = {
   claimDuplicates: (type: 'facility' | 'provider', entityId: string) =>
     request<{ pendingCount: number; claimantIds: string[]; isDuplicate: boolean }>(
       `/admin/claims/${type}/${entityId}/duplicates`,
+    ),
+
+  uploadPractitioners: (file: File, dryRun = false) =>
+    uploadFile<ImportUploadResult>(
+      `/admin/import/practitioners${dryRun ? '?dryRun=true' : ''}`,
+      file,
+    ),
+
+  uploadFacilities: (file: File, dryRun = false) =>
+    uploadFile<ImportUploadResult>(
+      `/admin/import/facilities${dryRun ? '?dryRun=true' : ''}`,
+      file,
     ),
 
   importBatches: (params?: ListParams) =>

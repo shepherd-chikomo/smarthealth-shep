@@ -9,14 +9,17 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get appTitle => 'SmartHealth';
+  String get appTitle => 'MyHealth';
 
   @override
   String get offlineBannerMessage =>
       'Vous êtes hors ligne · données enregistrées affichées';
 
   @override
-  String get homeWelcome => 'Bienvenue sur SmartHealth';
+  String get homeWelcome => 'Bienvenue sur MyHealth';
+
+  @override
+  String get homePoweredBySmartHealth => 'Propulsé par SmartHealth';
 
   @override
   String get splashLoading => 'Chargement…';

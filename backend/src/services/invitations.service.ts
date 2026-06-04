@@ -1,5 +1,4 @@
 import { query } from '../lib/db.js';
-import { buildPaginationMeta } from '../lib/pagination.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { requireFacilityAdmin } from '../lib/facility-access.js';
 import type { AuthenticatedUser } from '../lib/auth.js';

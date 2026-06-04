@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
 import 'package:smarthealth_shep/features/booking/data/local/booking_dao.dart';
@@ -69,8 +70,10 @@ class BookingRepository {
     final local = await _providerDao.getById(providerId);
     if (local != null) return local;
 
-    for (final provider in MockData.providers) {
-      if (provider.id == providerId) return provider;
+    if (AppConfig.allowMockFallbacks) {
+      for (final provider in MockData.providers) {
+        if (provider.id == providerId) return provider;
+      }
     }
     return null;
   }

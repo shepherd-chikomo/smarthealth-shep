@@ -1,8 +1,9 @@
 {
   "@@locale": "nd",
-  "appTitle": "SmartHealth",
+  "appTitle": "MyHealth",
   "offlineBannerMessage": "Awukho ku-inthanethi · sibonisa idatha egciniwe",
-  "homeWelcome": "Wamukelekile ku-SmartHealth",
+  "homeWelcome": "Wamukelekile ku-MyHealth",
+  "homePoweredBySmartHealth": "Ixhaswe ngu-SmartHealth",
   "splashLoading": "Iyalayisha…",
   "navHome": "Ekhaya",
   "navSearch": "Sesha",

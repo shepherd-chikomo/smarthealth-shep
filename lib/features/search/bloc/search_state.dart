@@ -1,7 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/search/models/search_criteria.dart';
 import 'package:smarthealth_shep/features/search/models/search_sort_option.dart';
+import 'package:smarthealth_shep/features/search/search_filter_options.dart';
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+
 enum SearchStatus { initial, loading, ready, error }
 
 class SearchState extends Equatable {
@@ -15,8 +18,14 @@ class SearchState extends Equatable {
     this.sortBy = SearchSortOption.distance,
     this.allProviders = const [],
     this.filteredProviders = const [],
+    this.allFacilities = const [],
+    this.filteredFacilities = const [],
+    this.specialtyFilterOptions = const [],
+    this.conditionFilterOptions = const [],
+    this.ageGroupFilterOptions = const [],
     this.recentSearches = const [],
-    this.isOffline = false,    this.errorMessage,
+    this.isOffline = false,
+    this.errorMessage,
     this.navigateToResults = false,
   });
 
@@ -29,11 +38,17 @@ class SearchState extends Equatable {
   final SearchSortOption sortBy;
   final List<ProviderModel> allProviders;
   final List<ProviderModel> filteredProviders;
+  final List<FacilityModel> allFacilities;
+  final List<FacilityModel> filteredFacilities;
+  final List<SearchFilterOption> specialtyFilterOptions;
+  final List<SearchFilterOption> conditionFilterOptions;
+  final List<SearchFilterOption> ageGroupFilterOptions;
   final List<String> recentSearches;
-  final bool isOffline;  final String? errorMessage;
+  final bool isOffline;
+  final String? errorMessage;
   final bool navigateToResults;
 
-  int get resultsCount => filteredProviders.length;
+  int get resultsCount => filteredProviders.length + filteredFacilities.length;
 
   bool get hasActiveCriteria =>
       query.trim().isNotEmpty ||
@@ -47,11 +62,13 @@ class SearchState extends Equatable {
         specialties: specialties,
         conditions: conditions,
         ageGroups: ageGroups,
-        results: filteredProviders,
-        isOffline: isOffline,
         operational: operational,
+        providers: filteredProviders,
+        facilities: filteredFacilities,
+        isOffline: isOffline,
         sortBy: sortBy,
       );
+
   SearchState copyWith({
     SearchStatus? status,
     String? query,
@@ -62,8 +79,14 @@ class SearchState extends Equatable {
     SearchSortOption? sortBy,
     List<ProviderModel>? allProviders,
     List<ProviderModel>? filteredProviders,
+    List<FacilityModel>? allFacilities,
+    List<FacilityModel>? filteredFacilities,
+    List<SearchFilterOption>? specialtyFilterOptions,
+    List<SearchFilterOption>? conditionFilterOptions,
+    List<SearchFilterOption>? ageGroupFilterOptions,
     List<String>? recentSearches,
-    bool? isOffline,    String? errorMessage,
+    bool? isOffline,
+    String? errorMessage,
     bool? navigateToResults,
     bool clearError = false,
   }) {
@@ -77,8 +100,17 @@ class SearchState extends Equatable {
       sortBy: sortBy ?? this.sortBy,
       allProviders: allProviders ?? this.allProviders,
       filteredProviders: filteredProviders ?? this.filteredProviders,
+      allFacilities: allFacilities ?? this.allFacilities,
+      filteredFacilities: filteredFacilities ?? this.filteredFacilities,
+      specialtyFilterOptions:
+          specialtyFilterOptions ?? this.specialtyFilterOptions,
+      conditionFilterOptions:
+          conditionFilterOptions ?? this.conditionFilterOptions,
+      ageGroupFilterOptions:
+          ageGroupFilterOptions ?? this.ageGroupFilterOptions,
       recentSearches: recentSearches ?? this.recentSearches,
-      isOffline: isOffline ?? this.isOffline,      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isOffline: isOffline ?? this.isOffline,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       navigateToResults: navigateToResults ?? this.navigateToResults,
     );
   }
@@ -94,8 +126,14 @@ class SearchState extends Equatable {
         sortBy,
         allProviders,
         filteredProviders,
+        allFacilities,
+        filteredFacilities,
+        specialtyFilterOptions,
+        conditionFilterOptions,
+        ageGroupFilterOptions,
         recentSearches,
-        isOffline,        errorMessage,
+        isOffline,
+        errorMessage,
         navigateToResults,
       ];
 }

@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:smarthealth_shep/core/assets.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/appointments/data/local/appointment_dao.dart';
 import 'package:smarthealth_shep/features/appointments/data/mock_appointments.dart';
 import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
@@ -30,7 +31,7 @@ class AppointmentsRepository {
   final SyncService _syncService;
 
   Future<List<AppointmentModel>> loadAppointments() async {
-    if (await _dao.isEmpty()) {
+    if (AppConfig.seedMockDataOnEmpty && await _dao.isEmpty()) {
       await _dao.saveAll(MockAppointments.seed());
     }
     final appointments = await _dao.getAll();
@@ -191,8 +192,10 @@ class AppointmentsRepository {
   Future<ProviderModel?> _resolveProvider(String providerId) async {
     final local = await _providerDao.getById(providerId);
     if (local != null) return local;
-    for (final provider in MockData.providers) {
-      if (provider.id == providerId) return provider;
+    if (AppConfig.allowMockFallbacks) {
+      for (final provider in MockData.providers) {
+        if (provider.id == providerId) return provider;
+      }
     }
     return null;
   }

@@ -9,14 +9,17 @@ class AppLocalizationsNd extends AppLocalizations {
   AppLocalizationsNd([String locale = 'nd']) : super(locale);
 
   @override
-  String get appTitle => 'SmartHealth';
+  String get appTitle => 'MyHealth';
 
   @override
   String get offlineBannerMessage =>
       'Awukho ku-inthanethi · sibonisa idatha egciniwe';
 
   @override
-  String get homeWelcome => 'Wamukelekile ku-SmartHealth';
+  String get homeWelcome => 'Wamukelekile ku-MyHealth';
+
+  @override
+  String get homePoweredBySmartHealth => 'Ixhaswe ngu-SmartHealth';
 
   @override
   String get splashLoading => 'Iyalayisha…';

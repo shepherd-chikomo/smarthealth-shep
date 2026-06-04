@@ -135,15 +135,25 @@ export async function searchProvidersRanked(options: ProviderSearchOptions) {
     params.push(options.specialtyId);
   }
   if (options.specialties?.length) {
-    conditions.push(`p.specialty = ANY($${idx++})`);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM public.provider_specialties ps
+      JOIN public.specialties s ON s.id = ps.specialty_id AND s.is_active = true
+      WHERE ps.provider_id = p.id AND s.slug = ANY($${idx++})
+    )`);
     params.push(options.specialties);
   }
   if (options.conditions?.length) {
-    conditions.push(`p.conditions && $${idx++}::text[]`);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM unnest(p.conditions) AS c(val)
+      WHERE lower(regexp_replace(trim(c.val), '[^a-zA-Z0-9]+', '_', 'g')) = ANY($${idx++})
+    )`);
     params.push(options.conditions);
   }
   if (options.ageGroups?.length) {
-    conditions.push(`p.age_groups && $${idx++}::text[]`);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM unnest(p.age_groups) AS g(val)
+      WHERE lower(regexp_replace(trim(g.val), '[^a-zA-Z0-9]+', '_', 'g')) = ANY($${idx++})
+    )`);
     params.push(options.ageGroups);
   }
   if (options.isVerified !== undefined) {

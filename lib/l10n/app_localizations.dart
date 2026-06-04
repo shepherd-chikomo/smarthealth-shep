@@ -109,7 +109,7 @@ abstract class AppLocalizations {
   /// Application title
   ///
   /// In en, this message translates to:
-  /// **'SmartHealth'**
+  /// **'MyHealth'**
   String get appTitle;
 
   /// Persistent banner when device has no connectivity
@@ -121,8 +121,14 @@ abstract class AppLocalizations {
   /// No description provided for @homeWelcome.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to SmartHealth'**
+  /// **'Welcome to MyHealth'**
   String get homeWelcome;
+
+  /// No description provided for @homePoweredBySmartHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by SmartHealth'**
+  String get homePoweredBySmartHealth;
 
   /// No description provided for @splashLoading.
   ///

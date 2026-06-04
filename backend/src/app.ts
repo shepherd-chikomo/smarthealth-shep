@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import {
   serializerCompiler,
@@ -25,6 +26,7 @@ import { paymentsRoutes } from './routes/payments.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
 import { analyticsRoutes } from './routes/analytics.routes.js';
 import { searchRoutes } from './routes/search.routes.js';
+import { catalogRoutes } from './routes/catalog.routes.js';
 import { facilityRoutes } from './routes/facility.routes.js';
 import { claimsRoutes } from './routes/claims.routes.js';
 import { z } from 'zod';
@@ -64,6 +66,10 @@ export async function buildApp() {
   await app.register(cors, {
     origin: env.NODE_ENV === 'production' ? ['https://smarthealth.co.zw'] : true,
     credentials: true,
+  });
+
+  await app.register(multipart, {
+    limits: { fileSize: 30 * 1024 * 1024, files: 1 },
   });
 
   await app.register(rateLimit, {
@@ -136,6 +142,7 @@ export async function buildApp() {
     await api.register(facilityRoutes);
     await api.register(claimsRoutes);
     await api.register(searchRoutes);
+    await api.register(catalogRoutes);
   }, { prefix: env.API_PREFIX });
 
   return app;

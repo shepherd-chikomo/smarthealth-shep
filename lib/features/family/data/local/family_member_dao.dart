@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/storage/app_database.dart';
 import 'package:smarthealth_shep/shared/data/mock_data.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
@@ -67,6 +68,8 @@ class FamilyMemberDao {
   }
 
   Future<void> _ensureSeeded() async {
+    if (!AppConfig.seedMockDataOnEmpty) return;
+
     final db = await _db;
     final count = Sqflite.firstIntValue(
       await db.rawQuery('SELECT COUNT(*) FROM family_members'),

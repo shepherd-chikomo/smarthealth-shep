@@ -16,11 +16,18 @@
     "security:owasp": "tsx scripts/owasp-check.ts",
     "lint": "tsc --noEmit",
     "openapi:export": "tsx scripts/export-openapi.ts",
-    "import:providers": "tsx scripts/import/import_practitioners.ts",
-    "import:dual": "tsx scripts/import/import_dual_registry.ts",
-    "import:emails": "tsx scripts/import/import_practitioner_emails.ts",
-    "import:wipe": "tsx scripts/import/wipe_import_data.ts",
-    "import:diff": "tsx scripts/import/registry_diff.ts"
+    "import:providers": "tsx src/import/import_practitioners.ts",
+    "import:dual": "tsx src/import/import_dual_registry.ts",
+    "import:emails": "tsx src/import/import_practitioner_emails.ts",
+    "import:wipe": "tsx src/import/wipe_import_data.ts",
+    "import:diff": "tsx src/import/registry_diff.ts",
+    "import:link": "tsx src/import/link_all.ts",
+    "fix:addresses": "tsx src/import/fix_facility_addresses.ts",
+    "geocode:facilities": "tsx src/import/geocode_facilities.ts",
+    "geocode:import-csv": "tsx src/import/import_geocode_csv.ts",
+    "audit:geocode": "tsx src/import/audit_geocode.ts",
+    "db:migrate:geocode-quality": "tsx src/import/apply_geocode_migration.ts",
+    "classify:facilities": "tsx src/import/classify_facilities.ts"
   },
   "engines": {
     "node": ">=20"
@@ -28,16 +35,17 @@
   "dependencies": {
     "@fastify/cors": "^11.0.1",
     "@fastify/helmet": "^13.0.1",
+    "@fastify/multipart": "^10.0.0",
     "@fastify/rate-limit": "^10.2.2",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.2",
+    "@sentry/node": "^9.30.0",
     "dotenv": "^16.5.0",
-    "fastify": "^5.3.3",
     "fast-levenshtein": "^3.0.0",
+    "fastify": "^5.3.3",
     "fastify-type-provider-zod": "^4.0.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.0",
-    "@sentry/node": "^9.30.0",
     "xlsx": "^0.18.5",
     "zod": "^3.25.28"
   },

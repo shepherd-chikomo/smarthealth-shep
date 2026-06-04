@@ -223,7 +223,10 @@ class ProviderRepository {
     await _ensureSeeded();
     final local = await _dao.getAll(categoryId: categoryId);
     if (local.isNotEmpty) return local;
-    return _mockProviders(categoryId: categoryId);
+    if (seedMockDataOnEmpty) {
+      return _mockProviders(categoryId: categoryId);
+    }
+    return [];
   }
 
   Future<ProviderModel?> getById(String id) async {
@@ -238,6 +241,7 @@ class ProviderRepository {
   }
 
   ProviderModel? getDetailByIdLocal(String id) {
+    if (!seedMockDataOnEmpty) return null;
     for (final provider in MockData.providers) {
       if (provider.id == id) {
         return ProviderDetailCatalog.enrich(provider);

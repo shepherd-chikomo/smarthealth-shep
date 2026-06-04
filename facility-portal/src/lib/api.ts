@@ -117,6 +117,27 @@ export const api = {
   createDoctor: (fid: string, body: Record<string, unknown>) =>
     request(`/facility/doctors`, fid, { method: 'POST', body: JSON.stringify(body) }),
 
+  lookupProvider: (fid: string, mdpczNumber: string) =>
+    request<{
+      found: boolean;
+      provider?: {
+        id: string;
+        name: string;
+        specialty: string | null;
+        mdpczNumber: string | null;
+        phone: string | null;
+        email: string | null;
+        isActive: boolean;
+        alreadyAtFacility: boolean;
+      };
+    }>(`/facility/doctors/lookup?mdpczNumber=${encodeURIComponent(mdpczNumber)}`, fid),
+
+  attachDoctor: (fid: string, providerId: string) =>
+    request<{ id: string; attached: boolean }>(`/facility/doctors/attach`, fid, {
+      method: 'POST',
+      body: JSON.stringify({ providerId }),
+    }),
+
   updateDoctor: (fid: string, id: string, body: Record<string, unknown>) =>
     request(`/facility/doctors/${id}`, fid, { method: 'PATCH', body: JSON.stringify(body) }),
 

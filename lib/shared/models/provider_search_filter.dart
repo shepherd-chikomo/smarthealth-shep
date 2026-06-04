@@ -22,6 +22,7 @@ class ProviderSearchFilter extends Equatable {
     this.city,
     this.province,
     this.facilityId,
+    this.facilityType,
   });
 
   final String query;
@@ -43,6 +44,7 @@ class ProviderSearchFilter extends Equatable {
   final String? city;
   final String? province;
   final String? facilityId;
+  final String? facilityType;
 
   bool get isEmpty =>
       query.trim().isEmpty &&
@@ -63,7 +65,8 @@ class ProviderSearchFilter extends Equatable {
       queueUnder30 == null &&
       city == null &&
       province == null &&
-      facilityId == null;
+      facilityId == null &&
+      facilityType == null;
 
   ProviderSearchFilter copyWith({
     String? query,
@@ -85,6 +88,7 @@ class ProviderSearchFilter extends Equatable {
     String? city,
     String? province,
     String? facilityId,
+    String? facilityType,
   }) {
     return ProviderSearchFilter(
       query: query ?? this.query,
@@ -106,6 +110,7 @@ class ProviderSearchFilter extends Equatable {
       city: city ?? this.city,
       province: province ?? this.province,
       facilityId: facilityId ?? this.facilityId,
+      facilityType: facilityType ?? this.facilityType,
     );
   }
 
@@ -130,5 +135,6 @@ class ProviderSearchFilter extends Equatable {
         city,
         province,
         facilityId,
+        facilityType,
       ];
 }

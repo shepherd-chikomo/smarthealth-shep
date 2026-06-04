@@ -19,6 +19,31 @@ flutter analyze
 flutter run
 ```
 
+### Patient app → main database (local API)
+
+By default the app talks to `http://localhost:3000/v1` and does **not** seed mock providers
+(`USE_MAIN_DATABASE=true`). Start the Docker API first:
+
+```powershell
+docker compose up -d db smarthealth-migrate smarthealth-api
+```
+
+On a **physical phone**, `localhost` is the phone itself — use your PC's LAN IP:
+
+```powershell
+./scripts/run-patient-device.ps1 -DeviceId <your-device-id>
+```
+
+Or pass defines manually:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000/v1 --dart-define=USE_MAIN_DATABASE=true
+```
+
+For offline demos only: `--dart-define=USE_MAIN_DATABASE=false --dart-define=ALLOW_MOCK_DATA=true`
+
+Catalog endpoints used by home tiles and search filters: `/v1/catalog/facility-types`, `/v1/catalog/specialties`, `/v1/catalog/conditions`, `/v1/catalog/age-groups`.
+
 ## Android release (low-end devices)
 
 ```bash

@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smarthealth_shep/core/assets.dart';
-import 'package:smarthealth_shep/core/auth/auth_state.dart';
-import 'package:smarthealth_shep/core/auth/secure_storage.dart';
-import 'package:smarthealth_shep/core/config/app_config.dart';
-import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
-import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
-import 'package:smarthealth_shep/l10n/app_localizations.dart';
+import 'package:smarthealth_shep/features/splash/splash_navigation.dart';
 
+/// Full-screen branded splash using the approved MyHealth artwork.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -18,83 +13,39 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
+  static const _minDisplay = Duration(milliseconds: 600);
+
+  bool _navigating = false;
+
   @override
   void initState() {
     super.initState();
-    _bootstrap();
+    _scheduleNavigation();
   }
 
-  Future<void> _bootstrap() async {
-    final results = await Future.wait([
-      SharedPreferences.getInstance(),
-      SecureStorage().hasSession(),
-      Future<void>.delayed(const Duration(milliseconds: 300)),
+  Future<void> _scheduleNavigation() async {
+    final destinationFuture = SplashNavigation.resolveDestination(ref);
+
+    await Future.wait<void>([
+      Future<void>.delayed(_minDisplay),
+      destinationFuture.then((_) {}),
     ]);
 
-    final prefs = results[0] as SharedPreferences;
-    final hasSession = results[1] as bool;
-    final completed = prefs.getBool(OnboardingScreen.completedKey) ?? false;
-
-    if (!mounted) return;
-
-    if (!completed) {
-      context.go('/onboarding');
-      return;
-    }
-
-    if (AppConfig.skipAuthForTesting) {
-      await ref.read(authControllerProvider.notifier).refresh();
-      if (!mounted) return;
-      context.go('/home');
-      return;
-    }
-
-    if (hasSession) {
-      await ref.read(authControllerProvider.notifier).refresh();
-      if (!mounted) return;
-      context.go('/home');
-      return;
-    }
-
-    context.go('/login');
+    if (!mounted || _navigating) return;
+    _navigating = true;
+    context.go(await destinationFuture);
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
     return Scaffold(
-      backgroundColor: HomeDashboardColors.primary,
-      body: Center(
-        child: Semantics(
-          label: l10n.splashLoading,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                AppAssets.splashLogo,
-                width: 120,
-                height: 120,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                l10n.appTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(color: Colors.white),
-              const SizedBox(height: 12),
-              Text(
-                l10n.splashLoading,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ],
-          ),
-        ),
+      body: Image.asset(
+        AppAssets.splashFullScreen,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        alignment: Alignment.center,
+        filterQuality: FilterQuality.high,
       ),
     );
   }

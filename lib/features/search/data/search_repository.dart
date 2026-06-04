@@ -1,56 +1,213 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/location/location_providers.dart';
+import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
+import 'package:smarthealth_shep/core/network/api_service.dart';
+import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/features/search/data/search_filter_engine.dart';
+import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
+import 'package:smarthealth_shep/shared/models/specialty_model.dart';
 
-class SearchProvidersResult {
-  const SearchProvidersResult({
+final searchRepositoryProvider = Provider<SearchRepository>((ref) {
+  final dio = ref.watch(dioProvider);
+  return SearchRepository(
+    providerRepository: ref.watch(providerRepositoryProvider),
+    api: ApiService(dio),
+    searchOrigin: ref.watch(searchOriginResolverProvider),
+  );
+});
+
+class SearchDiscoveryResult {
+  const SearchDiscoveryResult({
     required this.providers,
+    required this.facilities,
+    required this.specialtyFilters,
+    required this.conditionFilters,
+    required this.ageGroupFilters,
     this.isOffline = false,
   });
 
   final List<ProviderModel> providers;
+  final List<FacilityModel> facilities;
+  final List<SearchFilterOption> specialtyFilters;
+  final List<SearchFilterOption> conditionFilters;
+  final List<SearchFilterOption> ageGroupFilters;
+  final bool isOffline;
+}
+
+class SearchQueryResult {
+  const SearchQueryResult({
+    required this.providers,
+    required this.facilities,
+    this.isOffline = false,
+  });
+
+  final List<ProviderModel> providers;
+  final List<FacilityModel> facilities;
   final bool isOffline;
 }
 
 /// Ranked healthcare search — API-first with offline fallback.
 class SearchRepository {
   SearchRepository({
-    ProviderRepository? providerRepository,
-  }) : _providerRepository = providerRepository ?? ProviderRepository.defaults();
+    required ProviderRepository providerRepository,
+    required ApiService api,
+    required SearchOriginResolver searchOrigin,
+  })  : _providerRepository = providerRepository,
+        _client = api,
+        _searchOrigin = searchOrigin;
 
   final ProviderRepository _providerRepository;
+  final ApiService _client;
+  final SearchOriginResolver _searchOrigin;
 
-  /// Loads the full provider directory (for filter chip options).
-  Future<SearchProvidersResult> loadProviders() async {
-    final result = await _providerRepository.getProviders();
-    return SearchProvidersResult(
-      providers: result,
-      isOffline: false,
+  ProviderSearchFilter _defaultGeoFilter(
+    ProviderSearchFilter filter, {
+    required double lat,
+    required double lon,
+  }) {
+    return filter.copyWith(
+      latitude: filter.latitude ?? lat,
+      longitude: filter.longitude ?? lon,
+      radiusKm: filter.radiusKm ?? AppConfig.defaultSearchRadiusKm,
     );
   }
 
-  /// Executes ranked search against the healthcare search engine.
-  Future<SearchProvidersResult> search({
+  List<SearchFilterOption> _toFilterOptions(
+    List<({String id, String label})> items,
+  ) {
+    return items
+        .map((item) => SearchFilterOption(id: item.id, label: item.label))
+        .toList();
+  }
+
+  /// Initial search screen data: catalog filters, nearby facilities, providers.
+  Future<SearchDiscoveryResult> loadDiscovery({bool refreshOrigin = true}) async {
+    var isOffline = false;
+    Object? lastError;
+
+    final origin = await _searchOrigin.resolve(refreshGps: refreshOrigin);
+
+    List<SpecialtyModel> specialtyModels = const [];
+    try {
+      specialtyModels = await _client.fetchCatalogSpecialties(limit: 30);
+    } catch (error) {
+      isOffline = true;
+      lastError = error;
+    }
+
+    List<({String id, String label})> conditions = const [];
+    try {
+      conditions = await _client.fetchCatalogConditions();
+    } catch (error) {
+      isOffline = true;
+      lastError = error;
+    }
+
+    List<({String id, String label})> ageGroups = const [];
+    try {
+      ageGroups = await _client.fetchCatalogAgeGroups();
+    } catch (error) {
+      isOffline = true;
+      lastError = error;
+    }
+
+    List<FacilityModel> facilities = const [];
+    try {
+      facilities = await _client.fetchNearbyFacilities(
+        lat: origin.latitude,
+        lon: origin.longitude,
+        radiusKm: AppConfig.defaultSearchRadiusKm,
+        limit: 50,
+      );
+    } catch (error) {
+      isOffline = true;
+      lastError = error;
+    }
+
+    List<ProviderModel> providers = const [];
+    try {
+      final filter = _defaultGeoFilter(
+        const ProviderSearchFilter(),
+        lat: origin.latitude,
+        lon: origin.longitude,
+      );
+      final providerResult = await _providerRepository.searchProviders(filter);
+      providers = providerResult.providers;
+      isOffline = isOffline || providerResult.isOffline;
+    } catch (error) {
+      isOffline = true;
+      lastError = error;
+      try {
+        providers = await _providerRepository.getProviders();
+      } catch (_) {
+        // No local cache — providers stay empty.
+      }
+    }
+
+    if (facilities.isEmpty &&
+        providers.isEmpty &&
+        specialtyModels.isEmpty) {
+      if (AppConfig.allowMockFallbacks) {
+        final all = await _providerRepository.getProviders();
+        return SearchDiscoveryResult(
+          providers: all,
+          facilities: const [],
+          specialtyFilters: SearchFilterOptions.specialties,
+          conditionFilters: SearchFilterOptions.conditions,
+          ageGroupFilters: SearchFilterOptions.ageGroups,
+          isOffline: true,
+        );
+      }
+      Error.throwWithStackTrace(
+        lastError ?? Exception('Search discovery failed'),
+        StackTrace.current,
+      );
+    }
+
+    return SearchDiscoveryResult(
+      providers: providers,
+      facilities: facilities,
+      specialtyFilters: specialtyModels.isNotEmpty
+          ? specialtyModels
+              .map((s) => SearchFilterOption(id: s.slug, label: s.name))
+              .toList()
+          : SearchFilterOptions.specialties,
+      conditionFilters: conditions.isNotEmpty
+          ? _toFilterOptions(conditions)
+          : SearchFilterOptions.conditions,
+      ageGroupFilters: ageGroups.isNotEmpty
+          ? _toFilterOptions(ageGroups)
+          : SearchFilterOptions.ageGroups,
+      isOffline: isOffline,
+    );
+  }
+
+  /// Executes ranked search against providers and facilities APIs.
+  Future<SearchQueryResult> search({
     required String query,
     Set<String> specialties = const {},
     Set<String> conditions = const {},
     Set<String> ageGroups = const {},
     Set<String> operational = const {},
-    double? latitude,
-    double? longitude,
-    double? radiusKm,
-    String? city,
-    String? province,
+    String? facilityType,
+    bool refreshOrigin = false,
   }) async {
-    final filter = ProviderSearchFilter(
+    final origin = await _searchOrigin.resolve(refreshGps: refreshOrigin);
+
+    var filter = ProviderSearchFilter(
       query: query,
       specialties: specialties,
       conditions: conditions,
       ageGroups: ageGroups,
-      latitude: latitude,
-      longitude: longitude,
-      radiusKm: radiusKm,
+      facilityType: facilityType,
+      latitude: origin.latitude,
+      longitude: origin.longitude,
+      radiusKm: AppConfig.defaultSearchRadiusKm,
       isVerified: operational.contains('verified_only') ? true : null,
       openNow: operational.contains('open_now') ? true : null,
       queueUnder30: operational.contains('queue_under_30') ? true : null,
@@ -58,24 +215,34 @@ class SearchRepository {
           operational.contains('available_today') ? true : null,
       acceptsWalkIns: operational.contains('walk_ins') ? true : null,
       emergencyAvailable: operational.contains('emergency') ? true : null,
-      city: city,
-      province: province,
+    );
+
+    filter = _defaultGeoFilter(
+      filter,
+      lat: origin.latitude,
+      lon: origin.longitude,
     );
 
     if (filter.isEmpty) {
-      final all = await loadProviders();
-      return all;
+      final discovery = await loadDiscovery(refreshOrigin: false);
+      return SearchQueryResult(
+        providers: discovery.providers,
+        facilities: discovery.facilities,
+        isOffline: discovery.isOffline,
+      );
     }
 
     try {
-      final result = await _providerRepository.searchProviders(filter);
-      return SearchProvidersResult(
-        providers: result.providers,
-        isOffline: result.isOffline,
+      final providerResult = await _providerRepository.searchProviders(filter);
+      final facilities = await _client.searchFacilities(filter);
+      return SearchQueryResult(
+        providers: providerResult.providers,
+        facilities: facilities,
+        isOffline: providerResult.isOffline,
       );
     } catch (_) {
-      final cached = await loadProviders();
-      final filtered = SearchFilterEngine.apply(
+      final cached = await loadDiscovery(refreshOrigin: false);
+      final filteredProviders = SearchFilterEngine.apply(
         providers: cached.providers,
         query: query,
         specialties: specialties,
@@ -83,8 +250,14 @@ class SearchRepository {
         ageGroups: ageGroups,
         operational: operational,
       );
-      return SearchProvidersResult(
-        providers: filtered,
+      final filteredFacilities = SearchFilterEngine.applyFacilities(
+        facilities: cached.facilities,
+        query: query,
+        facilityType: facilityType,
+      );
+      return SearchQueryResult(
+        providers: filteredProviders,
+        facilities: filteredFacilities,
         isOffline: true,
       );
     }

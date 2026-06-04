@@ -12,7 +12,8 @@ import 'package:smarthealth_shep/shared/data/local/provider_dao.dart' as _i5;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart' as _i4;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_storage.dart'
     as _i3;
-import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i10;
+import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i11;
+import 'package:smarthealth_shep/shared/models/facility_model.dart' as _i10;
 import 'package:smarthealth_shep/shared/models/provider_model.dart' as _i7;
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart'
     as _i8;
@@ -214,6 +215,36 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
           as _i6.Future<_i7.ProviderModel?>);
 
   @override
+  _i6.Future<List<_i10.FacilityModel>> fetchNearbyFacilities({
+    required double? lat,
+    required double? lon,
+    required double? radiusKm,
+    int? limit = 50,
+    int? page = 1,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchNearbyFacilities, [], {
+              #lat: lat,
+              #lon: lon,
+              #radiusKm: radiusKm,
+              #limit: limit,
+              #page: page,
+            }),
+            returnValue: _i6.Future<List<_i10.FacilityModel>>.value(
+              <_i10.FacilityModel>[],
+            ),
+          )
+          as _i6.Future<List<_i10.FacilityModel>>);
+
+  @override
+  _i6.Future<_i10.FacilityModel?> getFacilityById(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#getFacilityById, [id]),
+            returnValue: _i6.Future<_i10.FacilityModel?>.value(),
+          )
+          as _i6.Future<_i10.FacilityModel?>);
+
+  @override
   _i6.Future<_i2.ProviderSyncPayload> syncProviders({DateTime? since}) =>
       (super.noSuchMethod(
             Invocation.method(#syncProviders, [], {#since: since}),
@@ -230,7 +261,7 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
 /// A class which mocks [SyncService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSyncService extends _i1.Mock implements _i10.SyncService {
+class MockSyncService extends _i1.Mock implements _i11.SyncService {
   MockSyncService() {
     _i1.throwOnMissingStub(this);
   }
@@ -320,7 +351,7 @@ class MockSyncService extends _i1.Mock implements _i10.SyncService {
 
   @override
   _i6.Future<_i4.SyncRunResult> syncNow({
-    _i10.SyncTrigger? trigger = _i10.SyncTrigger.manual,
+    _i11.SyncTrigger? trigger = _i11.SyncTrigger.manual,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#syncNow, [], {#trigger: trigger}),

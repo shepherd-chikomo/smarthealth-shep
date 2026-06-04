@@ -1,8 +1,9 @@
 {
   "@@locale": "fr",
-  "appTitle": "SmartHealth",
+  "appTitle": "MyHealth",
   "offlineBannerMessage": "Vous êtes hors ligne · données enregistrées affichées",
-  "homeWelcome": "Bienvenue sur SmartHealth",
+  "homeWelcome": "Bienvenue sur MyHealth",
+  "homePoweredBySmartHealth": "Propulsé par SmartHealth",
   "splashLoading": "Chargement…",
   "navHome": "Accueil",
   "navSearch": "Rechercher",

@@ -6,6 +6,8 @@ import { requireAdminAuth, requireStaffAuth, requireSuperAdminAuth } from '../pl
 import * as admin from '../services/admin.service.js';
 import * as audit from '../services/audit.service.js';
 import * as importSvc from '../services/import.service.js';
+import * as importUpload from '../services/import-upload.service.js';
+import { ValidationError } from '../lib/errors.js';
 import * as facilitiesAdmin from '../services/facilities-admin.service.js';
 import * as registryDiff from '../services/registry-diff.service.js';
 import * as practitionerClaim from '../services/practitioner-claim.service.js';
@@ -513,6 +515,54 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { tags: ['Admin', 'Import'], params: z.object({ id: z.string().uuid() }) },
     },
     async (request) => importSvc.getImportBatch(request.user!, request.params.id),
+  );
+
+  // In-process uploads (multipart .xlsx). No Zod body schema — the file is
+  // read via request.file(); the dry-run flag comes from the querystring.
+  app.post(
+    '/admin/import/practitioners',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Import'],
+        consumes: ['multipart/form-data'],
+        querystring: z.object({ dryRun: z.enum(['true', 'false']).optional() }),
+      },
+    },
+    async (request) => {
+      const data = await request.file();
+      if (!data) throw new ValidationError('No file uploaded');
+      const buffer = await data.toBuffer();
+      return importUpload.importProvidersUpload(
+        request.user!,
+        buffer,
+        data.filename,
+        request.query.dryRun === 'true',
+      );
+    },
+  );
+
+  app.post(
+    '/admin/import/facilities',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Import'],
+        consumes: ['multipart/form-data'],
+        querystring: z.object({ dryRun: z.enum(['true', 'false']).optional() }),
+      },
+    },
+    async (request) => {
+      const data = await request.file();
+      if (!data) throw new ValidationError('No file uploaded');
+      const buffer = await data.toBuffer();
+      return importUpload.importFacilitiesUpload(
+        request.user!,
+        buffer,
+        data.filename,
+        request.query.dryRun === 'true',
+      );
+    },
   );
 
   app.get(

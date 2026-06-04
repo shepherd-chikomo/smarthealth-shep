@@ -1,5 +1,6 @@
 import { buildApp } from './app.js';
 import { env } from './config.js';
+import { refreshJwks } from './lib/auth.js';
 import { pool } from './lib/db.js';
 import { captureException, initSentry } from './lib/sentry.js';
 import { startAnalyticsWorker, stopAnalyticsWorker } from './workers/analytics-worker.js';
@@ -9,6 +10,10 @@ import { startRetentionWorker, stopRetentionWorker } from './workers/retention-w
 async function main() {
   initSentry();
   const app = await buildApp();
+  // Prime Supabase Auth JWKS (asymmetric token verification) and refresh periodically.
+  await refreshJwks(true);
+  const jwksTimer = setInterval(() => void refreshJwks(true), 10 * 60 * 1000);
+  jwksTimer.unref();
   startNotificationWorker();
   startAnalyticsWorker();
   if (env.RETENTION_WORKER_ENABLED) startRetentionWorker();

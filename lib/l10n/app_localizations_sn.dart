@@ -9,14 +9,17 @@ class AppLocalizationsSn extends AppLocalizations {
   AppLocalizationsSn([String locale = 'sn']) : super(locale);
 
   @override
-  String get appTitle => 'SmartHealth';
+  String get appTitle => 'MyHealth';
 
   @override
   String get offlineBannerMessage =>
       'Hamusi painternet · tichiratidza data yakachengetwa';
 
   @override
-  String get homeWelcome => 'Mauya kuSmartHealth';
+  String get homeWelcome => 'Mauya kuMyHealth';
+
+  @override
+  String get homePoweredBySmartHealth => 'Inoshandiswa neSmartHealth';
 
   @override
   String get splashLoading => 'Kuri kurodha…';

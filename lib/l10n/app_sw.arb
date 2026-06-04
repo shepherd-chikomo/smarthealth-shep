@@ -1,8 +1,9 @@
 {
   "@@locale": "sw",
-  "appTitle": "SmartHealth",
+  "appTitle": "MyHealth",
   "offlineBannerMessage": "Huna mtandao · tunaonyesha data iliyohifadhiwa",
-  "homeWelcome": "Karibu SmartHealth",
+  "homeWelcome": "Karibu MyHealth",
+  "homePoweredBySmartHealth": "Inaendeshwa na SmartHealth",
   "splashLoading": "Inapakia…",
   "navHome": "Nyumbani",
   "navSearch": "Tafuta",

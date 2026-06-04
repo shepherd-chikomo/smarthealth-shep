@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
-import 'package:smarthealth_shep/features/search/widgets/search_operational_empty_state.dart';
+import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 /// Discovery shortcuts shown when search has no active criteria.
@@ -12,7 +13,10 @@ class SearchSuggestionsPanel extends StatelessWidget {
     super.key,
     required this.recentSearches,
     required this.providers,
+    required this.facilities,
+    required this.specialtyOptions,
     required this.onQuerySelected,
+    required this.onFacilitySelected,
     required this.onSpecialtySelected,
     required this.onOperationalSelected,
     required this.onRecentRemoved,
@@ -20,7 +24,10 @@ class SearchSuggestionsPanel extends StatelessWidget {
 
   final List<String> recentSearches;
   final List<ProviderModel> providers;
+  final List<FacilityModel> facilities;
+  final List<SearchFilterOption> specialtyOptions;
   final ValueChanged<String> onQuerySelected;
+  final ValueChanged<String> onFacilitySelected;
   final ValueChanged<String> onSpecialtySelected;
   final ValueChanged<String> onOperationalSelected;
   final ValueChanged<String> onRecentRemoved;
@@ -28,8 +35,17 @@ class SearchSuggestionsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final nearby = buildNearbyFacilitySuggestions(providers);
-    final specialties = popularSpecialtySuggestions;
+    final nearby = facilities.isNotEmpty
+        ? (List<FacilityModel>.from(facilities)
+          ..sort(
+            (a, b) => (a.distanceKm ?? double.infinity)
+                .compareTo(b.distanceKm ?? double.infinity),
+          ))
+        : <FacilityModel>[];
+    final nearbyLimited = nearby.take(4).toList();
+    final specialties = specialtyOptions.isNotEmpty
+        ? specialtyOptions.take(8).toList()
+        : SearchFilterOptions.specialties.take(5).toList();
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -67,16 +83,16 @@ class SearchSuggestionsPanel extends StatelessWidget {
             ],
           ),
         ),
-        if (nearby.isNotEmpty)
+        if (nearbyLimited.isNotEmpty)
           _SuggestionSection(
             title: l10n.searchNearbyFacilities,
             child: Column(
               children: [
-                for (final facility in nearby)
+                for (final facility in nearbyLimited)
                   _NearbyFacilityTile(
                     name: facility.name,
-                    distanceKm: facility.distanceKm,
-                    onTap: () => onQuerySelected(facility.name),
+                    distanceKm: facility.distanceKm ?? 0,
+                    onTap: () => onFacilitySelected(facility.id),
                   ),
               ],
             ),

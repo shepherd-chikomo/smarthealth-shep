@@ -1,5 +1,4 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:smarthealth_shep/features/home/data/home_repository.dart';
 import 'package:smarthealth_shep/shared/data/provider_detail_catalog.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
@@ -16,17 +15,14 @@ class ProviderProfileResult {
   final bool isOffline;
 }
 
-/// Local-first provider profile: Hive cache → API (mock).
+/// Local-first provider profile: SQLite cache → API.
 class ProviderProfileRepository {
   ProviderProfileRepository({
-    HomeRepository? homeRepository,
     ProviderRepository? providerRepository,
     Connectivity? connectivity,
-  })  : _homeRepository = homeRepository ?? HomeRepository(),
-        _providerRepository = providerRepository ?? ProviderRepository.defaults(),
+  })  : _providerRepository = providerRepository ?? ProviderRepository.defaults(),
         _connectivity = connectivity ?? Connectivity();
 
-  final HomeRepository _homeRepository;
   final ProviderRepository _providerRepository;
   final Connectivity _connectivity;
 
@@ -35,18 +31,12 @@ class ProviderProfileRepository {
     return results.any((r) => r != ConnectivityResult.none);
   }
 
-  ProviderModel? _fromLocalCache(String id) {
-    final cached = _homeRepository.readCachedProviders();
-    if (cached == null) return null;
-    for (final provider in cached) {
-      if (provider.id == id) return provider;
-    }
-    return null;
-  }
+  Future<ProviderModel?> _fromLocalCache(String id) =>
+      _providerRepository.getById(id);
 
   Future<ProviderProfileResult?> fetchProfile(String id) async {
     final online = await _isOnline();
-    final cached = _fromLocalCache(id);
+    final cached = await _fromLocalCache(id);
 
     if (online) {
       try {

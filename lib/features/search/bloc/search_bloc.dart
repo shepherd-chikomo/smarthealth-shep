@@ -9,9 +9,9 @@ import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   SearchBloc({
-    SearchRepository? repository,
+    required SearchRepository repository,
     RecentSearchStore? recentSearchStore,
-  })  : _repository = repository ?? SearchRepository(),
+  })  : _repository = repository,
         _recentSearchStore = recentSearchStore ?? RecentSearchStore(),
         super(const SearchState()) {
     on<SearchQueryChanged>(_onQueryChanged);
@@ -65,12 +65,17 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   ) async {
     emit(state.copyWith(status: SearchStatus.loading, clearError: true));
     try {
-      final result = await _repository.loadProviders();
+      final result = await _repository.loadDiscovery();
       emit(
         state.copyWith(
           status: SearchStatus.ready,
           allProviders: result.providers,
           filteredProviders: result.providers,
+          allFacilities: result.facilities,
+          filteredFacilities: result.facilities,
+          specialtyFilterOptions: result.specialtyFilters,
+          conditionFilterOptions: result.conditionFilters,
+          ageGroupFilterOptions: result.ageGroupFilters,
           isOffline: result.isOffline,
         ),
       );
@@ -143,11 +148,17 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     FiltersApplied event,
     Emitter<SearchState> emit,
   ) async {
+    if (!state.hasActiveCriteria) return;
+
+    await _runSearch(emit);
+    if (state.status == SearchStatus.error) return;
+
     if (state.query.trim().isNotEmpty) {
       await _recentSearchStore.add(state.query);
       final searches = await _recentSearchStore.load();
       emit(state.copyWith(recentSearches: searches));
     }
+
     emit(state.copyWith(navigateToResults: true));
     emit(state.copyWith(navigateToResults: false));
   }
@@ -157,6 +168,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       emit(
         state.copyWith(
           filteredProviders: state.allProviders,
+          filteredFacilities: state.allFacilities,
           status: SearchStatus.ready,
         ),
       );
@@ -176,6 +188,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         state.copyWith(
           status: SearchStatus.ready,
           filteredProviders: result.providers,
+          filteredFacilities: result.facilities,
           isOffline: result.isOffline,
         ),
       );

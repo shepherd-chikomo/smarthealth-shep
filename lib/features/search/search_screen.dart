@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
@@ -14,13 +15,13 @@ import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 
-class SearchScreen extends StatelessWidget {
+class SearchScreen extends ConsumerWidget {
   const SearchScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider(
-      create: (_) => SearchBloc(repository: SearchRepository()),
+      create: (_) => SearchBloc(repository: ref.read(searchRepositoryProvider)),
       child: const _SearchView(),
     );
   }
@@ -65,11 +66,15 @@ class _SearchViewState extends State<_SearchView> {
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
-            if (state.status == SearchStatus.loading && state.allProviders.isEmpty) {
+            if (state.status == SearchStatus.loading &&
+                state.allProviders.isEmpty &&
+                state.allFacilities.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state.status == SearchStatus.error && state.allProviders.isEmpty) {
+            if (state.status == SearchStatus.error &&
+                state.allProviders.isEmpty &&
+                state.allFacilities.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -125,6 +130,12 @@ class _SearchViewState extends State<_SearchView> {
                     onChanged: (value) => context
                         .read<SearchBloc>()
                         .add(SearchQueryChanged(value)),
+                    onSubmitted: (value) {
+                      if (value.trim().isEmpty) return;
+                      context
+                          .read<SearchBloc>()
+                          .add(const FiltersApplied());
+                    },
                     onClear: () {
                       _controller.clear();
                       context
@@ -140,11 +151,16 @@ class _SearchViewState extends State<_SearchView> {
                         SearchSuggestionsPanel(
                           recentSearches: state.recentSearches,
                           providers: state.allProviders,
+                          facilities: state.allFacilities,
+                          specialtyOptions: state.specialtyFilterOptions,
                           onQuerySelected: (query) {
                             _controller.text = query;
                             context
                                 .read<SearchBloc>()
                                 .add(SearchQueryChanged(query));
+                            context
+                                .read<SearchBloc>()
+                                .add(const FiltersApplied());
                           },
                           onSpecialtySelected: (id) => context
                               .read<SearchBloc>()
@@ -165,10 +181,14 @@ class _SearchViewState extends State<_SearchView> {
                           onRecentRemoved: (query) => context
                               .read<SearchBloc>()
                               .add(RecentSearchRemoved(query)),
+                          onFacilitySelected: (id) =>
+                              context.push('/facility/$id'),
                         ),
                       SearchFilterSection(
                         title: l10n.searchFilterSpecialty,
-                        options: SearchFilterOptions.specialties,
+                        options: state.specialtyFilterOptions.isNotEmpty
+                            ? state.specialtyFilterOptions
+                            : SearchFilterOptions.specialties,
                         selectedIds: state.specialties,
                         group: SearchFilterGroup.specialty,
                         onToggle: (group, id) => context
@@ -177,7 +197,9 @@ class _SearchViewState extends State<_SearchView> {
                       ),
                       SearchFilterSection(
                         title: l10n.searchFilterCondition,
-                        options: SearchFilterOptions.conditions,
+                        options: state.conditionFilterOptions.isNotEmpty
+                            ? state.conditionFilterOptions
+                            : SearchFilterOptions.conditions,
                         selectedIds: state.conditions,
                         group: SearchFilterGroup.condition,
                         onToggle: (group, id) => context
@@ -186,7 +208,9 @@ class _SearchViewState extends State<_SearchView> {
                       ),
                       SearchFilterSection(
                         title: l10n.searchFilterAgeGroup,
-                        options: SearchFilterOptions.ageGroups,
+                        options: state.ageGroupFilterOptions.isNotEmpty
+                            ? state.ageGroupFilterOptions
+                            : SearchFilterOptions.ageGroups,
                         selectedIds: state.ageGroups,
                         group: SearchFilterGroup.ageGroup,
                         onToggle: (group, id) => context
@@ -212,9 +236,12 @@ class _SearchViewState extends State<_SearchView> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: PrimaryButton(
                       label: l10n.searchApplyFilters(state.resultsCount),
-                      onPressed: () => context
-                          .read<SearchBloc>()
-                          .add(const FiltersApplied()),
+                      onPressed: state.status == SearchStatus.loading ||
+                              !state.hasActiveCriteria
+                          ? null
+                          : () => context
+                              .read<SearchBloc>()
+                              .add(const FiltersApplied()),
                     ),
                   ),
                 ),
@@ -232,12 +259,14 @@ class _SearchInputField extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.onChanged,
+    required this.onSubmitted,
     required this.onClear,
   });
 
   final TextEditingController controller;
   final String hint;
   final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
   final VoidCallback onClear;
 
   @override
@@ -247,6 +276,7 @@ class _SearchInputField extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
+        onSubmitted: onSubmitted,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: hint,

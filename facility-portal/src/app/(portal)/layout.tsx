@@ -23,7 +23,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (needsProviderPortal) {
       router.replace('/provider/facilities');
     }
-  }, [loading, profile, authError, needsProviderPortal, router]);
+  }, [loading, profile, needsProviderPortal, router]);
 
   useEffect(() => {
     if (loading || !needsProviderPortal) return;

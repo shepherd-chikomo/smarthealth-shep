@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
+import 'package:smarthealth_shep/shared/models/specialty_model.dart';
 
 /// Delta sync payload from the providers API.
 class ProviderSyncPayload {
@@ -88,6 +91,104 @@ class ApiService {
     return ProviderModel.fromJson(data);
   }
 
+  Future<List<({String facilityType, String label, int count})>>
+      fetchFacilityTypeCatalog() async {
+    final response = await _get<Map<String, dynamic>>(
+      '/catalog/facility-types',
+      bypassCache: true,
+    );
+    final list = response.data?['types'] as List<dynamic>? ?? [];
+    final types = <({String facilityType, String label, int count})>[];
+    for (final item in list) {
+      if (item is! Map<String, dynamic>) continue;
+      final facilityType = item['facilityType']?.toString();
+      final label = item['label']?.toString();
+      final countRaw = item['count'];
+      if (facilityType == null || facilityType.isEmpty || label == null) {
+        continue;
+      }
+      final count = countRaw is num ? countRaw.toInt() : 0;
+      types.add((facilityType: facilityType, label: label, count: count));
+    }
+    return types;
+  }
+
+  Future<List<SpecialtyModel>> fetchCatalogSpecialties({int limit = 30}) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/catalog/specialties',
+      queryParameters: {'page': 1, 'limit': limit},
+    );
+    final list = response.data?['specialties'] as List<dynamic>? ?? [];
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(SpecialtyModel.fromJson)
+        .toList();
+  }
+
+  Future<List<({String id, String label})>> fetchCatalogConditions() async {
+    final response = await _get<Map<String, dynamic>>('/catalog/conditions');
+    return _parseCatalogFilterItems(response.data?['conditions']);
+  }
+
+  Future<List<({String id, String label})>> fetchCatalogAgeGroups() async {
+    final response = await _get<Map<String, dynamic>>('/catalog/age-groups');
+    return _parseCatalogFilterItems(response.data?['ageGroups']);
+  }
+
+  Future<List<FacilityModel>> searchFacilities(
+    ProviderSearchFilter filter,
+  ) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/search/facilities',
+      queryParameters: {
+        if (filter.query.isNotEmpty) 'q': filter.query,
+        if (filter.facilityType != null) 'facilityType': filter.facilityType,
+        if (filter.latitude != null) 'lat': filter.latitude,
+        if (filter.longitude != null) 'lon': filter.longitude,
+        if (filter.radiusKm != null) 'radiusKm': filter.radiusKm,
+        if (filter.isVerified == true) 'isVerified': true,
+        if (filter.openNow == true) 'openNow': true,
+        if (filter.hasQueue == true) 'hasQueue': true,
+        if (filter.city != null) 'city': filter.city,
+        if (filter.province != null) 'province': filter.province,
+        'page': 1,
+        'limit': 50,
+      },
+    );
+    return _parseFacilityList(response.data?['facilities']);
+  }
+
+  Future<List<FacilityModel>> fetchNearbyFacilities({
+    required double lat,
+    required double lon,
+    required double radiusKm,
+    int limit = 50,
+    int page = 1,
+    String? facilityType,
+  }) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/facilities/nearby',
+      queryParameters: {
+        'lat': lat,
+        'lon': lon,
+        'radiusKm': radiusKm,
+        'page': page,
+        'limit': limit,
+        'facilityType': ?facilityType,
+      },
+      bypassCache: true,
+    );
+
+    return _parseFacilityList(response.data?['facilities']);
+  }
+
+  Future<FacilityModel?> getFacilityById(String id) async {
+    final response = await _get<Map<String, dynamic>>('/facilities/$id');
+    final data = response.data?['facility'];
+    if (data is! Map<String, dynamic>) return null;
+    return FacilityModel.fromJson(data);
+  }
+
   Future<ProviderSyncPayload> syncProviders({DateTime? since}) async {
     final response = await _get<Map<String, dynamic>>(
       '/providers/sync',
@@ -115,11 +216,18 @@ class ApiService {
   Future<Response<T>> _get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
+    bool bypassCache = false,
   }) async {
     try {
       return await _dio.get<T>(
         path,
         queryParameters: queryParameters,
+        options: bypassCache
+            ? CacheOptions(
+                policy: CachePolicy.refresh,
+                store: MemCacheStore(),
+              ).toOptions()
+            : null,
       );
     } on DioException catch (e) {
       throw _mapDioException(e);
@@ -156,9 +264,47 @@ class ApiService {
   List<ProviderModel> _parseProviderList(Object? raw) {
     if (raw is! List<dynamic>) return const [];
 
+    final providers = <ProviderModel>[];
+    for (final item in raw) {
+      if (item is! Map<String, dynamic>) continue;
+      try {
+        final normalized = Map<String, dynamic>.from(item);
+        normalized['categoryId'] ??=
+            normalized['specialtyId'] ?? 'general-practice';
+        providers.add(ProviderModel.fromJson(normalized));
+      } catch (_) {
+        // Skip malformed rows rather than failing the whole response.
+      }
+    }
+    return providers;
+  }
+
+  List<FacilityModel> _parseFacilityList(Object? raw) {
+    if (raw is! List<dynamic>) return const [];
+
+    final facilities = <FacilityModel>[];
+    for (final item in raw) {
+      if (item is! Map<String, dynamic>) continue;
+      try {
+        facilities.add(FacilityModel.fromJson(item));
+      } catch (_) {
+        // Skip malformed rows rather than failing the whole response.
+      }
+    }
+    return facilities;
+  }
+
+  List<({String id, String label})> _parseCatalogFilterItems(Object? raw) {
+    if (raw is! List<dynamic>) return const [];
+
     return raw
         .whereType<Map<String, dynamic>>()
-        .map(ProviderModel.fromJson)
+        .map(
+          (row) => (
+            id: row['id'] as String,
+            label: row['label'] as String,
+          ),
+        )
         .toList();
   }
 }

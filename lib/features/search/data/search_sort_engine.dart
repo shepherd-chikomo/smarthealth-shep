@@ -1,4 +1,5 @@
 import 'package:smarthealth_shep/features/search/models/search_sort_option.dart';
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/utils/provider_operational_utils.dart';
 
@@ -74,5 +75,18 @@ abstract final class SearchSortEngine {
     if (a == null) return 1;
     if (b == null) return -1;
     return a.compareTo(b);
+  }
+
+  static List<FacilityModel> applyFacilities(
+    List<FacilityModel> facilities,
+    SearchSortOption sort,
+  ) {
+    final sorted = List<FacilityModel>.from(facilities);
+    if (sort == SearchSortOption.distance) {
+      sorted.sort(
+        (a, b) => _compareNullableDouble(a.distanceKm, b.distanceKm),
+      );
+    }
+    return sorted;
   }
 }

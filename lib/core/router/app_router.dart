@@ -21,6 +21,7 @@ import 'package:smarthealth_shep/features/notifications/screens/notification_pre
 import 'package:smarthealth_shep/features/notifications/screens/notifications_screen.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/features/profile/settings_screen.dart';
+import 'package:smarthealth_shep/features/facility/facility_detail_screen.dart';
 import 'package:smarthealth_shep/features/provider_profile/provider_profile_screen.dart';
 import 'package:smarthealth_shep/features/queue/queue_flow_host.dart';
 import 'package:smarthealth_shep/features/queue/queue_status_host.dart';
@@ -120,6 +121,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return ProviderProfileScreen(providerId: id);
+        },
+      ),
+      GoRoute(
+        path: '/facility/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return FacilityDetailScreen(facilityId: id);
         },
       ),
       GoRoute(

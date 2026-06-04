@@ -21,6 +21,8 @@ export const facilityListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().optional(),
   status: z.string().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
 async function attachUser(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {

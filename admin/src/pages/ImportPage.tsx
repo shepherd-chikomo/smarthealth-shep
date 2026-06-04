@@ -1,9 +1,85 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, type ImportUploadResult } from '../lib/api';
 import { ErrorState, LoadingState, PageHeader, PaginationBar } from '../components/ui';
 
 type Tab = 'batches' | 'failures' | 'duplicates' | 'specialties';
+
+function UploadCard({
+  title,
+  description,
+  upload,
+  onUploaded,
+}: {
+  title: string;
+  description: string;
+  upload: (file: File, dryRun: boolean) => Promise<ImportUploadResult>;
+  onUploaded: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dryRun, setDryRun] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (!file) throw new Error('Choose an .xlsx file first');
+      return upload(file, dryRun);
+    },
+    onSuccess: () => {
+      onUploaded();
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = '';
+    },
+  });
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+      <h3 className="mb-1 font-semibold">{title}</h3>
+      <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{description}</p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".xlsx"
+        className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-teal-600 file:px-3 file:py-1.5 file:text-white hover:file:bg-teal-700 dark:text-slate-300"
+        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+      />
+
+      <label className="mt-3 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+        <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
+        Dry run (validate without writing)
+      </label>
+
+      <button
+        type="button"
+        className="btn-primary mt-3"
+        disabled={!file || mutation.isPending}
+        onClick={() => mutation.mutate()}
+      >
+        {mutation.isPending ? 'Uploading…' : 'Upload & import'}
+      </button>
+
+      {mutation.error && (
+        <p className="mt-3 text-sm text-red-600">{(mutation.error as Error).message}</p>
+      )}
+
+      {mutation.data && (
+        <div className="mt-3 rounded border border-teal-200 bg-teal-50 p-3 text-sm dark:border-teal-800 dark:bg-teal-950">
+          <p className="font-medium">
+            {mutation.data.dryRun ? 'Dry run complete' : 'Import complete'} — {mutation.data.created}{' '}
+            created, {mutation.data.failed} failed
+          </p>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">
+            {Object.entries(mutation.data.details)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(' · ')}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">Batch {mutation.data.batchId}</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ImportPage() {
   const qc = useQueryClient();
@@ -57,8 +133,31 @@ export function ImportPage() {
     <div>
       <PageHeader
         title="Data Import"
-        description="Review MDPCZ/HPA import batches, failed rows, duplicate merges, and specialty mappings"
+        description="Upload registers and review MDPCZ/HPA import batches, failed rows, duplicate merges, and specialty mappings"
       />
+
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <UploadCard
+          title="Practitioners (MDPCZ register)"
+          description="Upload the MDPCZ public register .xlsx to import provider records."
+          upload={(file, dryRun) => api.uploadPractitioners(file, dryRun)}
+          onUploaded={() => {
+            qc.invalidateQueries({ queryKey: ['import-batches'] });
+            setTab('batches');
+            setPage(1);
+          }}
+        />
+        <UploadCard
+          title="Facilities (HPA register)"
+          description="Upload the HPA facilities .xlsx to import facility records."
+          upload={(file, dryRun) => api.uploadFacilities(file, dryRun)}
+          onUploaded={() => {
+            qc.invalidateQueries({ queryKey: ['import-batches'] });
+            setTab('batches');
+            setPage(1);
+          }}
+        />
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((t) => (
@@ -99,7 +198,7 @@ export function ImportPage() {
                         <td>{String(b.sourceFile)}</td>
                         <td>
                           <span className="badge badge-gray mr-1">{String(b.status)}</span>
-                          {b.dryRun && <span className="badge badge-yellow">dry-run</span>}
+                          {Boolean(b.dryRun) && <span className="badge badge-yellow">dry-run</span>}
                         </td>
                         <td>{String(b.totalRows)}</td>
                         <td>{String(b.importedCount)}</td>
@@ -273,14 +372,6 @@ export function ImportPage() {
         </>
       )}
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
-        <h3 className="mb-2 font-semibold">CLI Import Commands</h3>
-        <pre className="overflow-x-auto text-sm text-slate-700 dark:text-slate-300">{`cd backend
-npm run import:providers -- path/to/practitioners.xlsx
-npm run import:providers -- path/to/practitioners.xlsx --dry-run
-npm run import:providers -- path/to/practitioners.xlsx --reset
-npm run import:providers -- path/to/practitioners.xlsx --skip-geocoding`}</pre>
-      </div>
     </div>
   );
 }

@@ -1,8 +1,37 @@
+import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/utils/catalog_slug.dart';
 import 'package:smarthealth_shep/shared/utils/provider_operational_utils.dart';
 
-/// Local filter + search matching for cached providers.
+/// Local filter + search matching for cached providers and facilities.
 abstract final class SearchFilterEngine {
+  static List<FacilityModel> applyFacilities({
+    required List<FacilityModel> facilities,
+    required String query,
+    String? facilityType,
+  }) {
+    var results = facilities;
+    if (facilityType != null) {
+      results = results.where((f) => f.facilityType == facilityType).toList();
+    }
+    if (query.trim().isEmpty) return results;
+
+    final q = query.trim().toLowerCase();
+    return results.where((facility) {
+      final fields = [
+        facility.name,
+        facility.addressLine1,
+        facility.city,
+        facility.slug,
+      ].whereType<String>();
+      for (final field in fields) {
+        final lower = field.toLowerCase();
+        if (lower.contains(q)) return true;
+        if (_typoSimilarity(lower, q) >= 0.25) return true;
+      }
+      return false;
+    }).toList();
+  }
   static List<ProviderModel> apply({
     required List<ProviderModel> providers,
     required String query,
@@ -13,7 +42,7 @@ abstract final class SearchFilterEngine {
   }) {
     return providers.where((provider) {
       if (!_matchesQuery(provider, query)) return false;
-      if (!_matchesGroup(provider.specialtyId, specialties)) return false;
+      if (!_matchesSpecialties(provider, specialties)) return false;
       if (!_matchesListGroup(provider.conditions, conditions)) return false;
       if (!_matchesListGroup(provider.ageGroups, ageGroups)) return false;
       if (!_matchesOperational(provider, operational)) return false;
@@ -85,15 +114,23 @@ abstract final class SearchFilterEngine {
     return matches / longer.length;
   }
 
-  /// OR within group; empty set = no filter.
-  static bool _matchesGroup(String? value, Set<String> selected) {
-    if (selected.isEmpty) return true;
-    if (value == null) return false;
-    return selected.contains(value);
-  }
-
   static bool _matchesListGroup(List<String> values, Set<String> selected) {
     if (selected.isEmpty) return true;
-    return values.any(selected.contains);
+    return values.any(
+      (value) => selected.any((slug) => catalogSlugMatches(value, slug)),
+    );
+  }
+
+  static bool _matchesSpecialties(ProviderModel provider, Set<String> selected) {
+    if (selected.isEmpty) return true;
+    final slug = provider.specialtyId;
+    if (slug != null && selected.contains(slug)) return true;
+    final specialtySlug = provider.specialty != null
+        ? normalizeCatalogSlug(provider.specialty!)
+        : null;
+    if (specialtySlug != null && selected.contains(specialtySlug)) {
+      return true;
+    }
+    return false;
   }
 }

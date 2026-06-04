@@ -15,28 +15,37 @@ import {
   Bell,
   BadgeCheck,
   Upload,
+  type LucideIcon,
 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuth } from '../lib/auth';
 import { ThemeToggle } from './ThemeToggle';
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  superOnly?: boolean;
+  hideFromSuper?: boolean;
+};
+
+const nav: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/users', label: 'User Management', icon: UserCog, superOnly: true },
   { to: '/facility-admins', label: 'Facility Admins', icon: Users, superOnly: true },
-  { to: '/queue', label: 'Queue', icon: Activity },
+  { to: '/queue', label: 'Queue', icon: Activity, hideFromSuper: true },
   { to: '/providers', label: 'Providers', icon: Stethoscope },
   { to: '/facilities', label: 'Facilities', icon: Building2, superOnly: true },
   { to: '/registry-changes', label: 'Registry Changes', icon: FileText, superOnly: true },
-  { to: '/claims', label: 'Claims', icon: BadgeCheck },
+  { to: '/claims', label: 'Facility Claims', icon: BadgeCheck },
   { to: '/import', label: 'Data Import', icon: Upload, superOnly: true },
-  { to: '/appointments', label: 'Appointments', icon: Calendar },
-  { to: '/hours', label: 'Operating Hours', icon: Clock },
+  { to: '/appointments', label: 'Appointments', icon: Calendar, hideFromSuper: true },
+  { to: '/hours', label: 'Operating Hours', icon: Clock, hideFromSuper: true },
   { to: '/content', label: 'Content', icon: Bell },
   { to: '/settings', label: 'System Settings', icon: Settings },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3, superOnly: true },
-  { to: '/reports', label: 'Reports', icon: FileText },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3, superOnly: true, hideFromSuper: true },
+  { to: '/reports', label: 'Reports', icon: FileText, hideFromSuper: true },
   { to: '/security', label: 'Audit Log', icon: Shield },
 ];
 
@@ -60,7 +69,13 @@ export function AdminLayout() {
           </div>
         </div>
         <nav className="flex min-h-0 flex-1 gap-1 overflow-x-auto overflow-y-auto px-2 pb-3 lg:flex-col lg:overflow-x-visible lg:px-3">
-          {nav.filter((n) => !n.superOnly || isSuper).map(({ to, label, icon: Icon }) => (
+          {nav
+            .filter((n) => {
+              if (n.superOnly && !isSuper) return false;
+              if (n.hideFromSuper && isSuper) return false;
+              return true;
+            })
+            .map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

@@ -53,15 +53,21 @@ class EmergencyHubRepository {
         await _writeCache(remote);
         return remote;
       } catch (_) {
-        final fallback = EmergencyFallbackData.hub();
-        await _writeCache(fallback);
-        return fallback;
+        if (AppConfig.allowMockFallbacks) {
+          final fallback = EmergencyFallbackData.hub();
+          await _writeCache(fallback);
+          return fallback;
+        }
+        rethrow;
       }
     }
 
-    final fallback = EmergencyFallbackData.hub();
-    await _writeCache(fallback);
-    return fallback;
+    if (AppConfig.allowMockFallbacks) {
+      final fallback = EmergencyFallbackData.hub();
+      await _writeCache(fallback);
+      return fallback;
+    }
+    throw StateError('No network and no cached emergency hub data.');
   }
 
   Future<EmergencyHubData> _fetchFromApi() async {
@@ -133,12 +139,23 @@ class EmergencyHubRepository {
     }
 
     if (services.isEmpty && facilities.isEmpty) {
-      return EmergencyFallbackData.hub();
+      if (AppConfig.allowMockFallbacks) {
+        return EmergencyFallbackData.hub();
+      }
+      return EmergencyHubData(
+        services: const [],
+        facilities: const [],
+        cachedAt: DateTime.now(),
+      );
     }
 
     return EmergencyHubData(
       cachedAt: DateTime.now(),
-      services: services.isNotEmpty ? services : EmergencyFallbackData.hub().services,
+      services: services.isNotEmpty
+          ? services
+          : (AppConfig.allowMockFallbacks
+              ? EmergencyFallbackData.hub().services
+              : const []),
       facilities: facilities,
     );
   }
