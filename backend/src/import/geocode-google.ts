@@ -1,5 +1,9 @@
+import dns from 'node:dns';
 import type pg from 'pg';
 import { env } from '../config.js';
+
+// Dev VPS often has IPv6 egress; Google API keys may be restricted to IPv4 only.
+dns.setDefaultResultOrder('ipv4first');
 import {
   buildFacilityAddressQuery,
   buildNameCityQuery,
@@ -13,6 +17,7 @@ import {
   type FacilityAddressInput,
   type StructuredAddressParams,
 } from './geocode.js';
+import { isTrustedGeocodeQuality } from '../lib/geocode-quality.js';
 import { logger } from './logger.js';
 import { provinceForGeocodeQuery } from './province_resolve.js';
 import type {
@@ -508,6 +513,49 @@ export async function geocodeGoogleFacilityBatch(
       logger.warn(`Google geocoding failed for facility: ${sample.name}`, {
         error: error instanceof Error ? error.message : String(error),
         signature: sig,
+      });
+    }
+  }
+
+  return results;
+}
+
+/** Keep only trusted facility geocode results (address, name, manual). */
+export function filterTrustedGoogleResult(
+  result: GeocodeResult | null,
+): GeocodeResult | null {
+  if (!result) return null;
+  if (result.quality && !isTrustedGeocodeQuality(result.quality)) return null;
+  return result;
+}
+
+export async function geocodeGoogleEntity(
+  client: pg.PoolClient,
+  query: string,
+  skipRemote: boolean,
+): Promise<GeocodeResult | null> {
+  return filterTrustedGoogleResult(
+    await googleGeocodeFreeformAttempt(client, query, 'address', null, skipRemote),
+  );
+}
+
+export async function geocodeGoogleBatch(
+  client: pg.PoolClient,
+  queries: string[],
+  skipGeocoding: boolean,
+): Promise<Map<string, GeocodeResult>> {
+  const results = new Map<string, GeocodeResult>();
+  const unique = [...new Set(queries)];
+
+  logger.info(`Google geocoding ${unique.length} unique locations`, { skipGeocoding });
+
+  for (const query of unique) {
+    try {
+      const result = await geocodeGoogleEntity(client, query, skipGeocoding);
+      if (result) results.set(query, result);
+    } catch (error) {
+      logger.warn(`Google geocoding failed for: ${query}`, {
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

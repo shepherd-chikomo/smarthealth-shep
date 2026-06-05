@@ -30,7 +30,7 @@ const sampleGeo: GeocodeResult = {
   formattedAddress: '11 Lanark Road, Harare, Zimbabwe',
   fromCache: false,
   quality: 'address',
-  provider: 'nominatim',
+  provider: 'google',
 };
 
 describe('geocodeFacilityRecord', () => {
@@ -111,7 +111,7 @@ describe('geocodeFacilityRecord', () => {
   });
 
   it('does not throw when geocode lookup throws', async () => {
-    mockGeocodeFacilityInput.mockRejectedValue(new Error('Nominatim unavailable'));
+    mockGeocodeFacilityInput.mockRejectedValue(new Error('Google geocoding unavailable'));
 
     const result = await geocodeFacilityRecord({
       facilityId: 'fac-4',

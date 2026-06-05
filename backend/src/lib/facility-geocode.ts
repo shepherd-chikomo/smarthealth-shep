@@ -2,17 +2,10 @@ import type pg from 'pg';
 import {
   createCityCentroidMap,
   geocodeFacilityInput,
-  isWithinZimbabwe,
 } from '../import/geocode.js';
-import { geocodeGoogleFacilityInput } from '../import/geocode-google.js';
 import { logger } from '../import/logger.js';
-import {
-  inferProvinceFromCitySync,
-  lookupProvinceFromDb,
-  resolveProvinceFromCity,
-} from '../import/province_resolve.js';
-import { isTrustedGeocodeQuality } from './geocode-quality.js';
-import type { GeocodeProvider, GeocodeQuality, GeocodeResult } from '../import/types.js';
+import { resolveProvinceFromCity } from '../import/province_resolve.js';
+import type { GeocodeQuality, GeocodeResult } from '../import/types.js';
 import { pool } from './db.js';
 
 async function loadCityCentroids(
@@ -31,24 +24,6 @@ async function loadCityCentroids(
        AND longitude IS NOT NULL`,
   );
   return createCityCentroidMap(result.rows);
-}
-
-function cityCentroidFallback(
-  city: string,
-  province: string,
-  cityCentroids: ReturnType<typeof createCityCentroidMap>,
-): GeocodeResult | null {
-  const centroid = cityCentroids.get(city, province);
-  if (!centroid || !isWithinZimbabwe(centroid.lat, centroid.lon)) return null;
-
-  return {
-    latitude: centroid.lat,
-    longitude: centroid.lon,
-    formattedAddress: `${city}, ${province}, Zimbabwe (city centre)`,
-    fromCache: false,
-    quality: 'city_centre',
-    provider: 'nominatim',
-  };
 }
 
 async function applyGeocodeToFacility(
@@ -92,8 +67,6 @@ export interface GeocodeFacilityRecordInput {
   province: string | null;
   /** When true, clear coordinates if lookup fails (use after address edit). */
   clearOnFailure?: boolean;
-  /** Geocoding provider (default nominatim). */
-  provider?: GeocodeProvider;
 }
 
 export interface GeocodeFacilityRecordResult {
@@ -102,21 +75,13 @@ export interface GeocodeFacilityRecordResult {
 }
 
 /**
- * Geocode a single facility (Nominatim or Google + cache + city-centre fallback).
+ * Geocode a single facility via Google Maps Platform.
  * Non-blocking for callers: failures are logged, not thrown.
  */
 export async function geocodeFacilityRecord(
   input: GeocodeFacilityRecordInput,
 ): Promise<GeocodeFacilityRecordResult> {
-  const {
-    facilityId,
-    name,
-    addressLine1,
-    city,
-    province,
-    clearOnFailure = false,
-    provider = 'nominatim',
-  } = input;
+  const { facilityId, name, addressLine1, city, province, clearOnFailure = false } = input;
 
   if (!addressLine1 && !city) {
     return { geocoded: false };
@@ -127,34 +92,17 @@ export async function geocodeFacilityRecord(
     const cityCentroids = await loadCityCentroids(client);
     const storedProvince = province ?? (city ? await resolveProvinceFromCity(client, city) : null);
 
-    const facilityInput = {
-      name,
-      addressLine1,
-      city,
-      province: storedProvince,
-    };
-
-    let geo =
-      provider === 'google'
-        ? await geocodeGoogleFacilityInput(client, facilityInput, cityCentroids, false)
-        : await geocodeFacilityInput(client, facilityInput, cityCentroids, false);
-
-    if (
-      geo &&
-      provider === 'google' &&
-      geo.quality &&
-      !isTrustedGeocodeQuality(geo.quality)
-    ) {
-      geo = null;
-    }
-
-    if (!geo && city && provider !== 'google') {
-      const fallbackProvince =
-        (await lookupProvinceFromDb(client, city)) ?? inferProvinceFromCitySync(city);
-      if (fallbackProvince) {
-        geo = cityCentroidFallback(city, fallbackProvince, cityCentroids);
-      }
-    }
+    const geo = await geocodeFacilityInput(
+      client,
+      {
+        name,
+        addressLine1,
+        city,
+        province: storedProvince,
+      },
+      cityCentroids,
+      false,
+    );
 
     if (geo) {
       await applyGeocodeToFacility(client, facilityId, geo);
@@ -162,6 +110,7 @@ export async function geocodeFacilityRecord(
         facilityId,
         quality: geo.quality ?? 'address',
         fromCache: geo.fromCache,
+        provider: geo.provider ?? 'google',
       });
       return { geocoded: true, quality: geo.quality ?? 'address' };
     }

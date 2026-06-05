@@ -2,7 +2,7 @@
 /**
  * Backfill latitude/longitude for facilities missing coordinates.
  *
- * Uses multi-strategy Nominatim (rate-limited ~1 req/s) with geocode_cache deduplication.
+ * Uses Google Maps Platform (Geocoding + Places) with geocode_cache deduplication.
  *
  * Usage:
  *   npm run geocode:facilities
@@ -10,11 +10,10 @@
  *   npm run geocode:facilities -- --dry-run
  *   npm run geocode:facilities -- --skip-remote
  *   npm run geocode:facilities -- --import-source HPA --reset --clear-cache --csv geocode-failures.csv
- *   npm run geocode:facilities -- --provider google --from-csv ../geocode-failures.csv --limit 500
+ *   npm run geocode:facilities -- --import-source HPA --reset --clear-cache
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { isTrustedGeocodeQuality } from '../lib/geocode-quality.js';
 import { closePool, pool, withTransaction } from './db.js';
 import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import {
@@ -23,14 +22,13 @@ import {
   geocodeFacilityBatch,
   isWithinZimbabwe,
 } from './geocode.js';
-import { geocodeGoogleFacilityBatch } from './geocode-google.js';
 import {
   isUntrustedProvince,
   lookupProvinceFromDb,
   provinceForGeocodeQuery,
 } from './province_resolve.js';
 import { logger } from './logger.js';
-import type { GeocodeProvider, GeocodeQuality, GeocodeResult } from './types.js';
+import type { GeocodeQuality, GeocodeResult } from './types.js';
 
 interface FacilityRow {
   id: string;
@@ -52,7 +50,6 @@ interface GeocodeOptions {
   clearCache: boolean;
   importSource: string | null;
   noCityFallback: boolean;
-  provider: GeocodeProvider;
 }
 
 function parseArgs(): GeocodeOptions {
@@ -64,8 +61,6 @@ function parseArgs(): GeocodeOptions {
   let csvPath: string | null = null;
   let fromCsv: string | null = null;
   let importSource: string | null = null;
-  let provider: GeocodeProvider = 'nominatim';
-
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--limit' && argv[i + 1]) {
       limit = Number.parseInt(argv[i + 1], 10);
@@ -82,10 +77,6 @@ function parseArgs(): GeocodeOptions {
     } else if (argv[i] === '--import-source' && argv[i + 1]) {
       importSource = argv[i + 1];
       i++;
-    } else if (argv[i] === '--provider' && argv[i + 1]) {
-      const value = argv[i + 1] as GeocodeProvider;
-      if (value === 'google' || value === 'nominatim') provider = value;
-      i++;
     }
   }
 
@@ -93,9 +84,6 @@ function parseArgs(): GeocodeOptions {
   if (reset && !importSource && !flags.has('--all-sources')) {
     importSource = 'HPA';
   }
-
-  const noCityFallback =
-    flags.has('--no-city-fallback') || (reset && !flags.has('--allow-city-fallback'));
 
   return {
     dryRun: flags.has('--dry-run'),
@@ -107,8 +95,7 @@ function parseArgs(): GeocodeOptions {
     reset,
     clearCache: flags.has('--clear-cache'),
     importSource,
-    noCityFallback: noCityFallback || provider === 'google',
-    provider,
+    noCityFallback: true,
   };
 }
 
@@ -192,7 +179,7 @@ function cityFallback(
     formattedAddress: `${facility.city}, ${facility.province}, Zimbabwe (city centre)`,
     fromCache: false,
     quality: 'city_centre',
-    provider: 'nominatim',
+    provider: 'google',
   };
 }
 
@@ -330,24 +317,15 @@ async function run(): Promise<void> {
       importSource: opts.importSource,
       noCityFallback: opts.noCityFallback,
       city: opts.city,
-      provider: opts.provider,
       fromCsv: opts.fromCsv,
     });
 
-    const geocodeResults =
-      opts.provider === 'google'
-        ? await geocodeGoogleFacilityBatch(
-            geocodeClient,
-            inputs,
-            cityCentroids,
-            opts.skipRemote,
-          )
-        : await geocodeFacilityBatch(
-            geocodeClient,
-            inputs,
-            cityCentroids,
-            opts.skipRemote,
-          );
+    const geocodeResults = await geocodeFacilityBatch(
+      geocodeClient,
+      inputs,
+      cityCentroids,
+      opts.skipRemote,
+    );
 
     const coordWhere = opts.reset
       ? ''
@@ -355,15 +333,6 @@ async function run(): Promise<void> {
 
     for (const [sig, facilityIds] of signatureToFacilityIds) {
       let geo: GeocodeResult | null = geocodeResults.get(sig) ?? null;
-
-      if (
-        geo &&
-        opts.provider === 'google' &&
-        geo.quality &&
-        !isTrustedGeocodeQuality(geo.quality)
-      ) {
-        geo = null;
-      }
 
       if (!geo) {
         if (!opts.noCityFallback) {

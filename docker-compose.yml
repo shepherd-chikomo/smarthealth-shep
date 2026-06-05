@@ -317,6 +317,7 @@ services:
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       RETENTION_WORKER_ENABLED: "true"
     depends_on:
       smarthealth-migrate:

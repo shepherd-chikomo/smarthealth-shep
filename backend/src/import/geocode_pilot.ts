@@ -14,7 +14,7 @@ import { closePool, pool } from './db.js';
 import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import {
   createCityCentroidMap,
-  geocodeFacilityInput,
+  geocodeNominatimFacilityInput,
   type FacilityAddressInput,
 } from './geocode.js';
 import {
@@ -311,7 +311,7 @@ async function run(): Promise<void> {
 
     for (const facility of facilities) {
       const input = toInput(facility);
-      const nominatim = await geocodeFacilityInput(client, input, cityCentroids, false);
+      const nominatim = await geocodeNominatimFacilityInput(client, input, cityCentroids, false);
       const google = await geocodeGoogleFacilityInput(client, input, cityCentroids, false);
       pilotRows.push({
         id: facility.id,

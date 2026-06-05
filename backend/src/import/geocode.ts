@@ -6,6 +6,13 @@ import type {
   NormalizedFacility,
   NormalizedProvider,
 } from './types.js';
+import {
+  filterTrustedGoogleResult,
+  geocodeGoogleBatch,
+  geocodeGoogleEntity,
+  geocodeGoogleFacilityBatch,
+  geocodeGoogleFacilityInput,
+} from './geocode-google.js';
 import { logger } from './logger.js';
 import { provinceForGeocodeQuery } from './province_resolve.js';
 
@@ -459,9 +466,9 @@ export function createCityCentroidMap(
 }
 
 /**
- * Multi-strategy geocode for a facility: structured street, name+address, address, name+city, city-only.
+ * Multi-strategy Nominatim geocode (pilot/legacy only).
  */
-export async function geocodeFacilityInput(
+export async function geocodeNominatimFacilityInput(
   client: pg.PoolClient,
   facility: FacilityAddressInput,
   cityCentroids: CityCentroidMap,
@@ -548,7 +555,7 @@ export async function geocodeFacilityInput(
   return best;
 }
 
-export async function geocodeFacilityBatch(
+export async function geocodeNominatimFacilityBatch(
   client: pg.PoolClient,
   facilities: FacilityAddressInput[],
   cityCentroids: CityCentroidMap,
@@ -564,7 +571,7 @@ export async function geocodeFacilityBatch(
     signatureToFacilities.set(sig, list);
   }
 
-  logger.info(`Geocoding ${signatureToFacilities.size} unique facility locations`, {
+  logger.info(`Nominatim geocoding ${signatureToFacilities.size} unique facility locations`, {
     skipRemote,
     totalFacilities: facilities.length,
   });
@@ -572,7 +579,7 @@ export async function geocodeFacilityBatch(
   for (const [sig, group] of signatureToFacilities) {
     const sample = group[0]!;
     try {
-      const result = await geocodeFacilityInput(
+      const result = await geocodeNominatimFacilityInput(
         client,
         sample,
         cityCentroids,
@@ -580,7 +587,7 @@ export async function geocodeFacilityBatch(
       );
       if (result) results.set(sig, result);
     } catch (error) {
-      logger.warn(`Geocoding failed for facility: ${sample.name}`, {
+      logger.warn(`Nominatim geocoding failed for facility: ${sample.name}`, {
         error: error instanceof Error ? error.message : String(error),
         signature: sig,
       });
@@ -609,7 +616,7 @@ export function buildGeocodeQuery(
   return query.length > 5 ? query : null;
 }
 
-export async function geocodeEntity(
+export async function geocodeNominatimEntity(
   client: pg.PoolClient,
   query: string,
   skipRemote: boolean,
@@ -617,7 +624,7 @@ export async function geocodeEntity(
   return geocodeFreeformAttempt(client, query, 'address', null, skipRemote);
 }
 
-export async function geocodeBatch(
+export async function geocodeNominatimBatch(
   client: pg.PoolClient,
   queries: string[],
   skipGeocoding: boolean,
@@ -625,14 +632,14 @@ export async function geocodeBatch(
   const results = new Map<string, GeocodeResult>();
   const unique = [...new Set(queries)];
 
-  logger.info(`Geocoding ${unique.length} unique locations`, { skipGeocoding });
+  logger.info(`Nominatim geocoding ${unique.length} unique locations`, { skipGeocoding });
 
   for (const query of unique) {
     try {
-      const result = await geocodeEntity(client, query, skipGeocoding);
+      const result = await geocodeNominatimEntity(client, query, skipGeocoding);
       if (result) results.set(query, result);
     } catch (error) {
-      logger.warn(`Geocoding failed for: ${query}`, {
+      logger.warn(`Nominatim geocoding failed for: ${query}`, {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -640,5 +647,35 @@ export async function geocodeBatch(
 
   return results;
 }
+
+/** Default facility geocode — Google Maps Platform. */
+export async function geocodeFacilityInput(
+  client: pg.PoolClient,
+  facility: FacilityAddressInput,
+  cityCentroids: CityCentroidMap,
+  skipRemote: boolean,
+): Promise<GeocodeResult | null> {
+  return filterTrustedGoogleResult(
+    await geocodeGoogleFacilityInput(client, facility, cityCentroids, skipRemote),
+  );
+}
+
+export async function geocodeFacilityBatch(
+  client: pg.PoolClient,
+  facilities: FacilityAddressInput[],
+  cityCentroids: CityCentroidMap,
+  skipRemote: boolean,
+): Promise<Map<string, GeocodeResult>> {
+  const raw = await geocodeGoogleFacilityBatch(client, facilities, cityCentroids, skipRemote);
+  const results = new Map<string, GeocodeResult>();
+  for (const [sig, result] of raw) {
+    const trusted = filterTrustedGoogleResult(result);
+    if (trusted) results.set(sig, trusted);
+  }
+  return results;
+}
+
+export const geocodeEntity = geocodeGoogleEntity;
+export const geocodeBatch = geocodeGoogleBatch;
 
 export { TRUSTED_GEOCODE_QUALITIES, isTrustedGeocodeQuality } from '../lib/geocode-quality.js';

@@ -144,7 +144,7 @@ npm run fix:addresses                           # update address_line1 in DB
 
 ## Facility geocoding
 
-Imported HPA facilities are geocoded on `import:dual` using OpenStreetMap Nominatim (Zimbabwe-only, ~1 request/second). The backfill CLI uses a **multi-strategy cascade** (structured street search, name+address, address-only, name+city) with scoring and city plausibility checks. Results are cached in `public.geocode_cache`; `facilities.geocode_quality` controls whether `/v1/facilities/nearby` returns `distanceKm` (`address`, `name`, `manual` only).
+Imported HPA facilities are geocoded on `import:dual` using **Google Maps Platform** (Geocoding + Places). The backfill CLI uses a **multi-strategy cascade** (Places text search, structured street, name+address, address-only, name+city) with Zimbabwe bounds and city plausibility checks. Results are cached in `public.geocode_cache`; `facilities.geocode_quality` controls whether `/v1/facilities/nearby` returns `distanceKm` (`address`, `name`, `manual` only). Nominatim remains available only for `geocode:pilot` comparisons.
 
 **Fix bad provinces** before geocoding (Nominatim city lookup, caches in `public.cities`):
 
@@ -183,7 +183,7 @@ npm run geocode:facilities -- --csv failures.csv        # write unresolved rows 
 | Flag | Purpose |
 |------|---------|
 | `--dry-run` | No database writes |
-| `--skip-remote` | Skip Nominatim; use cache and city-centre fallback |
+| `--skip-remote` | Skip Google API; use cache only (no city-centre fallback) |
 | `--reset` | Clear lat/lon/formatted_address before geocoding (default scope: HPA) |
 | `--no-city-fallback` | Skip city-centre fallback on failed lookups (default when `--reset`) |
 | `--allow-city-fallback` | Re-enable city-centre fallback during a reset run |
@@ -192,7 +192,6 @@ npm run geocode:facilities -- --csv failures.csv        # write unresolved rows 
 | `--limit N` | Process at most N facilities |
 | `--city Harare` | Restrict to one city |
 | `--csv path` | Export facilities that could not be geocoded |
-| `--provider nominatim\|google` | Geocoding provider (default `nominatim`) |
 | `--from-csv path` | Limit geocoding to facility IDs listed in a CSV (e.g. `geocode-failures.csv`) |
 
 ### Google Maps geocoding pilot
@@ -220,10 +219,10 @@ npm run geocode:pilot -- --import-source HPA --quality city_centre,city_only,mis
 
 Review `pilot-results.csv` — especially rows where `recommendation` is `google` or `manual_review`.
 
-**Apply Google results** to failed facilities (only trusted `address`/`name` quality; no city-centre fallback):
+**Re-geocode all HPA facilities** after address fixes:
 
 ```powershell
-npm run geocode:facilities -- --provider google --from-csv ../geocode-failures.csv --limit 500
+npm run geocode:facilities -- --import-source HPA --reset --clear-cache --csv ../geocode-failures.csv
 npm run audit:geocode
 ```
 
