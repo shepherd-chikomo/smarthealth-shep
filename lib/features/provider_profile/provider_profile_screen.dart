@@ -13,6 +13,7 @@ import 'package:smarthealth_shep/features/provider_profile/widgets/provider_prof
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/operational_status.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/shared/utils/maps_launcher.dart';
 import 'package:smarthealth_shep/shared/widgets/claim_listing_cta.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/operating_hours_card.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/provider_availability_section.dart';
@@ -92,12 +93,7 @@ class _LoadedProfileView extends StatelessWidget {
   Future<void> _directions(ProviderModel p) async {
     final query = p.mapsQuery;
     if (query == null) return;
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await openInMaps(query);
   }
 
   static ClaimOperationalStatus _claimStatusFor(ProviderModel provider) {

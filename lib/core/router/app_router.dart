@@ -127,7 +127,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/facility/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return FacilityDetailScreen(facilityId: id);
+          final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
+          return FacilityDetailScreen(
+            facilityId: id,
+            parentTabIndex: tab,
+          );
         },
       ),
       GoRoute(

@@ -322,6 +322,24 @@ abstract class AppLocalizations {
   /// **'No facilities match this category nearby.'**
   String get homeNoProviders;
 
+  /// No description provided for @homeShowAllInCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all in {city}'**
+  String homeShowAllInCity(String city);
+
+  /// No description provided for @homeCityFallbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing facilities in {city} (exact location unavailable)'**
+  String homeCityFallbackHint(String city);
+
+  /// No description provided for @facilityOpenInMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in maps'**
+  String get facilityOpenInMaps;
+
   /// No description provided for @searchInputHint.
   ///
   /// In en, this message translates to:

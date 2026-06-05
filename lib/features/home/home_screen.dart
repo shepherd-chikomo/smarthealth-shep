@@ -8,6 +8,7 @@ import 'package:smarthealth_shep/features/home/bloc/home_bloc.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
+import 'package:smarthealth_shep/features/home/models/facility_load_mode.dart';
 import 'package:flutter/foundation.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
@@ -122,6 +123,17 @@ class _HomeDashboardView extends ConsumerWidget {
                               ),
                             ),
                           ),
+                          if (_cityFallbackHint(state, l10n) != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: Text(
+                                _cityFallbackHint(state, l10n)!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: HomeDashboardColors.textSecondary,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -166,6 +178,24 @@ class _HomeDashboardView extends ConsumerWidget {
         HomeOffline(:final categories) => categories,
         HomeError(:final categories) => categories,
         _ => const [],
+      };
+
+  String? _cityFallbackHint(HomeState state, AppLocalizations l10n) {
+    final (mode, city) = switch (state) {
+      HomeLoaded(:final loadMode, :final fallbackCity) =>
+        (loadMode, fallbackCity),
+      HomeOffline(:final loadMode, :final fallbackCity) =>
+        (loadMode, fallbackCity),
+      _ => (FacilityLoadMode.geo, null),
+    };
+    if (mode != FacilityLoadMode.cityFallback || city == null) return null;
+    return l10n.homeCityFallbackHint(city);
+  }
+
+  String? _fallbackCityFromState(HomeState state) => switch (state) {
+        HomeLoaded(:final fallbackCity) => fallbackCity,
+        HomeOffline(:final fallbackCity) => fallbackCity,
+        _ => null,
       };
 
   Future<void> _showCityPicker(BuildContext context, HomeState state) async {
@@ -253,9 +283,11 @@ class _HomeDashboardView extends ConsumerWidget {
                       onRetry: () => context
                           .read<HomeBloc>()
                           .add(const RefreshHomeData()),
-                      onClearCategory: () => context
-                          .read<HomeBloc>()
-                          .add(const SelectHomeCategory(null)),
+                      onCityFallback: _fallbackCityFromState(state) != null
+                          ? () => context
+                              .read<HomeBloc>()
+                              .add(const LoadHomeCityFallback())
+                          : null,
                     ),
                   ),
                 )
@@ -266,7 +298,7 @@ class _HomeDashboardView extends ConsumerWidget {
                     final facility = facilities[index];
                     return FacilityCard(
                       facility: facility,
-                      onTap: () => context.push('/facility/${facility.id}'),
+                      onTap: () => context.push('/facility/${facility.id}?tab=0'),
                     );
                   },
                 ),
@@ -376,47 +408,30 @@ class _HomeEmptyFacilities extends StatelessWidget {
   const _HomeEmptyFacilities({
     required this.state,
     required this.onRetry,
-    required this.onClearCategory,
+    this.onCityFallback,
   });
 
   final HomeState state;
   final VoidCallback onRetry;
-  final VoidCallback onClearCategory;
+  final VoidCallback? onCityFallback;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final total = switch (state) {
-      HomeLoaded(:final facilities) => facilities.length,
-      HomeOffline(:final facilities) => facilities.length,
-      _ => 0,
-    };
-    final filter = switch (state) {
-      HomeLoaded(:final selectedCategoryId) => selectedCategoryId,
-      HomeOffline(:final selectedCategoryId) => selectedCategoryId,
-      _ => null,
-    };
     final loadError = switch (state) {
       HomeLoaded(:final loadError) => loadError,
       _ => null,
     };
-
-    if (total > 0 && filter != null && filter != 'near_me') {
-      return Column(
-        children: [
-          Text(
-            l10n.homeNoProviders,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: HomeDashboardColors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: onClearCategory,
-            child: const Text('Show all nearby'),
-          ),
-        ],
-      );
-    }
+    final fallbackCity = switch (state) {
+      HomeLoaded(:final fallbackCity) => fallbackCity,
+      HomeOffline(:final fallbackCity) => fallbackCity,
+      _ => null,
+    };
+    final loadMode = switch (state) {
+      HomeLoaded(:final loadMode) => loadMode,
+      HomeOffline(:final loadMode) => loadMode,
+      _ => FacilityLoadMode.geo,
+    };
 
     return Column(
       children: [
@@ -436,6 +451,16 @@ class _HomeEmptyFacilities extends StatelessWidget {
               fontSize: 11,
               color: HomeDashboardColors.textSecondary,
             ),
+          ),
+        ],
+        if (loadMode == FacilityLoadMode.geo &&
+            fallbackCity != null &&
+            onCityFallback != null &&
+            loadError == null) ...[
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onCityFallback,
+            child: Text(l10n.homeShowAllInCity(fallbackCity)),
           ),
         ],
         const SizedBox(height: 16),

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
+import 'package:smarthealth_shep/features/home/models/facility_load_mode.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/service_category_model.dart';
@@ -36,6 +37,8 @@ final class HomeLoaded extends HomeState {
     this.activeQueue,
     this.loadError,
     this.searchOrigin,
+    this.loadMode = FacilityLoadMode.geo,
+    this.fallbackCity,
   });
 
   final String city;
@@ -48,13 +51,15 @@ final class HomeLoaded extends HomeState {
   final QueueSession? activeQueue;
   final String? loadError;
   final AppPosition? searchOrigin;
+  final FacilityLoadMode loadMode;
+  final String? fallbackCity;
 
   List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
       return facilities;
     }
     return facilities
-        .where((f) => f.facilityType == selectedCategoryId)
+        .where((f) => f.matchesCategory(selectedCategoryId!))
         .toList();
   }
 
@@ -69,6 +74,8 @@ final class HomeLoaded extends HomeState {
     QueueSession? activeQueue,
     String? loadError,
     AppPosition? searchOrigin,
+    FacilityLoadMode? loadMode,
+    String? fallbackCity,
     bool clearCategory = false,
     bool clearQueue = false,
     bool clearLoadError = false,
@@ -85,6 +92,8 @@ final class HomeLoaded extends HomeState {
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
       loadError: clearLoadError ? null : (loadError ?? this.loadError),
       searchOrigin: searchOrigin ?? this.searchOrigin,
+      loadMode: loadMode ?? this.loadMode,
+      fallbackCity: fallbackCity ?? this.fallbackCity,
     );
   }
 
@@ -100,6 +109,8 @@ final class HomeLoaded extends HomeState {
         activeQueue,
         loadError,
         searchOrigin,
+        loadMode,
+        fallbackCity,
       ];
 }
 
@@ -112,6 +123,8 @@ final class HomeOffline extends HomeState {
     this.selectedCategoryId,
     this.activeQueue,
     this.searchOrigin,
+    this.loadMode = FacilityLoadMode.geo,
+    this.fallbackCity,
   });
 
   final String city;
@@ -121,13 +134,15 @@ final class HomeOffline extends HomeState {
   final String? selectedCategoryId;
   final QueueSession? activeQueue;
   final AppPosition? searchOrigin;
+  final FacilityLoadMode loadMode;
+  final String? fallbackCity;
 
   List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
       return facilities;
     }
     return facilities
-        .where((f) => f.facilityType == selectedCategoryId)
+        .where((f) => f.matchesCategory(selectedCategoryId!))
         .toList();
   }
 
@@ -139,6 +154,8 @@ final class HomeOffline extends HomeState {
     String? selectedCategoryId,
     QueueSession? activeQueue,
     AppPosition? searchOrigin,
+    FacilityLoadMode? loadMode,
+    String? fallbackCity,
     bool clearCategory = false,
     bool clearQueue = false,
   }) {
@@ -151,6 +168,8 @@ final class HomeOffline extends HomeState {
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
       searchOrigin: searchOrigin ?? this.searchOrigin,
+      loadMode: loadMode ?? this.loadMode,
+      fallbackCity: fallbackCity ?? this.fallbackCity,
     );
   }
 
@@ -163,6 +182,8 @@ final class HomeOffline extends HomeState {
         selectedCategoryId,
         activeQueue,
         searchOrigin,
+        loadMode,
+        fallbackCity,
       ];
 }
 

@@ -4,13 +4,15 @@ import {
   geocodeFacilityInput,
   isWithinZimbabwe,
 } from '../import/geocode.js';
+import { geocodeGoogleFacilityInput } from '../import/geocode-google.js';
 import { logger } from '../import/logger.js';
 import {
   inferProvinceFromCitySync,
   lookupProvinceFromDb,
   resolveProvinceFromCity,
 } from '../import/province_resolve.js';
-import type { GeocodeQuality, GeocodeResult } from '../import/types.js';
+import { isTrustedGeocodeQuality } from './geocode-quality.js';
+import type { GeocodeProvider, GeocodeQuality, GeocodeResult } from '../import/types.js';
 import { pool } from './db.js';
 
 async function loadCityCentroids(
@@ -90,6 +92,8 @@ export interface GeocodeFacilityRecordInput {
   province: string | null;
   /** When true, clear coordinates if lookup fails (use after address edit). */
   clearOnFailure?: boolean;
+  /** Geocoding provider (default nominatim). */
+  provider?: GeocodeProvider;
 }
 
 export interface GeocodeFacilityRecordResult {
@@ -98,13 +102,21 @@ export interface GeocodeFacilityRecordResult {
 }
 
 /**
- * Geocode a single facility (Nominatim + cache + city-centre fallback).
+ * Geocode a single facility (Nominatim or Google + cache + city-centre fallback).
  * Non-blocking for callers: failures are logged, not thrown.
  */
 export async function geocodeFacilityRecord(
   input: GeocodeFacilityRecordInput,
 ): Promise<GeocodeFacilityRecordResult> {
-  const { facilityId, name, addressLine1, city, province, clearOnFailure = false } = input;
+  const {
+    facilityId,
+    name,
+    addressLine1,
+    city,
+    province,
+    clearOnFailure = false,
+    provider = 'nominatim',
+  } = input;
 
   if (!addressLine1 && !city) {
     return { geocoded: false };
@@ -115,19 +127,28 @@ export async function geocodeFacilityRecord(
     const cityCentroids = await loadCityCentroids(client);
     const storedProvince = province ?? (city ? await resolveProvinceFromCity(client, city) : null);
 
-    let geo = await geocodeFacilityInput(
-      client,
-      {
-        name,
-        addressLine1,
-        city,
-        province: storedProvince,
-      },
-      cityCentroids,
-      false,
-    );
+    const facilityInput = {
+      name,
+      addressLine1,
+      city,
+      province: storedProvince,
+    };
 
-    if (!geo && city) {
+    let geo =
+      provider === 'google'
+        ? await geocodeGoogleFacilityInput(client, facilityInput, cityCentroids, false)
+        : await geocodeFacilityInput(client, facilityInput, cityCentroids, false);
+
+    if (
+      geo &&
+      provider === 'google' &&
+      geo.quality &&
+      !isTrustedGeocodeQuality(geo.quality)
+    ) {
+      geo = null;
+    }
+
+    if (!geo && city && provider !== 'google') {
       const fallbackProvince =
         (await lookupProvinceFromDb(client, city)) ?? inferProvinceFromCitySync(city);
       if (fallbackProvince) {

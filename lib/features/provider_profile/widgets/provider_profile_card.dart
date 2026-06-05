@@ -4,6 +4,7 @@ import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/provider_profile/provider_profile_utils.dart';
+import 'package:smarthealth_shep/shared/utils/maps_launcher.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/widgets/smart_image.dart';

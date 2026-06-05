@@ -57,6 +57,23 @@
   "homeRetry": "Try again",
   "homeErrorTitle": "Could not load facilities",
   "homeNoProviders": "No facilities match this category nearby.",
+  "homeShowAllInCity": "Show all in {city}",
+  "@homeShowAllInCity": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCityFallbackHint": "Showing facilities in {city} (exact location unavailable)",
+  "@homeCityFallbackHint": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "facilityOpenInMaps": "Open in maps",
   "searchInputHint": "Search doctors, clinics, conditions…",
   "searchFilterSpecialty": "Filter by Specialty",
   "searchFilterCondition": "Filter by Medical Condition",

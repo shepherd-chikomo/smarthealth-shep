@@ -7,6 +7,8 @@ import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
+import 'package:smarthealth_shep/features/home/data/home_fallback_city.dart';
+import 'package:smarthealth_shep/features/home/models/facility_load_mode.dart';
 import 'package:smarthealth_shep/features/queue/data/queue_repository.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/core/location/location_service.dart';
@@ -24,6 +26,8 @@ class HomeSyncResult {
     this.activeQueue,
     this.loadError,
     this.searchOrigin,
+    this.loadMode = FacilityLoadMode.geo,
+    this.fallbackCity,
   });
 
   final List<FacilityModel> facilities;
@@ -33,6 +37,8 @@ class HomeSyncResult {
   final QueueSession? activeQueue;
   final String? loadError;
   final AppPosition? searchOrigin;
+  final FacilityLoadMode loadMode;
+  final String? fallbackCity;
 }
 
 /// Loads and caches home dashboard facility data (offline-first).
@@ -56,10 +62,11 @@ class HomeRepository {
 
   static const _cacheFacilitiesKey = 'home_facilities_json';
   static const _cacheCityKey = 'home_city';
+  static const _cacheCityManualKey = 'home_city_manual';
   static const _cacheUpdatedKey = 'home_last_updated';
   static const _cacheSchemaKey = 'home_facilities_cache_schema';
   /// Bump when home facility API semantics change (e.g. after geocoding backfill).
-  static const _cacheSchemaVersion = 5;
+  static const _cacheSchemaVersion = 6;
 
   Box get _box => Hive.box(HiveBoxes.homeDashboard);
 
@@ -67,6 +74,16 @@ class HomeRepository {
     final results = await _connectivity.checkConnectivity();
     return results.any((r) => r != ConnectivityResult.none);
   }
+
+  bool _isHeaderCityManual() =>
+      _box.get(_cacheCityManualKey, defaultValue: false) as bool;
+
+  String _resolveFallbackCity(AppPosition origin, String headerCity) =>
+      resolveFallbackCity(
+        origin: origin,
+        headerCity: headerCity,
+        headerCityManual: _isHeaderCityManual(),
+      );
 
   Future<HomeSyncResult> sync({
     bool forceRefresh = false,
@@ -106,6 +123,9 @@ class HomeRepository {
       );
       final facilities = nearby.facilities;
       final now = DateTime.now();
+      final fallbackCity = facilities.isEmpty && !nearby.isOffline
+          ? _resolveFallbackCity(origin, city)
+          : null;
 
       developer.log(
         'Loaded ${facilities.length} facilities from API',
@@ -125,6 +145,8 @@ class HomeRepository {
         isOffline: nearby.isOffline || !online,
         activeQueue: _queue.getActiveSession(),
         searchOrigin: origin,
+        loadMode: FacilityLoadMode.geo,
+        fallbackCity: fallbackCity,
       );
     } catch (error, stackTrace) {
       developer.log(
@@ -144,6 +166,7 @@ class HomeRepository {
           activeQueue: _queue.getActiveSession(),
           loadError: error.toString(),
           searchOrigin: origin,
+          fallbackCity: _resolveFallbackCity(origin, city),
         );
       }
 
@@ -155,12 +178,73 @@ class HomeRepository {
         activeQueue: _queue.getActiveSession(),
         loadError: error.toString(),
         searchOrigin: origin,
+        fallbackCity: _resolveFallbackCity(origin, city),
       );
     }
   }
 
-  Future<void> saveCity(String city) async {
+  Future<HomeSyncResult> syncCityFallback({
+    required String city,
+    String? facilityType,
+  }) async {
+    final headerCity = _box.get(_cacheCityKey, defaultValue: 'Harare') as String;
+    final online = await _isOnline();
+    final origin = _searchOrigin.readCached();
+
+    developer.log(
+      'City fallback sync (city=$city, type=$facilityType)',
+      name: _logName,
+    );
+
+    try {
+      final result = await _facilities.getFacilitiesByCity(
+        city: city,
+        facilityType: facilityType,
+      );
+      final facilities = result.facilities;
+      final now = DateTime.now();
+
+      if (facilities.isNotEmpty) {
+        await _writeCache(facilities, headerCity, now);
+      }
+
+      return HomeSyncResult(
+        facilities: facilities,
+        city: headerCity,
+        lastUpdated: now,
+        isOffline: result.isOffline || !online,
+        activeQueue: _queue.getActiveSession(),
+        searchOrigin: origin,
+        loadMode: FacilityLoadMode.cityFallback,
+        fallbackCity: city,
+      );
+    } catch (error, stackTrace) {
+      developer.log(
+        'City fallback sync failed',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+
+      return HomeSyncResult(
+        facilities: const [],
+        city: headerCity,
+        lastUpdated: DateTime.now(),
+        isOffline: true,
+        activeQueue: _queue.getActiveSession(),
+        loadError: error.toString(),
+        searchOrigin: origin,
+        loadMode: FacilityLoadMode.cityFallback,
+        fallbackCity: city,
+      );
+    }
+  }
+
+  Future<void> saveCity(String city, {bool manual = false}) async {
     await _box.put(_cacheCityKey, city);
+    if (manual) {
+      await _box.put(_cacheCityManualKey, true);
+    }
   }
 
   List<FacilityModel>? readCachedFacilities() => _readCache()?.facilities;

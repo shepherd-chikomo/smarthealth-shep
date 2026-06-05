@@ -126,6 +126,19 @@ class AppLocalizationsNd extends AppLocalizations {
   String get homeNoProviders => 'No facilities match this category nearby.';
 
   @override
+  String homeShowAllInCity(String city) {
+    return 'Show all in $city';
+  }
+
+  @override
+  String homeCityFallbackHint(String city) {
+    return 'Showing facilities in $city (exact location unavailable)';
+  }
+
+  @override
+  String get facilityOpenInMaps => 'Open in maps';
+
+  @override
   String get searchInputHint => 'Search doctors, clinics, conditions…';
 
   @override

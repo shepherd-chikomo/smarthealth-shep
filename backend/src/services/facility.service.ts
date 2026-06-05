@@ -13,15 +13,24 @@ import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admi
 import { normalizeEmail, normalizeZimbabwePhone, ensureAuthUserEmail } from '../lib/supabase-auth.js';
 import { logAppointmentAudit, logPermissionAudit } from '../lib/audit-log.js';
 import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
+import {
+  effectiveFacilityTypes,
+  normalizeFacilityTypes,
+} from '../lib/facility-types.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
 import type { RequestContext } from '../lib/request-context.js';
 
 function mapFacility(row: Record<string, unknown>) {
+  const facilityTypes = effectiveFacilityTypes({
+    facility_type: String(row.facility_type),
+    facility_types: row.facility_types as string[] | null,
+  });
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
     facilityType: row.facility_type,
+    facilityTypes,
     description: row.description,
     addressLine1: row.address_line1,
     addressLine2: row.address_line2,
@@ -251,9 +260,13 @@ export async function updateFacilityProfile(
     phone?: string;
     email?: string;
     website?: string;
+    facilityTypes?: string[];
   },
 ) {
   await requireFacilityAdmin(user, facilityId);
+
+  const normalizedTypes =
+    data.facilityTypes !== undefined ? normalizeFacilityTypes(data.facilityTypes) : null;
 
   const existing = await query<{
     address_line1: string | null;
@@ -282,6 +295,8 @@ export async function updateFacilityProfile(
        phone = COALESCE($7, phone),
        email = COALESCE($8, email),
        website = COALESCE($9, website),
+       facility_type = COALESCE($10, facility_type),
+       facility_types = COALESCE($11, facility_types),
        updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -295,6 +310,8 @@ export async function updateFacilityProfile(
       data.phone ?? null,
       data.email ?? null,
       data.website ?? null,
+      normalizedTypes ? normalizedTypes[0] : null,
+      normalizedTypes ? normalizedTypes : null,
     ],
   );
 

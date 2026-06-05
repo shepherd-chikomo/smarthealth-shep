@@ -44,6 +44,8 @@ const envSchema = z.object({
   // Email fallback (Resend)
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  // Google Maps Platform (Geocoding + Places — optional, for geocode pilot/backfill)
+  GOOGLE_MAPS_API_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,32 +1,31 @@
 import { query } from '../lib/db.js';
+import { FACILITY_TYPE_LABELS } from '../lib/facility-types.js';
 import { toCatalogSlug } from '../lib/catalog-slug.js';
 import { searchSpecialties } from './search.service.js';
 
-const FACILITY_TYPE_LABELS: Record<string, string> = {
-  hospital: 'Hospitals',
-  clinic: 'Clinics',
-  pharmacy: 'Pharmacies',
-  laboratory: 'Laboratories',
-  dental: 'Dental',
-  optometry: 'Optometry',
-  imaging: 'Imaging',
-  other: 'Other care',
-};
-
 export async function listFacilityTypeCatalog() {
   const result = await query<{ facility_type: string; count: string }>(
-    `SELECT facility_type, COUNT(*)::text AS count
-     FROM public.facilities
-     WHERE is_active = true AND deleted_at IS NULL
-     GROUP BY facility_type
+    `SELECT expanded.facility_type, COUNT(*)::text AS count
+     FROM public.facilities f
+     CROSS JOIN LATERAL (
+       SELECT unnest(
+         CASE
+           WHEN cardinality(f.facility_types) > 0 THEN f.facility_types
+           ELSE ARRAY[f.facility_type]
+         END
+       ) AS facility_type
+     ) expanded
+     WHERE f.is_active = true AND f.deleted_at IS NULL
+     GROUP BY expanded.facility_type
      HAVING COUNT(*) > 0
-     ORDER BY COUNT(*) DESC, facility_type ASC`,
+     ORDER BY COUNT(*) DESC, expanded.facility_type ASC`,
   );
 
   return {
     types: result.rows.map((row) => ({
       facilityType: row.facility_type,
-      label: FACILITY_TYPE_LABELS[row.facility_type] ?? row.facility_type,
+      label: FACILITY_TYPE_LABELS[row.facility_type as keyof typeof FACILITY_TYPE_LABELS]
+        ?? row.facility_type,
       count: Number(row.count),
     })),
   };

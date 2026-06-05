@@ -180,6 +180,7 @@ export const facilitySchema = z.object({
   name: z.string(),
   slug: z.string(),
   facilityType: z.string(),
+  facilityTypes: z.array(z.string()).optional(),
   description: z.string().nullable(),
   addressLine1: z.string().nullable(),
   city: z.string(),

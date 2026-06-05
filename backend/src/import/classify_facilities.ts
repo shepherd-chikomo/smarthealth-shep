@@ -189,6 +189,7 @@ async function run(): Promise<void> {
         await client.query(
           `UPDATE public.facilities AS f
            SET facility_type = v.new_type::public.facility_type,
+               facility_types = ARRAY[v.new_type::public.facility_type],
                updated_at = timezone('utc', now())
            FROM (
              SELECT unnest($1::uuid[]) AS id,

@@ -1,6 +1,7 @@
 import { query } from '../lib/db.js';
 import { buildPaginationMeta, paginationOffset } from '../lib/pagination.js';
 import { buildTextMatchCondition, normalizeSearchQuery } from '../lib/search-query.js';
+import { effectiveFacilityTypes, sqlFacilityMatchesType } from '../lib/facility-types.js';
 
 export interface ProviderSearchOptions {
   page: number;
@@ -313,7 +314,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     params.push(`%${options.city}%`);
   }
   if (options.facilityType) {
-    conditions.push(`f.facility_type = $${idx++}::public.facility_type`);
+    conditions.push(sqlFacilityMatchesType('f', `$${idx++}`));
     params.push(options.facilityType);
   }
   if (options.isVerified !== undefined) {
@@ -376,6 +377,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     name: string;
     slug: string;
     facility_type: string;
+    facility_types: string[] | null;
     description: string | null;
     address_line1: string | null;
     city: string;
@@ -393,7 +395,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     rank_score: number;
     provider_count: number;
   }>(
-    `SELECT f.id, f.name, f.slug, f.facility_type, f.description, f.address_line1,
+    `SELECT f.id, f.name, f.slug, f.facility_type, f.facility_types, f.description, f.address_line1,
             f.city, f.province, f.phone, f.email, f.website,
             f.latitude, f.longitude, f.is_verified, f.logo_path,
             public.is_facility_open_now(f.id) AS is_open_now,
@@ -414,6 +416,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
       name: row.name,
       slug: row.slug,
       facilityType: row.facility_type,
+      facilityTypes: effectiveFacilityTypes(row),
       description: row.description,
       addressLine1: row.address_line1,
       city: row.city,

@@ -1,4 +1,5 @@
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
+import 'package:smarthealth_shep/core/utils/haversine.dart';
 
 /// Searchable catalog of major Zimbabwe cities for manual location entry.
 abstract final class ZimbabweCities {
@@ -50,5 +51,19 @@ abstract final class ZimbabweCities {
       if (city.name.toLowerCase() == normalized) return city;
     }
     return null;
+  }
+
+  /// Closest catalog city to [lat]/[lon] by great-circle distance.
+  static ZimbabweCity nearestTo(double lat, double lon) {
+    ZimbabweCity nearest = all.first;
+    var bestKm = double.infinity;
+    for (final city in all) {
+      final km = haversineDistanceKm(lat, lon, city.latitude, city.longitude);
+      if (km < bestKm) {
+        bestKm = km;
+        nearest = city;
+      }
+    }
+    return nearest;
   }
 }

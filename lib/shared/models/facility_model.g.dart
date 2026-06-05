@@ -12,6 +12,11 @@ _FacilityModel _$FacilityModelFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       slug: json['slug'] as String,
       facilityType: json['facilityType'] as String,
+      facilityTypes:
+          (json['facilityTypes'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       description: json['description'] as String?,
       addressLine1: json['addressLine1'] as String?,
       city: json['city'] as String,
@@ -32,6 +37,7 @@ Map<String, dynamic> _$FacilityModelToJson(_FacilityModel instance) =>
       'name': instance.name,
       'slug': instance.slug,
       'facilityType': instance.facilityType,
+      'facilityTypes': instance.facilityTypes,
       'description': instance.description,
       'addressLine1': instance.addressLine1,
       'city': instance.city,

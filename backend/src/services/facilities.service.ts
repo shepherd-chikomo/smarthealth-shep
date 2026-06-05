@@ -3,6 +3,10 @@ import { NotFoundError } from '../lib/errors.js';
 import { buildPaginationMeta, paginationOffset, parseSort } from '../lib/pagination.js';
 import { normalizeSearchQuery } from '../lib/search-query.js';
 import { isTrustedGeocodeQuality } from '../lib/geocode-quality.js';
+import {
+  effectiveFacilityTypes,
+  sqlFacilityMatchesType,
+} from '../lib/facility-types.js';
 import { searchFacilitiesRanked } from './search.service.js';
 
 interface FacilityRow {
@@ -10,6 +14,7 @@ interface FacilityRow {
   name: string;
   slug: string;
   facility_type: string;
+  facility_types: string[] | null;
   description: string | null;
   address_line1: string | null;
   city: string;
@@ -31,11 +36,13 @@ function shouldShowDistance(row: FacilityRow): boolean {
 }
 
 function mapFacility(row: FacilityRow, includeDistance = false) {
+  const facilityTypes = effectiveFacilityTypes(row);
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
     facilityType: row.facility_type,
+    facilityTypes,
     description: row.description,
     addressLine1: row.address_line1,
     city: row.city,
@@ -109,7 +116,7 @@ export async function listFacilities(options: {
     params.push(`%${options.city}%`);
   }
   if (options.facilityType) {
-    conditions.push(`facility_type = $${idx++}::public.facility_type`);
+    conditions.push(sqlFacilityMatchesType('facilities', `$${idx++}`));
     params.push(options.facilityType);
   }
   if (options.isVerified !== undefined) {
@@ -128,7 +135,7 @@ export async function listFacilities(options: {
   const total = Number(countResult.rows[0]?.count ?? 0);
 
   const result = await query<FacilityRow>(
-    `SELECT id, name, slug, facility_type, description, address_line1, city, province,
+    `SELECT id, name, slug, facility_type, facility_types, description, address_line1, city, province,
             phone, email, website, latitude, longitude, geocode_quality, is_verified, logo_path,
             NULL::float AS distance_km
      FROM public.facilities
@@ -146,7 +153,7 @@ export async function listFacilities(options: {
 
 export async function getFacilityById(id: string) {
   const result = await query<FacilityRow>(
-    `SELECT id, name, slug, facility_type, description, address_line1, city, province,
+    `SELECT id, name, slug, facility_type, facility_types, description, address_line1, city, province,
             phone, email, website, latitude, longitude, geocode_quality, is_verified, logo_path,
             NULL::float AS distance_km
      FROM public.facilities
@@ -171,7 +178,7 @@ export async function nearbyFacilities(options: {
   let idx = 4;
 
   const typeClause = options.facilityType
-    ? ` AND f.facility_type = $${idx++}::public.facility_type`
+    ? ` AND ${sqlFacilityMatchesType('f', `$${idx++}`)}`
     : '';
   if (options.facilityType) {
     params.push(options.facilityType);
@@ -194,7 +201,7 @@ export async function nearbyFacilities(options: {
   const total = Number(countResult.rows[0]?.count ?? 0);
 
   const result = await query<FacilityRow>(
-    `SELECT id, name, slug, facility_type, description, address_line1, city, province,
+    `SELECT id, name, slug, facility_type, facility_types, description, address_line1, city, province,
             phone, email, website, latitude, longitude, geocode_quality, is_verified, logo_path,
             ST_Distance(
               ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,

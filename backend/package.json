@@ -25,6 +25,7 @@
     "fix:addresses": "tsx src/import/fix_facility_addresses.ts",
     "fix:provinces": "tsx src/import/fix_facility_provinces.ts",
     "geocode:facilities": "tsx src/import/geocode_facilities.ts",
+    "geocode:pilot": "tsx src/import/geocode_pilot.ts",
     "geocode:import-csv": "tsx src/import/import_geocode_csv.ts",
     "audit:geocode": "tsx src/import/audit_geocode.ts",
     "db:migrate:geocode-quality": "tsx src/import/apply_geocode_migration.ts",

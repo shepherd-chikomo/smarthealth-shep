@@ -80,13 +80,21 @@ export type GeocodeQuality =
   | 'city_centre'
   | 'manual';
 
+export type GeocodeProvider = 'nominatim' | 'google';
+
+export type GoogleGeocodeStrategy =
+  | 'places_text'
+  | 'geocoding_structured'
+  | 'geocoding_freeform';
+
 export interface GeocodeResult {
   latitude: number;
   longitude: number;
   formattedAddress: string;
   fromCache: boolean;
   quality?: GeocodeQuality;
-  provider?: 'nominatim';
+  provider?: GeocodeProvider;
+  googleStrategy?: GoogleGeocodeStrategy;
 }
 
 export interface ImportOptions {

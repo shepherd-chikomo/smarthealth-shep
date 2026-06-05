@@ -11,7 +11,7 @@ import { provinceForGeocodeQuery } from './province_resolve.js';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org/search';
 const RATE_LIMIT_MS = 1100;
-const MAX_CITY_DISTANCE_KM = 35;
+export const MAX_CITY_DISTANCE_KM = 35;
 
 /** Typical Zimbabwe bounding box (matches import validate.ts warnings). */
 const ZIMBABWE_LAT_MIN = -25;
@@ -269,21 +269,30 @@ function hitToResult(
   };
 }
 
-function passesPlausibility(
-  hit: NominatimHit,
+export function passesGeocodePlausibility(
+  lat: number,
+  lon: number,
   quality: GeocodeQuality,
   cityCentroid: { lat: number; lon: number } | null,
 ): boolean {
   if (!cityCentroid) return true;
   if (quality === 'city_only' || quality === 'city_centre') return true;
 
-  const dist = haversineKm(
+  const dist = haversineKm(lat, lon, cityCentroid.lat, cityCentroid.lon);
+  return dist <= MAX_CITY_DISTANCE_KM;
+}
+
+function passesPlausibility(
+  hit: NominatimHit,
+  quality: GeocodeQuality,
+  cityCentroid: { lat: number; lon: number } | null,
+): boolean {
+  return passesGeocodePlausibility(
     hit.latitude,
     hit.longitude,
-    cityCentroid.lat,
-    cityCentroid.lon,
+    quality,
+    cityCentroid,
   );
-  return dist <= MAX_CITY_DISTANCE_KM;
 }
 
 function pickBestHit(
@@ -333,7 +342,7 @@ export async function getCachedGeocode(
     longitude: result.rows[0].longitude,
     formattedAddress: result.rows[0].formatted_address,
     fromCache: true,
-    provider: (result.rows[0].provider as 'nominatim') ?? 'nominatim',
+    provider: (result.rows[0].provider as GeocodeResult['provider']) ?? 'nominatim',
   });
 }
 

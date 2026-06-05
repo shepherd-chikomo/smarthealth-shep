@@ -40,6 +40,33 @@ class FacilityCache {
     return null;
   }
 
+  Future<void> upsertOne(Map<String, dynamic> facility) async {
+    final id = facility['id'];
+    if (id is! String || id.isEmpty) return;
+
+    final all = readAll();
+    final index = all.indexWhere((entry) => entry['id'] == id);
+    if (index >= 0) {
+      all[index] = {...all[index], ...facility};
+    } else {
+      all.add(facility);
+    }
+    await saveAll(all);
+  }
+
+  Future<void> patchCoordinates(String id, double lat, double lon) async {
+    final all = readAll();
+    final index = all.indexWhere((entry) => entry['id'] == id);
+    if (index < 0) return;
+
+    all[index] = {
+      ...all[index],
+      'latitude': lat,
+      'longitude': lon,
+    };
+    await saveAll(all);
+  }
+
   DateTime? get lastSyncedAt {
     final raw = box.get(_lastSyncKey) as String?;
     return raw != null ? DateTime.tryParse(raw) : null;

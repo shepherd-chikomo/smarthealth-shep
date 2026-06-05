@@ -182,6 +182,26 @@ class ApiService {
     return _parseFacilityList(response.data?['facilities']);
   }
 
+  Future<List<FacilityModel>> fetchFacilitiesByCity({
+    required String city,
+    String? facilityType,
+    int limit = 50,
+    int page = 1,
+  }) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/facilities',
+      queryParameters: {
+        'city': city,
+        'page': page,
+        'limit': limit,
+        'facilityType': ?facilityType,
+      },
+      bypassCache: true,
+    );
+
+    return _parseFacilityList(response.data?['facilities']);
+  }
+
   Future<FacilityModel?> getFacilityById(String id) async {
     final response = await _get<Map<String, dynamic>>('/facilities/$id');
     final data = response.data?['facility'];

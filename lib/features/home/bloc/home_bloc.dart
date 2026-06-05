@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
+import 'package:smarthealth_shep/features/home/models/facility_load_mode.dart';
 import 'package:smarthealth_shep/shared/data/category_repository.dart';
 import 'package:smarthealth_shep/shared/models/service_category_model.dart';
 
@@ -16,6 +17,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<RefreshHomeData>(_onRefresh);
     on<SelectHomeCategory>(_onSelectCategory);
     on<ChangeHomeCity>(_onChangeCity);
+    on<LoadHomeCityFallback>(_onLoadCityFallback);
   }
 
   final HomeRepository _repository;
@@ -48,6 +50,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isRefreshing: true,
         activeQueue: current.activeQueue,
         searchOrigin: current.searchOrigin,
+        loadMode: current.loadMode,
+        fallbackCity: current.fallbackCity,
       ));
     }
     _cachedCategories = await _categories.getHomeServiceCategories();
@@ -56,6 +60,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         : current is HomeOffline
             ? current.selectedCategoryId
             : null;
+
+    if (current is HomeLoaded && current.loadMode == FacilityLoadMode.cityFallback) {
+      await _fetchCityFallback(emit, categoryId: categoryId, current: current);
+      return;
+    }
+
     await _fetch(
       emit,
       isRefresh: true,
@@ -89,32 +99,112 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         manualCityName: manualCityName,
       );
 
-      if (result.isOffline) {
-        emit(HomeOffline(
-          city: result.city,
-          facilities: result.facilities,
-          lastUpdated: result.lastUpdated,
-          categories: _cachedCategories,
-          selectedCategoryId: selectedCategoryId,
-          activeQueue: result.activeQueue,
-          searchOrigin: result.searchOrigin,
-        ));
-      } else {
-        emit(HomeLoaded(
-          city: result.city,
-          facilities: result.facilities,
-          lastUpdated: result.lastUpdated,
-          categories: _cachedCategories,
-          selectedCategoryId: selectedCategoryId,
-          activeQueue: result.activeQueue,
-          loadError: result.loadError,
-          searchOrigin: result.searchOrigin,
-        ));
-      }
+      _emitSyncResult(
+        emit,
+        result: result,
+        selectedCategoryId: selectedCategoryId,
+      );
     } catch (error) {
       emit(HomeError(
         message: error.toString(),
         categories: _cachedCategories,
+      ));
+    }
+  }
+
+  Future<void> _fetchCityFallback(
+    Emitter<HomeState> emit, {
+    String? categoryId,
+    HomeLoaded? current,
+  }) async {
+    try {
+      final previous = current ?? state;
+      final selectedCategoryId = categoryId ??
+          (previous is HomeLoaded
+              ? previous.selectedCategoryId
+              : previous is HomeOffline
+                  ? previous.selectedCategoryId
+                  : null);
+      final city = previous is HomeLoaded
+          ? (previous.fallbackCity ?? previous.city)
+          : previous is HomeOffline
+              ? (previous.fallbackCity ?? previous.city)
+              : 'Harare';
+
+      final result = await _repository.syncCityFallback(
+        city: city,
+        facilityType: _facilityTypeForCategory(selectedCategoryId),
+      );
+
+      _emitSyncResult(
+        emit,
+        result: result,
+        selectedCategoryId: selectedCategoryId,
+      );
+    } catch (error) {
+      emit(HomeError(
+        message: error.toString(),
+        categories: _cachedCategories,
+      ));
+    }
+  }
+
+  Future<void> _onLoadCityFallback(
+    LoadHomeCityFallback event,
+    Emitter<HomeState> emit,
+  ) async {
+    final current = state;
+    if (current is HomeLoaded) {
+      emit(current.copyWith(isRefreshing: true));
+    } else if (current is HomeOffline) {
+      emit(HomeLoaded(
+        city: current.city,
+        facilities: current.facilities,
+        lastUpdated: current.lastUpdated,
+        categories: current.categories,
+        selectedCategoryId: current.selectedCategoryId,
+        isRefreshing: true,
+        activeQueue: current.activeQueue,
+        searchOrigin: current.searchOrigin,
+        loadMode: current.loadMode,
+        fallbackCity: current.fallbackCity,
+      ));
+    } else {
+      return;
+    }
+
+    await _fetchCityFallback(emit);
+  }
+
+  void _emitSyncResult(
+    Emitter<HomeState> emit, {
+    required HomeSyncResult result,
+    String? selectedCategoryId,
+  }) {
+    if (result.isOffline) {
+      emit(HomeOffline(
+        city: result.city,
+        facilities: result.facilities,
+        lastUpdated: result.lastUpdated,
+        categories: _cachedCategories,
+        selectedCategoryId: selectedCategoryId,
+        activeQueue: result.activeQueue,
+        searchOrigin: result.searchOrigin,
+        loadMode: result.loadMode,
+        fallbackCity: result.fallbackCity,
+      ));
+    } else {
+      emit(HomeLoaded(
+        city: result.city,
+        facilities: result.facilities,
+        lastUpdated: result.lastUpdated,
+        categories: _cachedCategories,
+        selectedCategoryId: selectedCategoryId,
+        activeQueue: result.activeQueue,
+        loadError: result.loadError,
+        searchOrigin: result.searchOrigin,
+        loadMode: result.loadMode,
+        fallbackCity: result.fallbackCity,
       ));
     }
   }
@@ -129,6 +219,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         selectedCategoryId: event.categoryId,
         clearCategory: event.categoryId == null,
         isRefreshing: true,
+        loadMode: FacilityLoadMode.geo,
       ));
     } else if (current is HomeOffline) {
       emit(HomeLoaded(
@@ -140,6 +231,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isRefreshing: true,
         activeQueue: current.activeQueue,
         searchOrigin: current.searchOrigin,
+        loadMode: FacilityLoadMode.geo,
+        fallbackCity: current.fallbackCity,
       ));
     } else {
       return;
@@ -157,7 +250,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     ChangeHomeCity event,
     Emitter<HomeState> emit,
   ) async {
-    await _repository.saveCity(event.city);
+    await _repository.saveCity(event.city, manual: true);
     final current = state;
     if (current is HomeLoaded) {
       emit(current.copyWith(city: event.city, isRefreshing: true));
@@ -171,6 +264,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isRefreshing: true,
         activeQueue: current.activeQueue,
         searchOrigin: current.searchOrigin,
+        loadMode: current.loadMode,
+        fallbackCity: event.city,
       ));
     }
 

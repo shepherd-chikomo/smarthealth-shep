@@ -143,7 +143,7 @@ class _DirectoryResultsScreenState extends State<DirectoryResultsScreen> {
                           FacilityCard(
                             facility: _sortedFacilities[i],
                             onTap: () => context.push(
-                              '/facility/${_sortedFacilities[i].id}',
+                              '/facility/${_sortedFacilities[i].id}?tab=1',
                             ),
                           ),
                         ],

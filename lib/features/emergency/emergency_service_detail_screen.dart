@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';import 'package:smarthealth_shep/core/utils/app_constants.dart';
+import 'package:go_router/go_router.dart';
+import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
+import 'package:smarthealth_shep/shared/utils/maps_launcher.dart';
 import 'package:smarthealth_shep/features/emergency/widgets/emergency_hub_widgets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
@@ -27,12 +29,7 @@ class EmergencyServiceDetailScreen extends StatelessWidget {
         ? '${service.nearestLatitude},${service.nearestLongitude}'
         : service.nearestProviderName;
     if (query == null) return;
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await openInMaps(query);
   }
 
   @override

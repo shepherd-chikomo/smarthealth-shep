@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { FACILITY_TYPE_VALUES } from '../lib/facility-types.js';
 import { getRequestContext } from '../lib/request-context.js';
 import { facilityListQuerySchema, requireFacilityStaffAuth } from '../plugins/facility-guard.js';
 import * as facility from '../services/facility.service.js';
@@ -58,6 +59,7 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
           phone: z.string().optional(),
           email: z.string().optional(),
           website: z.string().optional(),
+          facilityTypes: z.array(z.enum(FACILITY_TYPE_VALUES)).min(1).optional(),
         }),
       },
     },

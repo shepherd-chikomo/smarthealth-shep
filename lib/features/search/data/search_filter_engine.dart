@@ -12,7 +12,7 @@ abstract final class SearchFilterEngine {
   }) {
     var results = facilities;
     if (facilityType != null) {
-      results = results.where((f) => f.facilityType == facilityType).toList();
+      results = results.where((f) => f.matchesCategory(facilityType!)).toList();
     }
     if (query.trim().isEmpty) return results;
 

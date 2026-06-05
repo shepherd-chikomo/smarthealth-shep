@@ -192,6 +192,40 @@ npm run geocode:facilities -- --csv failures.csv        # write unresolved rows 
 | `--limit N` | Process at most N facilities |
 | `--city Harare` | Restrict to one city |
 | `--csv path` | Export facilities that could not be geocoded |
+| `--provider nominatim\|google` | Geocoding provider (default `nominatim`) |
+| `--from-csv path` | Limit geocoding to facility IDs listed in a CSV (e.g. `geocode-failures.csv`) |
+
+### Google Maps geocoding pilot
+
+For facilities Nominatim could not resolve, you can compare or apply **Google Geocoding + Places** (paid; typically within the $200/mo Maps Platform credit for a one-time backfill).
+
+**Setup (one-time):**
+
+1. Enable **Geocoding API** and **Places API** in Google Cloud Console.
+2. Create an API key restricted to those APIs.
+3. Add to `backend/.env`:
+
+```env
+GOOGLE_MAPS_API_KEY=your-key-here
+```
+
+**Side-by-side pilot** (no DB writes; writes `pilot-results.csv`):
+
+```powershell
+cd backend
+npm run geocode:pilot -- --limit 50 --city Harare
+npm run geocode:pilot -- --from-csv ../geocode-failures.csv --limit 500
+npm run geocode:pilot -- --import-source HPA --quality city_centre,city_only,missing --output ../pilot-results.csv
+```
+
+Review `pilot-results.csv` — especially rows where `recommendation` is `google` or `manual_review`.
+
+**Apply Google results** to failed facilities (only trusted `address`/`name` quality; no city-centre fallback):
+
+```powershell
+npm run geocode:facilities -- --provider google --from-csv ../geocode-failures.csv --limit 500
+npm run audit:geocode
+```
 
 **Province backfill** (`npm run fix:provinces`): resolves `facilities.province` from Nominatim per distinct city (~1 req/s). Use `--dry-run` first, `--limit N` to smoke-test, `--unresolved-csv` for cities Nominatim could not place.
 

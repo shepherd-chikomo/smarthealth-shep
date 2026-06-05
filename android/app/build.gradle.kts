@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "dev.smarthealth.smarthealth_shep"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

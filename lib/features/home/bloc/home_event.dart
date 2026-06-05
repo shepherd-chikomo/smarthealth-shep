@@ -36,3 +36,7 @@ final class ChangeHomeCity extends HomeEvent {
   @override
   List<Object?> get props => [city];
 }
+
+final class LoadHomeCityFallback extends HomeEvent {
+  const LoadHomeCityFallback();
+}

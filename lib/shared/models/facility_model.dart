@@ -5,11 +5,14 @@ part 'facility_model.g.dart';
 
 @freezed
 abstract class FacilityModel with _$FacilityModel {
+  const FacilityModel._();
+
   const factory FacilityModel({
     required String id,
     required String name,
     required String slug,
     required String facilityType,
+    @Default([]) List<String> facilityTypes,
     String? description,
     String? addressLine1,
     required String city,
@@ -26,4 +29,11 @@ abstract class FacilityModel with _$FacilityModel {
 
   factory FacilityModel.fromJson(Map<String, dynamic> json) =>
       _$FacilityModelFromJson(json);
+
+  bool matchesCategory(String categoryId) {
+    if (facilityTypes.isNotEmpty) {
+      return facilityTypes.contains(categoryId);
+    }
+    return facilityType == categoryId;
+  }
 }

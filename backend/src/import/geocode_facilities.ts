@@ -10,9 +10,11 @@
  *   npm run geocode:facilities -- --dry-run
  *   npm run geocode:facilities -- --skip-remote
  *   npm run geocode:facilities -- --import-source HPA --reset --clear-cache --csv geocode-failures.csv
+ *   npm run geocode:facilities -- --provider google --from-csv ../geocode-failures.csv --limit 500
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { isTrustedGeocodeQuality } from '../lib/geocode-quality.js';
 import { closePool, pool, withTransaction } from './db.js';
 import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import {
@@ -21,13 +23,14 @@ import {
   geocodeFacilityBatch,
   isWithinZimbabwe,
 } from './geocode.js';
+import { geocodeGoogleFacilityBatch } from './geocode-google.js';
 import {
   isUntrustedProvince,
   lookupProvinceFromDb,
   provinceForGeocodeQuery,
 } from './province_resolve.js';
 import { logger } from './logger.js';
-import type { GeocodeQuality, GeocodeResult } from './types.js';
+import type { GeocodeProvider, GeocodeQuality, GeocodeResult } from './types.js';
 
 interface FacilityRow {
   id: string;
@@ -44,10 +47,12 @@ interface GeocodeOptions {
   limit: number | null;
   city: string | null;
   csvPath: string | null;
+  fromCsv: string | null;
   reset: boolean;
   clearCache: boolean;
   importSource: string | null;
   noCityFallback: boolean;
+  provider: GeocodeProvider;
 }
 
 function parseArgs(): GeocodeOptions {
@@ -57,7 +62,9 @@ function parseArgs(): GeocodeOptions {
   let limit: number | null = null;
   let city: string | null = null;
   let csvPath: string | null = null;
+  let fromCsv: string | null = null;
   let importSource: string | null = null;
+  let provider: GeocodeProvider = 'nominatim';
 
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--limit' && argv[i + 1]) {
@@ -69,8 +76,15 @@ function parseArgs(): GeocodeOptions {
     } else if (argv[i] === '--csv' && argv[i + 1]) {
       csvPath = resolve(argv[i + 1]);
       i++;
+    } else if (argv[i] === '--from-csv' && argv[i + 1]) {
+      fromCsv = resolve(argv[i + 1]);
+      i++;
     } else if (argv[i] === '--import-source' && argv[i + 1]) {
       importSource = argv[i + 1];
+      i++;
+    } else if (argv[i] === '--provider' && argv[i + 1]) {
+      const value = argv[i + 1] as GeocodeProvider;
+      if (value === 'google' || value === 'nominatim') provider = value;
       i++;
     }
   }
@@ -89,11 +103,24 @@ function parseArgs(): GeocodeOptions {
     limit: Number.isFinite(limit) && limit! > 0 ? limit : null,
     city,
     csvPath,
+    fromCsv,
     reset,
     clearCache: flags.has('--clear-cache'),
     importSource,
-    noCityFallback,
+    noCityFallback: noCityFallback || provider === 'google',
+    provider,
   };
+}
+
+function loadFacilityIdsFromCsv(path: string): string[] {
+  const text = readFileSync(path, 'utf8');
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  const ids: string[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const id = lines[i]!.split(',')[0]?.trim();
+    if (id) ids.push(id);
+  }
+  return ids;
 }
 
 function buildScopeConditions(
@@ -107,7 +134,7 @@ function buildScopeConditions(
   ];
   let idx = params.length + 1;
 
-  if (!opts.reset) {
+  if (!opts.reset && !opts.fromCsv) {
     conditions.push('(f.latitude IS NULL OR f.longitude IS NULL)');
   }
 
@@ -119,6 +146,16 @@ function buildScopeConditions(
   if (opts.city) {
     conditions.push(`f.city ILIKE $${idx++}`);
     params.push(opts.city);
+  }
+
+  if (opts.fromCsv) {
+    const ids = loadFacilityIdsFromCsv(opts.fromCsv);
+    if (ids.length > 0) {
+      conditions.push(`f.id = ANY($${idx++}::uuid[])`);
+      params.push(ids);
+    } else {
+      conditions.push('false');
+    }
   }
 
   return { conditions, nextIdx: idx };
@@ -293,14 +330,24 @@ async function run(): Promise<void> {
       importSource: opts.importSource,
       noCityFallback: opts.noCityFallback,
       city: opts.city,
+      provider: opts.provider,
+      fromCsv: opts.fromCsv,
     });
 
-    const geocodeResults = await geocodeFacilityBatch(
-      geocodeClient,
-      inputs,
-      cityCentroids,
-      opts.skipRemote,
-    );
+    const geocodeResults =
+      opts.provider === 'google'
+        ? await geocodeGoogleFacilityBatch(
+            geocodeClient,
+            inputs,
+            cityCentroids,
+            opts.skipRemote,
+          )
+        : await geocodeFacilityBatch(
+            geocodeClient,
+            inputs,
+            cityCentroids,
+            opts.skipRemote,
+          );
 
     const coordWhere = opts.reset
       ? ''
@@ -308,6 +355,15 @@ async function run(): Promise<void> {
 
     for (const [sig, facilityIds] of signatureToFacilityIds) {
       let geo: GeocodeResult | null = geocodeResults.get(sig) ?? null;
+
+      if (
+        geo &&
+        opts.provider === 'google' &&
+        geo.quality &&
+        !isTrustedGeocodeQuality(geo.quality)
+      ) {
+        geo = null;
+      }
 
       if (!geo) {
         if (!opts.noCityFallback) {

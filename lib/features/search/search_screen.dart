@@ -182,7 +182,7 @@ class _SearchViewState extends State<_SearchView> {
                               .read<SearchBloc>()
                               .add(RecentSearchRemoved(query)),
                           onFacilitySelected: (id) =>
-                              context.push('/facility/$id'),
+                              context.push('/facility/$id?tab=1'),
                         ),
                       SearchFilterSection(
                         title: l10n.searchFilterSpecialty,

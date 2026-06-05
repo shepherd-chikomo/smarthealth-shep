@@ -3,20 +3,27 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i9;
+import 'package:mockito/src/dummies.dart' as _i10;
 import 'package:smarthealth_shep/core/network/api_service.dart' as _i2;
-import 'package:smarthealth_shep/shared/data/local/provider_dao.dart' as _i5;
+import 'package:smarthealth_shep/features/home/data/home_repository.dart'
+    as _i5;
+import 'package:smarthealth_shep/shared/data/category_repository.dart' as _i14;
+import 'package:smarthealth_shep/shared/data/local/provider_dao.dart' as _i6;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart' as _i4;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_storage.dart'
     as _i3;
-import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i11;
-import 'package:smarthealth_shep/shared/models/facility_model.dart' as _i10;
-import 'package:smarthealth_shep/shared/models/provider_model.dart' as _i7;
+import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i13;
+import 'package:smarthealth_shep/shared/models/category_model.dart' as _i15;
+import 'package:smarthealth_shep/shared/models/facility_model.dart' as _i12;
+import 'package:smarthealth_shep/shared/models/provider_model.dart' as _i8;
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart'
-    as _i8;
+    as _i9;
+import 'package:smarthealth_shep/shared/models/service_category_model.dart'
+    as _i16;
+import 'package:smarthealth_shep/shared/models/specialty_model.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -50,109 +57,115 @@ class _FakeSyncRunResult_2 extends _i1.SmartFake implements _i4.SyncRunResult {
     : super(parent, parentInvocation);
 }
 
+class _FakeHomeSyncResult_3 extends _i1.SmartFake
+    implements _i5.HomeSyncResult {
+  _FakeHomeSyncResult_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [ProviderDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockProviderDao extends _i1.Mock implements _i5.ProviderDao {
+class MockProviderDao extends _i1.Mock implements _i6.ProviderDao {
   MockProviderDao() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i6.Future<DateTime?> getLastSync() =>
+  _i7.Future<DateTime?> getLastSync() =>
       (super.noSuchMethod(
             Invocation.method(#getLastSync, []),
-            returnValue: _i6.Future<DateTime?>.value(),
+            returnValue: _i7.Future<DateTime?>.value(),
           )
-          as _i6.Future<DateTime?>);
+          as _i7.Future<DateTime?>);
 
   @override
-  _i6.Future<void> setLastSync(DateTime? timestamp) =>
+  _i7.Future<void> setLastSync(DateTime? timestamp) =>
       (super.noSuchMethod(
             Invocation.method(#setLastSync, [timestamp]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<bool> isStale(String? id, {Duration? maxAge}) =>
+  _i7.Future<bool> isStale(String? id, {Duration? maxAge}) =>
       (super.noSuchMethod(
             Invocation.method(#isStale, [id], {#maxAge: maxAge}),
-            returnValue: _i6.Future<bool>.value(false),
+            returnValue: _i7.Future<bool>.value(false),
           )
-          as _i6.Future<bool>);
+          as _i7.Future<bool>);
 
   @override
-  _i6.Future<_i7.ProviderModel?> getById(String? id) =>
+  _i7.Future<_i8.ProviderModel?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i6.Future<_i7.ProviderModel?>.value(),
+            returnValue: _i7.Future<_i8.ProviderModel?>.value(),
           )
-          as _i6.Future<_i7.ProviderModel?>);
+          as _i7.Future<_i8.ProviderModel?>);
 
   @override
-  _i6.Future<List<_i7.ProviderModel>> getAll({String? categoryId}) =>
+  _i7.Future<List<_i8.ProviderModel>> getAll({String? categoryId}) =>
       (super.noSuchMethod(
             Invocation.method(#getAll, [], {#categoryId: categoryId}),
-            returnValue: _i6.Future<List<_i7.ProviderModel>>.value(
-              <_i7.ProviderModel>[],
+            returnValue: _i7.Future<List<_i8.ProviderModel>>.value(
+              <_i8.ProviderModel>[],
             ),
           )
-          as _i6.Future<List<_i7.ProviderModel>>);
+          as _i7.Future<List<_i8.ProviderModel>>);
 
   @override
-  _i6.Future<List<_i7.ProviderModel>> getNearby(
+  _i7.Future<List<_i8.ProviderModel>> getNearby(
     double? lat,
     double? lon,
     double? radiusKm,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getNearby, [lat, lon, radiusKm]),
-            returnValue: _i6.Future<List<_i7.ProviderModel>>.value(
-              <_i7.ProviderModel>[],
+            returnValue: _i7.Future<List<_i8.ProviderModel>>.value(
+              <_i8.ProviderModel>[],
             ),
           )
-          as _i6.Future<List<_i7.ProviderModel>>);
+          as _i7.Future<List<_i8.ProviderModel>>);
 
   @override
-  _i6.Future<List<_i7.ProviderModel>> search(
-    _i8.ProviderSearchFilter? filter,
+  _i7.Future<List<_i8.ProviderModel>> search(
+    _i9.ProviderSearchFilter? filter,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#search, [filter]),
-            returnValue: _i6.Future<List<_i7.ProviderModel>>.value(
-              <_i7.ProviderModel>[],
+            returnValue: _i7.Future<List<_i8.ProviderModel>>.value(
+              <_i8.ProviderModel>[],
             ),
           )
-          as _i6.Future<List<_i7.ProviderModel>>);
+          as _i7.Future<List<_i8.ProviderModel>>);
 
   @override
-  _i6.Future<void> upsertProvider(_i7.ProviderModel? provider) =>
+  _i7.Future<void> upsertProvider(_i8.ProviderModel? provider) =>
       (super.noSuchMethod(
             Invocation.method(#upsertProvider, [provider]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> upsertProviders(List<_i7.ProviderModel>? providers) =>
+  _i7.Future<void> upsertProviders(List<_i8.ProviderModel>? providers) =>
       (super.noSuchMethod(
             Invocation.method(#upsertProviders, [providers]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> deleteProviders(List<String>? ids) =>
+  _i7.Future<void> deleteProviders(List<String>? ids) =>
       (super.noSuchMethod(
             Invocation.method(#deleteProviders, [ids]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 }
 
 /// A class which mocks [ApiService].
@@ -167,7 +180,7 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
   String get baseUrl =>
       (super.noSuchMethod(
             Invocation.getter(#baseUrl),
-            returnValue: _i9.dummyValue<String>(
+            returnValue: _i10.dummyValue<String>(
               this,
               Invocation.getter(#baseUrl),
             ),
@@ -175,7 +188,7 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
           as String);
 
   @override
-  _i6.Future<List<_i7.ProviderModel>> fetchNearbyProviders({
+  _i7.Future<List<_i8.ProviderModel>> fetchNearbyProviders({
     required double? lat,
     required double? lon,
     required double? radiusKm,
@@ -188,39 +201,98 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               #radiusKm: radiusKm,
               #since: since,
             }),
-            returnValue: _i6.Future<List<_i7.ProviderModel>>.value(
-              <_i7.ProviderModel>[],
+            returnValue: _i7.Future<List<_i8.ProviderModel>>.value(
+              <_i8.ProviderModel>[],
             ),
           )
-          as _i6.Future<List<_i7.ProviderModel>>);
+          as _i7.Future<List<_i8.ProviderModel>>);
 
   @override
-  _i6.Future<List<_i7.ProviderModel>> searchProviders(
-    _i8.ProviderSearchFilter? filter,
+  _i7.Future<List<_i8.ProviderModel>> searchProviders(
+    _i9.ProviderSearchFilter? filter,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#searchProviders, [filter]),
-            returnValue: _i6.Future<List<_i7.ProviderModel>>.value(
-              <_i7.ProviderModel>[],
+            returnValue: _i7.Future<List<_i8.ProviderModel>>.value(
+              <_i8.ProviderModel>[],
             ),
           )
-          as _i6.Future<List<_i7.ProviderModel>>);
+          as _i7.Future<List<_i8.ProviderModel>>);
 
   @override
-  _i6.Future<_i7.ProviderModel?> getProviderById(String? id) =>
+  _i7.Future<_i8.ProviderModel?> getProviderById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getProviderById, [id]),
-            returnValue: _i6.Future<_i7.ProviderModel?>.value(),
+            returnValue: _i7.Future<_i8.ProviderModel?>.value(),
           )
-          as _i6.Future<_i7.ProviderModel?>);
+          as _i7.Future<_i8.ProviderModel?>);
 
   @override
-  _i6.Future<List<_i10.FacilityModel>> fetchNearbyFacilities({
+  _i7.Future<List<({int count, String facilityType, String label})>>
+  fetchFacilityTypeCatalog() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchFacilityTypeCatalog, []),
+            returnValue:
+                _i7.Future<
+                  List<({int count, String facilityType, String label})>
+                >.value(<({int count, String facilityType, String label})>[]),
+          )
+          as _i7.Future<
+            List<({int count, String facilityType, String label})>
+          >);
+
+  @override
+  _i7.Future<List<_i11.SpecialtyModel>> fetchCatalogSpecialties({
+    int? limit = 30,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchCatalogSpecialties, [], {#limit: limit}),
+            returnValue: _i7.Future<List<_i11.SpecialtyModel>>.value(
+              <_i11.SpecialtyModel>[],
+            ),
+          )
+          as _i7.Future<List<_i11.SpecialtyModel>>);
+
+  @override
+  _i7.Future<List<({String id, String label})>> fetchCatalogConditions() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchCatalogConditions, []),
+            returnValue: _i7.Future<List<({String id, String label})>>.value(
+              <({String id, String label})>[],
+            ),
+          )
+          as _i7.Future<List<({String id, String label})>>);
+
+  @override
+  _i7.Future<List<({String id, String label})>> fetchCatalogAgeGroups() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchCatalogAgeGroups, []),
+            returnValue: _i7.Future<List<({String id, String label})>>.value(
+              <({String id, String label})>[],
+            ),
+          )
+          as _i7.Future<List<({String id, String label})>>);
+
+  @override
+  _i7.Future<List<_i12.FacilityModel>> searchFacilities(
+    _i9.ProviderSearchFilter? filter,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#searchFacilities, [filter]),
+            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
+              <_i12.FacilityModel>[],
+            ),
+          )
+          as _i7.Future<List<_i12.FacilityModel>>);
+
+  @override
+  _i7.Future<List<_i12.FacilityModel>> fetchNearbyFacilities({
     required double? lat,
     required double? lon,
     required double? radiusKm,
     int? limit = 50,
     int? page = 1,
+    String? facilityType,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#fetchNearbyFacilities, [], {
@@ -229,39 +301,60 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               #radiusKm: radiusKm,
               #limit: limit,
               #page: page,
+              #facilityType: facilityType,
             }),
-            returnValue: _i6.Future<List<_i10.FacilityModel>>.value(
-              <_i10.FacilityModel>[],
+            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
+              <_i12.FacilityModel>[],
             ),
           )
-          as _i6.Future<List<_i10.FacilityModel>>);
+          as _i7.Future<List<_i12.FacilityModel>>);
 
   @override
-  _i6.Future<_i10.FacilityModel?> getFacilityById(String? id) =>
+  _i7.Future<List<_i12.FacilityModel>> fetchFacilitiesByCity({
+    required String? city,
+    String? facilityType,
+    int? limit = 50,
+    int? page = 1,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchFacilitiesByCity, [], {
+              #city: city,
+              #facilityType: facilityType,
+              #limit: limit,
+              #page: page,
+            }),
+            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
+              <_i12.FacilityModel>[],
+            ),
+          )
+          as _i7.Future<List<_i12.FacilityModel>>);
+
+  @override
+  _i7.Future<_i12.FacilityModel?> getFacilityById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getFacilityById, [id]),
-            returnValue: _i6.Future<_i10.FacilityModel?>.value(),
+            returnValue: _i7.Future<_i12.FacilityModel?>.value(),
           )
-          as _i6.Future<_i10.FacilityModel?>);
+          as _i7.Future<_i12.FacilityModel?>);
 
   @override
-  _i6.Future<_i2.ProviderSyncPayload> syncProviders({DateTime? since}) =>
+  _i7.Future<_i2.ProviderSyncPayload> syncProviders({DateTime? since}) =>
       (super.noSuchMethod(
             Invocation.method(#syncProviders, [], {#since: since}),
-            returnValue: _i6.Future<_i2.ProviderSyncPayload>.value(
+            returnValue: _i7.Future<_i2.ProviderSyncPayload>.value(
               _FakeProviderSyncPayload_0(
                 this,
                 Invocation.method(#syncProviders, [], {#since: since}),
               ),
             ),
           )
-          as _i6.Future<_i2.ProviderSyncPayload>);
+          as _i7.Future<_i2.ProviderSyncPayload>);
 }
 
 /// A class which mocks [SyncService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSyncService extends _i1.Mock implements _i11.SyncService {
+class MockSyncService extends _i1.Mock implements _i13.SyncService {
   MockSyncService() {
     _i1.throwOnMissingStub(this);
   }
@@ -278,13 +371,13 @@ class MockSyncService extends _i1.Mock implements _i11.SyncService {
           as _i3.SyncQueueStorage);
 
   @override
-  _i6.Future<void> initialize() =>
+  _i7.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
   void dispose() => super.noSuchMethod(
@@ -293,15 +386,15 @@ class MockSyncService extends _i1.Mock implements _i11.SyncService {
   );
 
   @override
-  _i6.Future<bool> isOnline() =>
+  _i7.Future<bool> isOnline() =>
       (super.noSuchMethod(
             Invocation.method(#isOnline, []),
-            returnValue: _i6.Future<bool>.value(false),
+            returnValue: _i7.Future<bool>.value(false),
           )
-          as _i6.Future<bool>);
+          as _i7.Future<bool>);
 
   @override
-  _i6.Future<void> enqueue({
+  _i7.Future<void> enqueue({
     required _i4.SyncMutationType? mutationType,
     required _i4.SyncEntityType? entityType,
     required String? entityId,
@@ -318,97 +411,199 @@ class MockSyncService extends _i1.Mock implements _i11.SyncService {
               #clientUpdatedAt: clientUpdatedAt,
               #optimistic: optimistic,
             }),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<_i4.SyncRunResult> syncPullToRefresh() =>
+  _i7.Future<_i4.SyncRunResult> syncPullToRefresh() =>
       (super.noSuchMethod(
             Invocation.method(#syncPullToRefresh, []),
-            returnValue: _i6.Future<_i4.SyncRunResult>.value(
+            returnValue: _i7.Future<_i4.SyncRunResult>.value(
               _FakeSyncRunResult_2(
                 this,
                 Invocation.method(#syncPullToRefresh, []),
               ),
             ),
           )
-          as _i6.Future<_i4.SyncRunResult>);
+          as _i7.Future<_i4.SyncRunResult>);
 
   @override
-  _i6.Future<_i4.SyncRunResult> runBackgroundSync() =>
+  _i7.Future<_i4.SyncRunResult> runBackgroundSync() =>
       (super.noSuchMethod(
             Invocation.method(#runBackgroundSync, []),
-            returnValue: _i6.Future<_i4.SyncRunResult>.value(
+            returnValue: _i7.Future<_i4.SyncRunResult>.value(
               _FakeSyncRunResult_2(
                 this,
                 Invocation.method(#runBackgroundSync, []),
               ),
             ),
           )
-          as _i6.Future<_i4.SyncRunResult>);
+          as _i7.Future<_i4.SyncRunResult>);
 
   @override
-  _i6.Future<_i4.SyncRunResult> syncNow({
-    _i11.SyncTrigger? trigger = _i11.SyncTrigger.manual,
+  _i7.Future<_i4.SyncRunResult> syncNow({
+    _i13.SyncTrigger? trigger = _i13.SyncTrigger.manual,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#syncNow, [], {#trigger: trigger}),
-            returnValue: _i6.Future<_i4.SyncRunResult>.value(
+            returnValue: _i7.Future<_i4.SyncRunResult>.value(
               _FakeSyncRunResult_2(
                 this,
                 Invocation.method(#syncNow, [], {#trigger: trigger}),
               ),
             ),
           )
-          as _i6.Future<_i4.SyncRunResult>);
+          as _i7.Future<_i4.SyncRunResult>);
 
   @override
-  _i6.Future<List<_i4.SyncQueueItem>> pendingItems() =>
+  _i7.Future<List<_i4.SyncQueueItem>> pendingItems() =>
       (super.noSuchMethod(
             Invocation.method(#pendingItems, []),
-            returnValue: _i6.Future<List<_i4.SyncQueueItem>>.value(
+            returnValue: _i7.Future<List<_i4.SyncQueueItem>>.value(
               <_i4.SyncQueueItem>[],
             ),
           )
-          as _i6.Future<List<_i4.SyncQueueItem>>);
+          as _i7.Future<List<_i4.SyncQueueItem>>);
 
   @override
-  _i6.Future<List<_i4.SyncQueueItem>> manualRetryItems() =>
+  _i7.Future<List<_i4.SyncQueueItem>> manualRetryItems() =>
       (super.noSuchMethod(
             Invocation.method(#manualRetryItems, []),
-            returnValue: _i6.Future<List<_i4.SyncQueueItem>>.value(
+            returnValue: _i7.Future<List<_i4.SyncQueueItem>>.value(
               <_i4.SyncQueueItem>[],
             ),
           )
-          as _i6.Future<List<_i4.SyncQueueItem>>);
+          as _i7.Future<List<_i4.SyncQueueItem>>);
 
   @override
-  _i6.Future<int> pendingCount() =>
+  _i7.Future<int> pendingCount() =>
       (super.noSuchMethod(
             Invocation.method(#pendingCount, []),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<_i4.SyncRunResult> retryManualItems() =>
+  _i7.Future<_i4.SyncRunResult> retryManualItems() =>
       (super.noSuchMethod(
             Invocation.method(#retryManualItems, []),
-            returnValue: _i6.Future<_i4.SyncRunResult>.value(
+            returnValue: _i7.Future<_i4.SyncRunResult>.value(
               _FakeSyncRunResult_2(
                 this,
                 Invocation.method(#retryManualItems, []),
               ),
             ),
           )
-          as _i6.Future<_i4.SyncRunResult>);
+          as _i7.Future<_i4.SyncRunResult>);
 
   @override
-  void schedule(String? key, _i6.Future<void> Function()? task) =>
+  void schedule(String? key, _i7.Future<void> Function()? task) =>
       super.noSuchMethod(
         Invocation.method(#schedule, [key, task]),
         returnValueForMissingStub: null,
       );
+}
+
+/// A class which mocks [HomeRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockHomeRepository extends _i1.Mock implements _i5.HomeRepository {
+  MockHomeRepository() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.Future<_i5.HomeSyncResult> sync({
+    bool? forceRefresh = false,
+    String? facilityType,
+    bool? refreshOrigin = false,
+    String? manualCityName,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#sync, [], {
+              #forceRefresh: forceRefresh,
+              #facilityType: facilityType,
+              #refreshOrigin: refreshOrigin,
+              #manualCityName: manualCityName,
+            }),
+            returnValue: _i7.Future<_i5.HomeSyncResult>.value(
+              _FakeHomeSyncResult_3(
+                this,
+                Invocation.method(#sync, [], {
+                  #forceRefresh: forceRefresh,
+                  #facilityType: facilityType,
+                  #refreshOrigin: refreshOrigin,
+                  #manualCityName: manualCityName,
+                }),
+              ),
+            ),
+          )
+          as _i7.Future<_i5.HomeSyncResult>);
+
+  @override
+  _i7.Future<_i5.HomeSyncResult> syncCityFallback({
+    required String? city,
+    String? facilityType,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#syncCityFallback, [], {
+              #city: city,
+              #facilityType: facilityType,
+            }),
+            returnValue: _i7.Future<_i5.HomeSyncResult>.value(
+              _FakeHomeSyncResult_3(
+                this,
+                Invocation.method(#syncCityFallback, [], {
+                  #city: city,
+                  #facilityType: facilityType,
+                }),
+              ),
+            ),
+          )
+          as _i7.Future<_i5.HomeSyncResult>);
+
+  @override
+  _i7.Future<void> saveCity(String? city, {bool? manual = false}) =>
+      (super.noSuchMethod(
+            Invocation.method(#saveCity, [city], {#manual: manual}),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+}
+
+/// A class which mocks [CategoryRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockCategoryRepository extends _i1.Mock
+    implements _i14.CategoryRepository {
+  MockCategoryRepository() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i7.Future<List<_i15.CategoryModel>> getCategories() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCategories, []),
+            returnValue: _i7.Future<List<_i15.CategoryModel>>.value(
+              <_i15.CategoryModel>[],
+            ),
+          )
+          as _i7.Future<List<_i15.CategoryModel>>);
+
+  @override
+  _i7.Future<List<_i16.ServiceCategoryModel>> getHomeServiceCategories({
+    String? nearMeLabel = 'Near Me',
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getHomeServiceCategories, [], {
+              #nearMeLabel: nearMeLabel,
+            }),
+            returnValue: _i7.Future<List<_i16.ServiceCategoryModel>>.value(
+              <_i16.ServiceCategoryModel>[],
+            ),
+          )
+          as _i7.Future<List<_i16.ServiceCategoryModel>>);
 }
