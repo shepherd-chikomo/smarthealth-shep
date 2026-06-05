@@ -5,8 +5,27 @@ set -eu
 COMPOSE="${COMPOSE:-docker compose}"
 FAILED=0
 
+check_migrate() {
+  # One-shot migration container — Exited(0) is success, not a failure.
+  if docker inspect smarthealth-migrate --format '{{.State.Status}} {{.State.ExitCode}}' 2>/dev/null \
+    | grep -q '^exited 0$'; then
+    echo "OK  smarthealth-migrate (completed)"
+    return
+  fi
+  if $COMPOSE ps --status running smarthealth-migrate 2>/dev/null | grep -q smarthealth-migrate; then
+    echo "WARN smarthealth-migrate (still running)"
+    return
+  fi
+  echo "FAIL smarthealth-migrate (not completed successfully)"
+  FAILED=1
+}
+
 check() {
   name="$1"
+  if [ "$name" = "smarthealth-migrate" ]; then
+    check_migrate
+    return
+  fi
   if $COMPOSE ps --status running "$name" 2>/dev/null | grep -q "$name"; then
     health=$($COMPOSE ps --format json "$name" 2>/dev/null | grep -o '"Health":"[^"]*"' | head -1 || echo "")
     if echo "$health" | grep -qE 'healthy|""'; then
