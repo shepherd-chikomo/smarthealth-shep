@@ -400,7 +400,10 @@ services:
   # Nginx reverse proxy (public entrypoint)
   # ═══════════════════════════════════════════════════════════════════════════
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    image: smarthealth-nginx:1.27
     container_name: smarthealth-nginx
     restart: unless-stopped
     logging: *default-logging
@@ -423,6 +426,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+      start_period: 15s
     networks:
       - smarthealth-internal
       - smarthealth-public
