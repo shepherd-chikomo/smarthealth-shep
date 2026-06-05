@@ -6,12 +6,14 @@ import {
   buildFacilityRegistryKey,
   buildFullNameKey,
   formatFacilityName,
-  inferProvinceFromCity,
+  inferProvinceFromCitySync,
   normalizeAddress,
   requireCity,
   buildLocationDedupKey,
   buildFacilityRegistryKeyWithRoleHolder,
 } from './normalize_registry.js';
+import { normalizeProvince } from './normalize_data.js';
+import { provinceInsertFallback, resolveProvinceFromCity } from './province_resolve.js';
 import { fetchImportResolutionRule } from './import_resolution_rules.js';
 import { generateFacilitySlug, ensureUniqueSlug } from './generate_slugs.js';
 import { buildFacilityAddressQuery, geocodeBatch } from './geocode.js';
@@ -117,7 +119,10 @@ export function parseHpaFacilityRows(rawRows: RawSpreadsheetRow[]): {
       : null;
 
     const city = requireCity(row.raw.city ? String(row.raw.city) : null);
-    const province = inferProvinceFromCity(city);
+    const rawProvinceStr = row.raw.province ? String(row.raw.province).trim() : '';
+    const rawProvince = rawProvinceStr ? normalizeProvince(rawProvinceStr, city) : null;
+    const province =
+      rawProvince ?? inferProvinceFromCitySync(city) ?? provinceInsertFallback(city);
     const registryKey = buildFacilityRegistryKey(facilityName, address, city);
 
     parsed.push({
@@ -260,7 +265,8 @@ export async function importHpaFacilities(
         }),
         slugUsed,
       );
-      const mergedProvince = inferProvinceFromCity(city);
+      const mergedProvince =
+        (await resolveProvinceFromCity(client, city)) ?? group[0].province;
       const geo = geocodeForHpaRow(
         { facilityName, address, city, province: mergedProvince },
         geocodeResults,

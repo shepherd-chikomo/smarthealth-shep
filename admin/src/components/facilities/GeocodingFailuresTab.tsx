@@ -84,6 +84,7 @@ export function GeocodingFailuresTab({ page, q, onPage }: Props) {
                 <th className="p-3">Name</th>
                 <th className="p-3">Address</th>
                 <th className="p-3">City</th>
+                <th className="p-3">Province</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Actions</th>
               </tr>
@@ -94,6 +95,7 @@ export function GeocodingFailuresTab({ page, q, onPage }: Props) {
                   <td className="p-3 font-medium">{f.name}</td>
                   <td className="p-3">{f.address ?? '—'}</td>
                   <td className="p-3">{f.city ?? '—'}</td>
+                  <td className="p-3">{f.province ?? '—'}</td>
                   <td className="p-3">{statusLabels[f.geocodeStatus] ?? f.geocodeStatus}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-2">
@@ -153,6 +155,15 @@ export function GeocodingFailuresTab({ page, q, onPage }: Props) {
                 onChange={(e) => setCity(e.target.value)}
               />
             </label>
+            <p className="text-sm text-slate-500">
+              Province:{' '}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {editFacility.province ?? '—'}
+              </span>
+              <span className="block text-xs">
+                Updated automatically from city when you save.
+              </span>
+            </p>
             {formError && <p className="text-sm text-red-600">{formError}</p>}
             <div className="flex gap-2">
               <button

@@ -1,4 +1,4 @@
-import { query } from '../lib/db.js';
+import { query, pool } from '../lib/db.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { isSuperAdmin } from '../lib/rbac.js';
@@ -14,7 +14,10 @@ import {
   locationDedupKeyFromRawRows,
   parseHpaRawRow,
 } from '../lib/registry-keys.js';
-import { inferProvinceFromCity } from '../import/normalize_registry.js';
+import {
+  provinceInsertFallback,
+  resolveProvinceFromCity,
+} from '../import/province_resolve.js';
 import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
 import { getGeocodeStatus, isGeocodedUpToDate } from '../lib/geocode-quality.js';
 import { upsertImportResolutionRule } from './import-resolution.service.js';
@@ -230,7 +233,8 @@ export async function updateFacilityAddress(
   const nextCity = hasCity ? (data.city!.trim() || null) : prior.city;
   const addressChanged =
     nextAddress !== prior.address_line1 || nextCity !== prior.city;
-  const province = inferProvinceFromCity(nextCity);
+  const resolved = await resolveProvinceFromCity(pool, nextCity);
+  const province = resolved ?? prior.province ?? provinceInsertFallback(nextCity);
 
   await query(
     `UPDATE public.facilities SET
@@ -391,7 +395,8 @@ async function upsertFacilityFromFields(opts: {
   normalizedNameKey?: string;
 }): Promise<string> {
   const slug = opts.facilityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
-  const province = inferProvinceFromCity(opts.city);
+  const province =
+    (await resolveProvinceFromCity(pool, opts.city)) ?? provinceInsertFallback(opts.city);
   const insert = await query<{ id: string }>(
     `INSERT INTO public.facilities (
        name, slug, facility_type, address_line1, city, province,

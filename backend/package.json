@@ -23,6 +23,7 @@
     "import:diff": "tsx src/import/registry_diff.ts",
     "import:link": "tsx src/import/link_all.ts",
     "fix:addresses": "tsx src/import/fix_facility_addresses.ts",
+    "fix:provinces": "tsx src/import/fix_facility_provinces.ts",
     "geocode:facilities": "tsx src/import/geocode_facilities.ts",
     "geocode:import-csv": "tsx src/import/import_geocode_csv.ts",
     "audit:geocode": "tsx src/import/audit_geocode.ts",

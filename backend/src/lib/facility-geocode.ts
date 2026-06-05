@@ -5,6 +5,11 @@ import {
   isWithinZimbabwe,
 } from '../import/geocode.js';
 import { logger } from '../import/logger.js';
+import {
+  inferProvinceFromCitySync,
+  lookupProvinceFromDb,
+  resolveProvinceFromCity,
+} from '../import/province_resolve.js';
 import type { GeocodeQuality, GeocodeResult } from '../import/types.js';
 import { pool } from './db.js';
 
@@ -108,7 +113,7 @@ export async function geocodeFacilityRecord(
   const client = await pool.connect();
   try {
     const cityCentroids = await loadCityCentroids(client);
-    const provinceValue = province ?? 'Harare';
+    const storedProvince = province ?? (city ? await resolveProvinceFromCity(client, city) : null);
 
     let geo = await geocodeFacilityInput(
       client,
@@ -116,14 +121,18 @@ export async function geocodeFacilityRecord(
         name,
         addressLine1,
         city,
-        province: provinceValue,
+        province: storedProvince,
       },
       cityCentroids,
       false,
     );
 
     if (!geo && city) {
-      geo = cityCentroidFallback(city, provinceValue, cityCentroids);
+      const fallbackProvince =
+        (await lookupProvinceFromDb(client, city)) ?? inferProvinceFromCitySync(city);
+      if (fallbackProvince) {
+        geo = cityCentroidFallback(city, fallbackProvince, cityCentroids);
+      }
     }
 
     if (geo) {

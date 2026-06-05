@@ -146,6 +146,14 @@ npm run fix:addresses                           # update address_line1 in DB
 
 Imported HPA facilities are geocoded on `import:dual` using OpenStreetMap Nominatim (Zimbabwe-only, ~1 request/second). The backfill CLI uses a **multi-strategy cascade** (structured street search, name+address, address-only, name+city) with scoring and city plausibility checks. Results are cached in `public.geocode_cache`; `facilities.geocode_quality` controls whether `/v1/facilities/nearby` returns `distanceKm` (`address`, `name`, `manual` only).
 
+**Fix bad provinces** before geocoding (Nominatim city lookup, caches in `public.cities`):
+
+```powershell
+cd backend
+npm run fix:provinces -- --dry-run
+npm run fix:provinces -- --import-source HPA --csv ../provinces-fixed.csv
+```
+
 **Fix bad distances:** reformat addresses, reset coordinates, and geocode again (no city-centre fallback by default on `--reset`):
 
 ```powershell
@@ -184,6 +192,8 @@ npm run geocode:facilities -- --csv failures.csv        # write unresolved rows 
 | `--limit N` | Process at most N facilities |
 | `--city Harare` | Restrict to one city |
 | `--csv path` | Export facilities that could not be geocoded |
+
+**Province backfill** (`npm run fix:provinces`): resolves `facilities.province` from Nominatim per distinct city (~1 req/s). Use `--dry-run` first, `--limit N` to smoke-test, `--unresolved-csv` for cities Nominatim could not place.
 
 **Other scripts:** `npm run audit:geocode` (coverage + duplicate coord report), `npm run geocode:import-csv -- --file coords.csv` (manual lat/lon).
 

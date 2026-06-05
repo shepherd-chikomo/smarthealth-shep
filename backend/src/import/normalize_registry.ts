@@ -101,31 +101,14 @@ export function formatCity(raw: string | null): string | null {
   return toTitleCase(raw);
 }
 
-const CITY_TO_PROVINCE: Record<string, string> = {
-  harare: 'Harare',
-  chitungwiza: 'Harare',
-  epworth: 'Harare',
-  bulawayo: 'Bulawayo',
-  mutare: 'Manicaland',
-  rusape: 'Manicaland',
-  bindura: 'Mashonaland Central',
-  chinhoyi: 'Mashonaland West',
-  kadoma: 'Mashonaland West',
-  norton: 'Mashonaland West',
-  marondera: 'Mashonaland East',
-  gweru: 'Midlands',
-  kwekwe: 'Midlands',
-  masvingo: 'Masvingo',
-  'victoria falls': 'Matabeleland North',
-  hwange: 'Matabeleland North',
-  beitbridge: 'Matabeleland South',
-};
-
-export function inferProvinceFromCity(city: string | null): string {
-  if (!city) return 'Harare';
-  const key = city.trim().toLowerCase();
-  return CITY_TO_PROVINCE[key] ?? 'Harare';
-}
+export {
+  inferProvinceFromCity,
+  inferProvinceFromCitySync,
+  isUntrustedProvince,
+  provinceForGeocodeQuery,
+  provinceInsertFallback,
+  resolveProvinceFromCity,
+} from './province_resolve.js';
 
 export function requireCity(city: string | null): string {
   return city?.trim() ? toTitleCase(city) : 'Unknown';

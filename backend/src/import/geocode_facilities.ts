@@ -21,6 +21,11 @@ import {
   geocodeFacilityBatch,
   isWithinZimbabwe,
 } from './geocode.js';
+import {
+  isUntrustedProvince,
+  lookupProvinceFromDb,
+  provinceForGeocodeQuery,
+} from './province_resolve.js';
 import { logger } from './logger.js';
 import type { GeocodeQuality, GeocodeResult } from './types.js';
 
@@ -168,7 +173,13 @@ async function run(): Promise<void> {
     reset: 0,
   };
 
-  const failures: Array<{ id: string; name: string; query: string | null }> = [];
+  const failures: Array<{
+    id: string;
+    name: string;
+    city: string | null;
+    province: string | null;
+    query: string | null;
+  }> = [];
 
   const scopeParams: unknown[] = [];
   const { conditions, nextIdx: idxStart } = buildScopeConditions(opts, scopeParams);
@@ -245,7 +256,7 @@ async function run(): Promise<void> {
       facilityById.set(row.id, row);
       if (!row.city && !row.address_line1) {
         summary.skipped++;
-        failures.push({ id: row.id, name: row.name, query: null });
+        failures.push({ id: row.id, name: row.name, city: row.city, province: row.province, query: null });
         continue;
       }
 
@@ -302,8 +313,17 @@ async function run(): Promise<void> {
         if (!opts.noCityFallback) {
           const sample = facilityById.get(facilityIds[0]!);
           if (sample) {
-            geo = cityFallback(sample, cityCentroids);
-            if (geo) summary.cityFallback += facilityIds.length;
+            let fallbackProvince = provinceForGeocodeQuery(sample.city, sample.province);
+            if (!fallbackProvince && isUntrustedProvince(sample.city, sample.province)) {
+              fallbackProvince = await lookupProvinceFromDb(pool, sample.city);
+            }
+            if (fallbackProvince) {
+              geo = cityFallback(
+                { ...sample, province: fallbackProvince },
+                cityCentroids,
+              );
+              if (geo) summary.cityFallback += facilityIds.length;
+            }
           }
         }
       } else {
@@ -317,8 +337,12 @@ async function run(): Promise<void> {
           failures.push({
             id,
             name: f?.name ?? id,
+            city: f?.city ?? null,
+            province: f?.province ?? null,
             query: f
-              ? [f.address_line1, f.city, f.province].filter(Boolean).join(', ')
+              ? [f.address_line1, f.city, provinceForGeocodeQuery(f.city, f.province)]
+                  .filter(Boolean)
+                  .join(', ')
               : null,
           });
         }
@@ -358,10 +382,12 @@ async function run(): Promise<void> {
   if (failures.length > 0) {
     logger.warn(`${failures.length} facilities could not be geocoded`);
     if (opts.csvPath) {
-      const lines = ['id,name,query', ...failures.map((f) => {
+      const lines = ['id,name,city,province,query', ...failures.map((f) => {
         const q = (f.query ?? '').replace(/"/g, '""');
         const n = f.name.replace(/"/g, '""');
-        return `${f.id},"${n}","${q}"`;
+        const city = (f.city ?? '').replace(/"/g, '""');
+        const province = (f.province ?? '').replace(/"/g, '""');
+        return `${f.id},"${n}","${city}","${province}","${q}"`;
       })];
       writeFileSync(opts.csvPath, lines.join('\n'), 'utf8');
       logger.info(`Wrote failure report to ${opts.csvPath}`);

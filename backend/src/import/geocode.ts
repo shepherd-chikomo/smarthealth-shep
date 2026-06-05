@@ -7,6 +7,7 @@ import type {
   NormalizedProvider,
 } from './types.js';
 import { logger } from './logger.js';
+import { provinceForGeocodeQuery } from './province_resolve.js';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org/search';
 const RATE_LIMIT_MS = 1100;
@@ -124,7 +125,8 @@ export function buildFacilityAddressQuery(
   if (options?.includeName && facility.name) parts.push(facility.name);
   if (facility.addressLine1) parts.push(facility.addressLine1);
   if (facility.city) parts.push(facility.city);
-  if (facility.province) parts.push(facility.province);
+  const province = provinceForGeocodeQuery(facility.city, facility.province);
+  if (province) parts.push(province);
   parts.push('Zimbabwe');
 
   const query = parts.filter(Boolean).join(', ');
@@ -134,7 +136,8 @@ export function buildFacilityAddressQuery(
 export function buildNameCityQuery(facility: FacilityAddressInput): string | null {
   if (!facility.name || !facility.city) return null;
   const parts = [facility.name, facility.city];
-  if (facility.province) parts.push(facility.province);
+  const province = provinceForGeocodeQuery(facility.city, facility.province);
+  if (province) parts.push(province);
   parts.push('Zimbabwe');
   const query = parts.join(', ');
   return query.length > 5 ? query : null;
@@ -143,7 +146,8 @@ export function buildNameCityQuery(facility: FacilityAddressInput): string | nul
 export function buildCityOnlyQuery(facility: FacilityAddressInput): string | null {
   if (!facility.city) return null;
   const parts = [facility.city];
-  if (facility.province) parts.push(facility.province);
+  const province = provinceForGeocodeQuery(facility.city, facility.province);
+  if (province) parts.push(province);
   parts.push('Zimbabwe');
   return parts.join(', ');
 }
@@ -455,9 +459,9 @@ export async function geocodeFacilityInput(
   skipRemote: boolean,
 ): Promise<GeocodeResult | null> {
   const city = facility.city ?? '';
-  const province = facility.province ?? '';
+  const trustedProvince = provinceForGeocodeQuery(city, facility.province);
   const centroid =
-    city && province ? cityCentroids.get(city, province) : null;
+    city && trustedProvince ? cityCentroids.get(city, trustedProvince) : null;
 
   const attempts: Array<() => Promise<GeocodeResult | null>> = [];
 
@@ -468,7 +472,7 @@ export async function geocodeFacilityInput(
         {
           street: facility.addressLine1!,
           city,
-          state: province || undefined,
+          state: trustedProvince || undefined,
           country: 'Zimbabwe',
         },
         'address',

@@ -142,6 +142,7 @@ export interface AdminFacility {
   name: string;
   address: string | null;
   city: string | null;
+  province: string | null;
   isVerified: boolean;
   isClaimed: boolean;
   primaryRoleHolder: string | null;
