@@ -149,7 +149,7 @@ export function ImportPage() {
         />
         <UploadCard
           title="Facilities (HPA register)"
-          description="Upload the HPA facilities .xlsx to import facility records."
+          description="Upload the HPA facilities .xlsx to import facility records. Map coordinates come from the geocode cache during upload; backfill new addresses separately on the server."
           upload={(file, dryRun) => api.uploadFacilities(file, dryRun)}
           onUploaded={() => {
             qc.invalidateQueries({ queryKey: ['import-batches'] });

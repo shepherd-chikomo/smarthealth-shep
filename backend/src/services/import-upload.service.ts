@@ -60,7 +60,20 @@ async function runUpload(params: {
     `INSERT INTO public.import_logs (
        id, source_file, source_type, status, dry_run, total_rows, options, started_by
      ) VALUES ($1, $2, $3::public.import_source_type, 'running', $4, 0, $5, $6)`,
-    [batchId, fileName, sourceType, dryRun, JSON.stringify({ upload: true }), user.id],
+    [
+      batchId,
+      fileName,
+      sourceType,
+      dryRun,
+      JSON.stringify({
+        upload: true,
+        // Nominatim is rate-limited (~1 req/s); geocoding thousands of facilities
+        // inline would exceed HTTP gateway timeouts. Use cache hits only here;
+        // backfill coordinates afterward via `npm run geocode:facilities`.
+        skipGeocoding: sourceType === 'HPA' && !dryRun,
+      }),
+      user.id,
+    ],
   );
 
   try {
@@ -154,11 +167,18 @@ export async function importFacilitiesUpload(
     dryRun,
     sourceType: 'HPA',
     run: async (client, filePath, batchId, dry) => {
-      const r = await importHpaFacilities(client, filePath, batchId, dry);
+      const skipGeocoding = !dry;
+      const r = await importHpaFacilities(client, filePath, batchId, dry, skipGeocoding);
       return {
         created: r.created,
         failed: r.failed,
-        details: { created: r.created, failed: r.failed, ambiguous: r.ambiguous, manualAssociation: r.manualAssociation },
+        details: {
+          created: r.created,
+          failed: r.failed,
+          ambiguous: r.ambiguous,
+          manualAssociation: r.manualAssociation,
+          geocodingDeferred: skipGeocoding,
+        },
       };
     },
   });
