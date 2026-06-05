@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3, Building2, Calendar, Clock, FileText,
-  LayoutDashboard, LogOut, Menu, Package, Stethoscope, Users, UserCog,
-  AlertTriangle, CreditCard, X,
+  LayoutDashboard, LogOut, Menu, Stethoscope, Users, UserCog,
+  AlertTriangle, X,
 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -23,8 +23,6 @@ const NAV = [
   { href: '/appointments', label: 'Appointments', icon: Calendar },
   { href: '/queue', label: 'Queue / Walk-ins', icon: Users },
   { href: '/emergency', label: 'Emergency', icon: AlertTriangle },
-  { href: '/billing', label: 'Billing', icon: CreditCard },
-  { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/staff', label: 'Staff', icon: UserCog },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/provider-analytics', label: 'My Performance', icon: Stethoscope },

@@ -6,12 +6,20 @@ import { api } from '@/lib/api';
 import { useFacility } from '@/lib/facility-context';
 import { ErrorState, LoadingState, PageHeader, PaginationBar, SearchBar } from '@/components/ui';
 
+const EMPTY_FORM = {
+  fullName: '',
+  email: '',
+  phone: '',
+  role: 'receptionist',
+};
+
 export default function StaffPage() {
   const { facilityId } = useFacility();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
-  const [form, setForm] = useState({ userId: '', role: 'receptionist' });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['staff', facilityId, page, q],
@@ -20,8 +28,19 @@ export default function StaffPage() {
   });
 
   const add = useMutation({
-    mutationFn: () => api.addStaff(facilityId!, form),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['staff', facilityId] }),
+    mutationFn: () =>
+      api.addStaff(facilityId!, {
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || undefined,
+        role: form.role,
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['staff', facilityId] });
+      setForm(EMPTY_FORM);
+      setFormError('');
+    },
+    onError: (err: Error) => setFormError(err.message),
   });
 
   const remove = useMutation({
@@ -32,16 +51,50 @@ export default function StaffPage() {
   return (
     <div>
       <PageHeader title="Staff Management" description="Manage facility team members and roles" />
-      <form className="card mb-4 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
-        <input className="input max-w-xs" placeholder="User UUID" required value={form.userId}
-          onChange={(e) => setForm({ ...form, userId: e.target.value })} />
-        <select className="input max-w-[180px]" value={form.role}
-          onChange={(e) => setForm({ ...form, role: e.target.value })}>
+      <form
+        className="card mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setFormError('');
+          add.mutate();
+        }}
+      >
+        <input
+          className="input"
+          placeholder="Full name"
+          required
+          value={form.fullName}
+          onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+        />
+        <input
+          className="input"
+          type="email"
+          placeholder="Email address"
+          required
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        <input
+          className="input"
+          placeholder="Phone (077…)"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
+        <select
+          className="input"
+          value={form.role}
+          onChange={(e) => setForm({ ...form, role: e.target.value })}
+        >
           <option value="receptionist">Receptionist</option>
           <option value="doctor">Doctor</option>
           <option value="facility_admin">Facility Admin</option>
         </select>
-        <button type="submit" className="btn-primary" disabled={add.isPending}>Add staff</button>
+        <button type="submit" className="btn-primary" disabled={add.isPending}>
+          {add.isPending ? 'Adding…' : 'Add staff'}
+        </button>
+        {formError && (
+          <p className="text-sm text-red-600 sm:col-span-2 lg:col-span-5">{formError}</p>
+        )}
       </form>
 
       <SearchBar value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Search staff…" />

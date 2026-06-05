@@ -42,6 +42,9 @@ export interface ListParams {
   limit?: number;
   q?: string;
   status?: string;
+  from?: string;
+  to?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 const API_BASE = '/v1';

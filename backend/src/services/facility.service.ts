@@ -6,11 +6,11 @@ import {
   getUserFacilityMemberships,
   requireFacilityAdmin,
 } from '../lib/facility-access.js';
-import { AppError, NotFoundError } from '../lib/errors.js';
+import { AppError, NotFoundError, ValidationError } from '../lib/errors.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
-import { normalizeZimbabwePhone } from '../lib/supabase-auth.js';
+import { normalizeEmail, normalizeZimbabwePhone, ensureAuthUserEmail } from '../lib/supabase-auth.js';
 import { logAppointmentAudit, logPermissionAudit } from '../lib/audit-log.js';
 import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
@@ -953,6 +953,16 @@ export async function listAppointments(user: AuthenticatedUser, facilityId: stri
     params.push(opts.status);
   }
 
+  if (opts.from) {
+    conditions.push(`a.scheduled_at >= $${idx++}`);
+    params.push(opts.from);
+  }
+
+  if (opts.to) {
+    conditions.push(`a.scheduled_at <= $${idx++}`);
+    params.push(opts.to);
+  }
+
   const search = buildSearchClause(
     ['a.reference_number', 'pr.first_name', 'pr.last_name', 'p.name'],
     opts.q,
@@ -964,6 +974,7 @@ export async function listAppointments(user: AuthenticatedUser, facilityId: stri
 
   const where = conditions.join(' AND ');
   const offset = adminOffset(opts.page, opts.limit);
+  const sortDir = opts.sortOrder === 'asc' ? 'ASC' : 'DESC';
 
   const count = await query<{ count: string }>(
     `SELECT COUNT(*)::text AS count
@@ -983,7 +994,7 @@ export async function listAppointments(user: AuthenticatedUser, facilityId: stri
      JOIN public.profiles pr ON pr.id = a.patient_id
      JOIN public.providers p ON p.id = a.provider_id
      WHERE ${where}
-     ORDER BY a.scheduled_at DESC
+     ORDER BY a.scheduled_at ${sortDir}
      LIMIT $${idx++} OFFSET $${idx}`,
     [...params, opts.limit, offset],
   );
@@ -1563,6 +1574,88 @@ export async function getInventoryAlerts(user: AuthenticatedUser, facilityId: st
 
 // --- Staff ---
 
+function splitFullName(fullName: string): { firstName: string; lastName: string | null } {
+  const trimmed = fullName.trim();
+  if (!trimmed) throw new ValidationError('Full name is required');
+  const parts = trimmed.split(/\s+/);
+  return {
+    firstName: parts[0]!,
+    lastName: parts.length > 1 ? parts.slice(1).join(' ') : null,
+  };
+}
+
+function authAdminBaseUrl(): string {
+  return env.SUPABASE_URL.includes('kong')
+    ? 'http://auth:9999'
+    : `${env.SUPABASE_URL.replace(/\/$/, '')}/auth/v1`;
+}
+
+async function createAuthUserForStaff(email: string, phone: string | null): Promise<string> {
+  const body: Record<string, unknown> = {
+    email,
+    email_confirm: true,
+    user_metadata: { registered_by: 'facility_portal_staff' },
+  };
+  if (phone) {
+    body.phone = phone;
+    body.phone_confirm = true;
+  }
+
+  const response = await fetch(`${authAdminBaseUrl()}/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = (await response.json()) as { id?: string; msg?: string; message?: string };
+  if (!response.ok) {
+    throw new AppError(
+      response.status,
+      'STAFF_CREATE_ERROR',
+      data.msg ?? data.message ?? 'Failed to create staff account',
+    );
+  }
+  return data.id!;
+}
+
+async function resolveStaffUserId(data: {
+  firstName: string;
+  lastName: string | null;
+  email: string;
+  phone: string | null;
+}): Promise<string> {
+  const byEmail = await query<{ id: string }>(
+    `SELECT id FROM public.profiles WHERE lower(email) = $1`,
+    [data.email],
+  );
+  const byPhone = data.phone
+    ? await query<{ id: string }>(
+        `SELECT id FROM public.profiles WHERE phone = $1`,
+        [data.phone],
+      )
+    : { rows: [] as { id: string }[] };
+
+  if (byEmail.rows[0] && byPhone.rows[0] && byEmail.rows[0].id !== byPhone.rows[0].id) {
+    throw new ValidationError('Email and phone belong to different accounts');
+  }
+
+  if (byEmail.rows[0]) return byEmail.rows[0].id;
+  if (byPhone.rows[0]) return byPhone.rows[0].id;
+
+  const userId = await createAuthUserForStaff(data.email, data.phone);
+  await query(
+    `INSERT INTO public.profiles (id, primary_role, first_name, last_name, email, phone)
+     VALUES ($1, 'receptionist', $2, $3, $4, $5)
+     ON CONFLICT (id) DO NOTHING`,
+    [userId, data.firstName, data.lastName, data.email, data.phone],
+  );
+  return userId;
+}
+
 export async function listStaff(user: AuthenticatedUser, facilityId: string, opts: AdminListQuery) {
   await assertFacilityAccess(user, facilityId);
   const params: unknown[] = [facilityId];
@@ -1605,17 +1698,40 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
 export async function addStaffMember(
   user: AuthenticatedUser,
   facilityId: string,
-  data: { userId: string; role: 'doctor' | 'receptionist' | 'facility_admin' },
+  data: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    role: 'doctor' | 'receptionist' | 'facility_admin';
+  },
   context?: RequestContext,
 ) {
   await requireFacilityAdmin(user, facilityId);
+
+  const { firstName, lastName } = splitFullName(data.fullName);
+  const email = normalizeEmail(data.email);
+  const phone = data.phone?.trim() ? normalizeZimbabwePhone(data.phone) : null;
+
+  const targetUserId = await resolveStaffUserId({ firstName, lastName, email, phone });
+  await ensureAuthUserEmail(targetUserId, email);
+
+  await query(
+    `UPDATE public.profiles SET
+       primary_role = $2::public.app_role,
+       first_name = $3,
+       last_name = $4,
+       email = $5,
+       phone = COALESCE($6, phone)
+     WHERE id = $1`,
+    [targetUserId, data.role, firstName, lastName, email, phone],
+  );
 
   const result = await query(
     `INSERT INTO public.facility_memberships (facility_id, user_id, role, invited_by)
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (facility_id, user_id) DO UPDATE SET role = EXCLUDED.role
      RETURNING id`,
-    [facilityId, data.userId, data.role, user.id],
+    [facilityId, targetUserId, data.role, user.id],
   );
   const membershipId = result.rows[0].id as string;
   await logPermissionAudit(
@@ -1625,9 +1741,9 @@ export async function addStaffMember(
     membershipId,
     facilityId,
     context,
-    { targetUserId: data.userId, role: data.role },
+    { targetUserId, role: data.role },
   );
-  return { id: membershipId };
+  return { id: membershipId, userId: targetUserId };
 }
 
 export async function removeStaffMember(

@@ -25,6 +25,12 @@ const STATUS_OPTIONS = [
   'no_show',
 ] as const;
 
+function calendarMonthRange(month: Date) {
+  const start = new Date(month.getFullYear(), month.getMonth(), 1);
+  const end = new Date(month.getFullYear(), month.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
 function AppointmentsContent() {
   const { facilityId } = useFacility();
   const qc = useQueryClient();
@@ -49,14 +55,27 @@ function AppointmentsContent() {
   }, [searchParams]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['appointments', facilityId, page, q, status, view],
-    queryFn: () =>
-      api.appointments(facilityId!, {
-        page: view === 'calendar' ? 1 : page,
-        limit: view === 'calendar' ? 200 : 20,
+    queryKey: ['appointments', facilityId, page, q, status, view, calendarMonth.toISOString()],
+    queryFn: () => {
+      if (view === 'calendar') {
+        const range = calendarMonthRange(calendarMonth);
+        return api.appointments(facilityId!, {
+          page: 1,
+          limit: 100,
+          q,
+          status: status || undefined,
+          from: range.from,
+          to: range.to,
+          sortOrder: 'asc',
+        });
+      }
+      return api.appointments(facilityId!, {
+        page,
+        limit: 20,
         q,
         status: status || undefined,
-      }),
+      });
+    },
     enabled: !!facilityId,
   });
 

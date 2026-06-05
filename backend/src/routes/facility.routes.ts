@@ -584,7 +584,9 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
         tags: ['Facility Portal'],
         querystring: z.object({ facilityId: z.string().uuid() }),
         body: z.object({
-          userId: z.string().uuid(),
+          fullName: z.string().min(1),
+          email: z.string().email(),
+          phone: z.string().optional(),
           role: z.enum(['doctor', 'receptionist', 'facility_admin']),
         }),
       },
