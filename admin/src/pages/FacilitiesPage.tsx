@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check } from 'lucide-react';
 import { api } from '../lib/api';
 import type { ImportReviewQueueItem } from '../lib/api';
 import { ErrorState, LoadingState, Modal, PageHeader, PaginationBar, SearchBar } from '../components/ui';
@@ -7,8 +8,16 @@ import { AmbiguousFacilityPanel } from '../components/import-queue/AmbiguousFaci
 import { UnlinkedPractitionerPanel } from '../components/import-queue/UnlinkedPractitionerPanel';
 import { NoEmailPractitionerPanel } from '../components/import-queue/NoEmailPractitionerPanel';
 import { ManualValidationPanel } from '../components/import-queue/ManualValidationPanel';
+import { GeocodingFailuresTab } from '../components/facilities/GeocodingFailuresTab';
 
-type Tab = 'facilities' | 'manual_association' | 'ambiguous_facility' | 'unlinked_practitioner' | 'no_email_practitioner' | 'manual_validation';
+type Tab =
+  | 'facilities'
+  | 'geocoding'
+  | 'manual_association'
+  | 'ambiguous_facility'
+  | 'unlinked_practitioner'
+  | 'no_email_practitioner'
+  | 'manual_validation';
 
 const queueLabels: Record<string, string> = {
   manual_association: 'Manual Association',
@@ -27,14 +36,18 @@ export function FacilitiesPage() {
   const [providerSearch, setProviderSearch] = useState('');
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedQueueId, setSelectedQueueId] = useState<string | undefined>();
+  const [geocodingId, setGeocodingId] = useState<string | null>(null);
 
   const facilities = useQuery({
-    queryKey: ['admin-facilities', page, q],
+    queryKey: ['admin-facilities', 'all', page, q],
     queryFn: () => api.adminFacilities({ page, limit: 20, q: q || undefined }),
     enabled: tab === 'facilities',
   });
 
-  const queueType = tab !== 'facilities' && tab !== 'manual_validation' ? tab : undefined;
+  const queueType =
+    tab !== 'facilities' && tab !== 'manual_validation' && tab !== 'geocoding'
+      ? tab
+      : undefined;
 
   const queue = useQuery({
     queryKey: ['import-review-queue', page, queueType, q],
@@ -70,8 +83,27 @@ export function FacilitiesPage() {
     },
   });
 
+  const geocode = useMutation({
+    mutationFn: (facilityId: string) => {
+      setGeocodingId(facilityId);
+      return api.geocodeFacility(facilityId);
+    },
+    onSettled: () => setGeocodingId(null),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin-facilities'] });
+    },
+  });
+
+  function geocodeTooltip(quality: string | null, geocodedAt: string | null): string {
+    const parts: string[] = [];
+    if (quality) parts.push(quality);
+    if (geocodedAt) parts.push(new Date(geocodedAt).toLocaleString());
+    return parts.length > 0 ? parts.join(' · ') : 'Geocoded';
+  }
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'facilities', label: 'All Facilities' },
+    { id: 'geocoding', label: 'Geocoding' },
     { id: 'manual_association', label: 'Manual Association' },
     { id: 'ambiguous_facility', label: 'Ambiguous Facilities' },
     { id: 'unlinked_practitioner', label: 'Unlinked Practitioners' },
@@ -143,6 +175,7 @@ export function FacilitiesPage() {
                   <tr className="border-b text-left text-slate-500">
                     <th className="p-3">Name</th>
                     <th className="p-3">City</th>
+                    <th className="p-3">Geocode</th>
                     <th className="p-3">Primary role-holder</th>
                     <th className="p-3">Linked</th>
                     <th className="p-3">Verified</th>
@@ -154,6 +187,25 @@ export function FacilitiesPage() {
                     <tr key={f.id} className="border-b border-slate-100 dark:border-slate-800">
                       <td className="p-3 font-medium">{f.name}</td>
                       <td className="p-3">{f.city ?? '—'}</td>
+                      <td className="p-3">
+                        {f.isGeocodedUpToDate ? (
+                          <span
+                            className="inline-flex text-teal-500"
+                            title={geocodeTooltip(f.geocodeQuality, f.geocodedAt)}
+                          >
+                            <Check className="h-5 w-5" aria-label="Geocoded" />
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-secondary text-xs"
+                            disabled={geocodingId === f.id}
+                            onClick={() => geocode.mutate(f.id)}
+                          >
+                            {geocodingId === f.id ? 'Geocoding…' : 'Geocode'}
+                          </button>
+                        )}
+                      </td>
                       <td className="p-3">{f.primaryRoleHolder?.trim() || '—'}</td>
                       <td className="p-3">{f.linkedProviderCount}</td>
                       <td className="p-3">{f.isVerified ? 'Yes' : 'No'}</td>
@@ -166,6 +218,10 @@ export function FacilitiesPage() {
             </div>
           )}
         </>
+      )}
+
+      {tab === 'geocoding' && (
+        <GeocodingFailuresTab page={page} q={q} onPage={setPage} />
       )}
 
       {queueType && (

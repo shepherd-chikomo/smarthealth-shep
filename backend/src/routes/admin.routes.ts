@@ -676,6 +676,7 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
           queue: z
             .enum([
               'all',
+              'geocoding',
               'ambiguous_facility',
               'manual_association',
               'unlinked_practitioner',
@@ -686,6 +687,52 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request) => facilitiesAdmin.listFacilities(request.user!, request.query),
+  );
+
+  app.post(
+    '/admin/facilities/:id/geocode',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        params: z.object({ id: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.geocodeFacility(
+        request.user!,
+        request.params.id,
+        getRequestContext(request),
+      ),
+  );
+
+  app.patch(
+    '/admin/facilities/:id/address',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin', 'Facilities'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z
+          .object({
+            name: z.string().min(1).optional(),
+            address: z.string().optional(),
+            city: z.string().optional(),
+          })
+          .refine(
+            (body) =>
+              body.name !== undefined || body.address !== undefined || body.city !== undefined,
+            { message: 'At least one of name, address, or city is required' },
+          ),
+      },
+    },
+    async (request) =>
+      facilitiesAdmin.updateFacilityAddress(
+        request.user!,
+        request.params.id,
+        request.body,
+        getRequestContext(request),
+      ),
   );
 
   app.get(

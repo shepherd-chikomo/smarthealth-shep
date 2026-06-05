@@ -137,6 +137,21 @@ export interface ImportReviewQueueItem {
   createdAt?: string | null;
 }
 
+export interface AdminFacility {
+  id: string;
+  name: string;
+  address: string | null;
+  city: string | null;
+  isVerified: boolean;
+  isClaimed: boolean;
+  primaryRoleHolder: string | null;
+  linkedProviderCount: number;
+  geocodeQuality: string | null;
+  geocodedAt: string | null;
+  isGeocodedUpToDate: boolean;
+  geocodeStatus: 'ok' | 'missing' | 'low_quality';
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/v1';
 
 import {
@@ -506,16 +521,21 @@ export const api = {
     }),
 
   adminFacilities: (params?: ListParams & { queue?: string }) =>
-    request<{ facilities: Array<{
-      id: string;
-      name: string;
-      address: string | null;
-      city: string | null;
-      isVerified: boolean;
-      isClaimed: boolean;
-      primaryRoleHolder: string | null;
-      linkedProviderCount: number;
-    }>; pagination: PaginationMeta }>(`/admin/facilities${qs(params)}`),
+    request<{ facilities: AdminFacility[]; pagination: PaginationMeta }>(`/admin/facilities${qs(params)}`),
+
+  geocodeFacility: (id: string) =>
+    request<{ geocoded: boolean; facility: AdminFacility }>(`/admin/facilities/${id}/geocode`, {
+      method: 'POST',
+    }),
+
+  updateFacilityAddress: (
+    id: string,
+    body: { name?: string; address?: string; city?: string },
+  ) =>
+    request<{ facility: AdminFacility }>(`/admin/facilities/${id}/address`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   importReviewQueue: (params?: ListParams & { queueType?: string }) =>
     request<{ items: ImportReviewQueueItem[]; pagination: PaginationMeta }>(

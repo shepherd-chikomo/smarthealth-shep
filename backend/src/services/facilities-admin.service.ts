@@ -16,6 +16,7 @@ import {
 } from '../lib/registry-keys.js';
 import { inferProvinceFromCity } from '../import/normalize_registry.js';
 import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
+import { getGeocodeStatus, isGeocodedUpToDate } from '../lib/geocode-quality.js';
 import { upsertImportResolutionRule } from './import-resolution.service.js';
 
 function requireSuperAdmin(user: AuthenticatedUser): void {
@@ -24,12 +25,26 @@ function requireSuperAdmin(user: AuthenticatedUser): void {
 
 export type FacilityQueueFilter =
   | 'all'
+  | 'geocoding'
   | 'ambiguous_facility'
   | 'manual_association'
   | 'unlinked_practitioner'
   | 'no_email_practitioner';
 
 function mapFacility(row: Record<string, unknown>) {
+  const latitude = row.latitude != null ? Number(row.latitude) : null;
+  const longitude = row.longitude != null ? Number(row.longitude) : null;
+  const geocodeQuality =
+    row.geocode_quality != null ? String(row.geocode_quality) : null;
+  const geocodedAt =
+    row.geocoded_at instanceof Date
+      ? row.geocoded_at.toISOString()
+      : row.geocoded_at
+        ? String(row.geocoded_at)
+        : null;
+
+  const geoRow = { latitude, longitude, geocode_quality: geocodeQuality };
+
   return {
     id: row.id,
     name: row.name,
@@ -43,6 +58,10 @@ function mapFacility(row: Record<string, unknown>) {
     primaryRoleHolder: row.primary_role_holder ?? null,
     linkedProviderCount: Number(row.linked_provider_count ?? 0),
     createdAt: row.created_at,
+    geocodeQuality,
+    geocodedAt,
+    isGeocodedUpToDate: isGeocodedUpToDate(geoRow),
+    geocodeStatus: getGeocodeStatus(geoRow),
   };
 }
 
@@ -73,7 +92,13 @@ export async function listFacilities(
     conditions.push(search.clause);
   }
 
-  if (opts.queue && opts.queue !== 'all') {
+  if (opts.queue === 'geocoding') {
+    conditions.push(`(f.address_line1 IS NOT NULL OR f.city IS NOT NULL)`);
+    conditions.push(`(
+      f.latitude IS NULL OR f.longitude IS NULL
+      OR f.geocode_quality IN ('city_only', 'city_centre')
+    )`);
+  } else if (opts.queue && opts.queue !== 'all') {
     conditions.push(`EXISTS (
       SELECT 1 FROM public.import_review_queue irq
       WHERE irq.status = 'pending' AND irq.queue_type = $${idx}::public.import_queue_type
@@ -96,6 +121,7 @@ export async function listFacilities(
   const rows = await query(
     `SELECT f.id, f.name, f.address_line1, f.city, f.province::text AS province,
             f.is_verified, f.is_claimed, f.verification_status, f.import_source, f.created_at,
+            f.latitude, f.longitude, f.geocode_quality, f.geocoded_at,
             (SELECT COUNT(*)::int FROM public.provider_facility_links pfl WHERE pfl.facility_id = f.id) AS linked_provider_count,
             (SELECT frih.practitioner_first_name || ' ' || COALESCE(frih.practitioner_last_name, '')
              FROM public.facility_role_holder_intents frih WHERE frih.facility_id = f.id LIMIT 1) AS primary_role_holder
@@ -110,6 +136,136 @@ export async function listFacilities(
     facilities: rows.rows.map(mapFacility),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+const FACILITY_ADMIN_SELECT = `
+  f.id, f.name, f.address_line1, f.city, f.province::text AS province,
+  f.is_verified, f.is_claimed, f.verification_status, f.import_source, f.created_at,
+  f.latitude, f.longitude, f.geocode_quality, f.geocoded_at,
+  (SELECT COUNT(*)::int FROM public.provider_facility_links pfl WHERE pfl.facility_id = f.id) AS linked_provider_count,
+  (SELECT frih.practitioner_first_name || ' ' || COALESCE(frih.practitioner_last_name, '')
+   FROM public.facility_role_holder_intents frih WHERE frih.facility_id = f.id LIMIT 1) AS primary_role_holder
+`;
+
+export async function geocodeFacility(
+  user: AuthenticatedUser,
+  facilityId: string,
+  ctx: RequestContext,
+) {
+  requireSuperAdmin(user);
+
+  const existing = await query<{
+    id: string;
+    name: string;
+    address_line1: string | null;
+    city: string | null;
+    province: string | null;
+  }>(
+    `SELECT id, name, address_line1, city, province::text AS province
+     FROM public.facilities
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [facilityId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Facility', facilityId);
+
+  const row = existing.rows[0];
+  const geocodeResult = await geocodeFacilityRecord({
+    facilityId,
+    name: row.name,
+    addressLine1: row.address_line1,
+    city: row.city,
+    province: row.province,
+    clearOnFailure: false,
+  });
+
+  const updated = await query(
+    `SELECT ${FACILITY_ADMIN_SELECT}
+     FROM public.facilities f
+     WHERE f.id = $1`,
+    [facilityId],
+  );
+
+  await logAdminAudit(user.id, 'admin.facility.geocode', 'facility', facilityId, ctx, {
+    geocoded: geocodeResult.geocoded,
+    quality: geocodeResult.quality ?? null,
+  });
+
+  return {
+    geocoded: geocodeResult.geocoded,
+    facility: mapFacility(updated.rows[0]),
+  };
+}
+
+export async function updateFacilityAddress(
+  user: AuthenticatedUser,
+  facilityId: string,
+  data: { name?: string; address?: string; city?: string },
+  ctx: RequestContext,
+) {
+  requireSuperAdmin(user);
+
+  const hasName = data.name !== undefined && data.name.trim().length > 0;
+  const hasAddress = data.address !== undefined;
+  const hasCity = data.city !== undefined;
+  if (!hasName && !hasAddress && !hasCity) {
+    throw new ValidationError('At least one of name, address, or city is required');
+  }
+
+  const existing = await query<{
+    name: string;
+    address_line1: string | null;
+    city: string | null;
+    province: string | null;
+  }>(
+    `SELECT name, address_line1, city, province::text AS province
+     FROM public.facilities
+     WHERE id = $1 AND deleted_at IS NULL`,
+    [facilityId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Facility', facilityId);
+
+  const prior = existing.rows[0];
+  const nextName = hasName ? data.name!.trim() : prior.name;
+  const nextAddress = hasAddress ? (data.address!.trim() || null) : prior.address_line1;
+  const nextCity = hasCity ? (data.city!.trim() || null) : prior.city;
+  const addressChanged =
+    nextAddress !== prior.address_line1 || nextCity !== prior.city;
+  const province = inferProvinceFromCity(nextCity);
+
+  await query(
+    `UPDATE public.facilities SET
+       name = $2,
+       address_line1 = $3,
+       city = $4,
+       province = $5::public.zimbabwe_province,
+       updated_at = timezone('utc', now())
+     WHERE id = $1`,
+    [facilityId, nextName, nextAddress, nextCity, province],
+  );
+
+  if (addressChanged) {
+    await geocodeFacilityRecord({
+      facilityId,
+      name: nextName,
+      addressLine1: nextAddress,
+      city: nextCity,
+      province,
+      clearOnFailure: true,
+    });
+  }
+
+  const updated = await query(
+    `SELECT ${FACILITY_ADMIN_SELECT}
+     FROM public.facilities f
+     WHERE f.id = $1`,
+    [facilityId],
+  );
+
+  await logAdminAudit(user.id, 'admin.facility.update_address', 'facility', facilityId, ctx, {
+    addressChanged,
+  });
+
+  return { facility: mapFacility(updated.rows[0]) };
 }
 
 export async function listImportReviewQueue(
