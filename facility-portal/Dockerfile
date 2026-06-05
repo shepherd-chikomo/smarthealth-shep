@@ -20,7 +20,9 @@ ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
+RUN apk add --no-cache wget \
+  && addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -28,5 +30,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3001
-HEALTHCHECK CMD wget -qO- http://localhost:3001/ || exit 1
+HEALTHCHECK CMD wget -q --spider http://127.0.0.1:3001/ || exit 1
 CMD ["node", "server.js"]

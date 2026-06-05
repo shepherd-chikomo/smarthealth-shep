@@ -1,5 +1,6 @@
 -- Supabase-compatible roles for self-hosted stack
--- Required by GoTrue, PostgREST, Storage API
+-- Service roles (supabase_auth_admin, etc.) are created by supabase/postgres image.
+-- Passwords are synced from POSTGRES_PASSWORD (see 100-role-passwords.sql).
 
 DO $$
 BEGIN
@@ -14,15 +15,6 @@ BEGIN
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticator') THEN
     CREATE ROLE authenticator NOINHERIT LOGIN PASSWORD 'postgres';
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'supabase_admin') THEN
-    CREATE ROLE supabase_admin NOINHERIT CREATEROLE CREATEDB REPLICATION BYPASSRLS LOGIN PASSWORD 'postgres';
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'supabase_auth_admin') THEN
-    CREATE ROLE supabase_auth_admin NOINHERIT CREATEROLE LOGIN PASSWORD 'postgres';
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'supabase_storage_admin') THEN
-    CREATE ROLE supabase_storage_admin NOINHERIT CREATEROLE LOGIN PASSWORD 'postgres';
   END IF;
 END $$;
 
