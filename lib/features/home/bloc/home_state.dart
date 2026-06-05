@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/features/queue/models/queue_session.dart';
 import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/service_category_model.dart';
@@ -34,6 +35,7 @@ final class HomeLoaded extends HomeState {
     this.isOffline = false,
     this.activeQueue,
     this.loadError,
+    this.searchOrigin,
   });
 
   final String city;
@@ -45,6 +47,7 @@ final class HomeLoaded extends HomeState {
   final bool isOffline;
   final QueueSession? activeQueue;
   final String? loadError;
+  final AppPosition? searchOrigin;
 
   List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
@@ -65,6 +68,7 @@ final class HomeLoaded extends HomeState {
     bool? isOffline,
     QueueSession? activeQueue,
     String? loadError,
+    AppPosition? searchOrigin,
     bool clearCategory = false,
     bool clearQueue = false,
     bool clearLoadError = false,
@@ -80,6 +84,7 @@ final class HomeLoaded extends HomeState {
       isOffline: isOffline ?? this.isOffline,
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
       loadError: clearLoadError ? null : (loadError ?? this.loadError),
+      searchOrigin: searchOrigin ?? this.searchOrigin,
     );
   }
 
@@ -94,6 +99,7 @@ final class HomeLoaded extends HomeState {
         isOffline,
         activeQueue,
         loadError,
+        searchOrigin,
       ];
 }
 
@@ -105,6 +111,7 @@ final class HomeOffline extends HomeState {
     required this.categories,
     this.selectedCategoryId,
     this.activeQueue,
+    this.searchOrigin,
   });
 
   final String city;
@@ -113,6 +120,7 @@ final class HomeOffline extends HomeState {
   final List<ServiceCategoryModel> categories;
   final String? selectedCategoryId;
   final QueueSession? activeQueue;
+  final AppPosition? searchOrigin;
 
   List<FacilityModel> get visibleFacilities {
     if (selectedCategoryId == null || selectedCategoryId == 'near_me') {
@@ -130,6 +138,7 @@ final class HomeOffline extends HomeState {
     List<ServiceCategoryModel>? categories,
     String? selectedCategoryId,
     QueueSession? activeQueue,
+    AppPosition? searchOrigin,
     bool clearCategory = false,
     bool clearQueue = false,
   }) {
@@ -141,12 +150,20 @@ final class HomeOffline extends HomeState {
       selectedCategoryId:
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       activeQueue: clearQueue ? null : (activeQueue ?? this.activeQueue),
+      searchOrigin: searchOrigin ?? this.searchOrigin,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [city, facilities, lastUpdated, categories, selectedCategoryId, activeQueue];
+  List<Object?> get props => [
+        city,
+        facilities,
+        lastUpdated,
+        categories,
+        selectedCategoryId,
+        activeQueue,
+        searchOrigin,
+      ];
 }
 
 final class HomeError extends HomeState {

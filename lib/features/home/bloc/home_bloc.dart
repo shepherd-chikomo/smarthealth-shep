@@ -47,6 +47,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         selectedCategoryId: current.selectedCategoryId,
         isRefreshing: true,
         activeQueue: current.activeQueue,
+        searchOrigin: current.searchOrigin,
       ));
     }
     _cachedCategories = await _categories.getHomeServiceCategories();
@@ -96,6 +97,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           categories: _cachedCategories,
           selectedCategoryId: selectedCategoryId,
           activeQueue: result.activeQueue,
+          searchOrigin: result.searchOrigin,
         ));
       } else {
         emit(HomeLoaded(
@@ -106,6 +108,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           selectedCategoryId: selectedCategoryId,
           activeQueue: result.activeQueue,
           loadError: result.loadError,
+          searchOrigin: result.searchOrigin,
         ));
       }
     } catch (error) {
@@ -136,6 +139,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         selectedCategoryId: event.categoryId,
         isRefreshing: true,
         activeQueue: current.activeQueue,
+        searchOrigin: current.searchOrigin,
       ));
     } else {
       return;
@@ -166,6 +170,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         selectedCategoryId: current.selectedCategoryId,
         isRefreshing: true,
         activeQueue: current.activeQueue,
+        searchOrigin: current.searchOrigin,
       ));
     }
 

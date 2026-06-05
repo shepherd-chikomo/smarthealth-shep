@@ -10,6 +10,7 @@ import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/shared/data/category_repository.dart';
 import 'package:smarthealth_shep/shared/data/facility_repository.dart';
@@ -338,6 +339,7 @@ class _HomeDebugStatus extends StatelessWidget {
       child: Text(
         'API: ${AppConfig.apiBaseUrl}\n'
         'Loaded: $count · categories: $categoryCount · filter: $filter'
+        '${_originDebugLine(state)}'
         '${error != null ? '\n$error' : ''}',
         style: const TextStyle(
           fontSize: 10,
@@ -345,6 +347,22 @@ class _HomeDebugStatus extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _originDebugLine(HomeState state) {
+    final AppPosition? origin = switch (state) {
+      HomeLoaded(:final searchOrigin) => searchOrigin,
+      HomeOffline(:final searchOrigin) => searchOrigin,
+      _ => null,
+    };
+    if (origin == null) return '';
+
+    final citySuffix =
+        origin.cityName != null ? ' · ${origin.cityName}' : '';
+    return '\nOrigin: ${origin.latitude.toStringAsFixed(4)}, '
+        '${origin.longitude.toStringAsFixed(4)} '
+        '(${origin.source.name})$citySuffix · '
+        'radius: ${AppConfig.defaultSearchRadiusKm}km';
   }
 
   String? _categoryFromState(HomeState state) => switch (state) {

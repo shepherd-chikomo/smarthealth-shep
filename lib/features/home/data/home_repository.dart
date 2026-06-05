@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
 import 'package:smarthealth_shep/features/queue/data/queue_repository.dart';
@@ -22,6 +23,7 @@ class HomeSyncResult {
     required this.isOffline,
     this.activeQueue,
     this.loadError,
+    this.searchOrigin,
   });
 
   final List<FacilityModel> facilities;
@@ -30,6 +32,7 @@ class HomeSyncResult {
   final bool isOffline;
   final QueueSession? activeQueue;
   final String? loadError;
+  final AppPosition? searchOrigin;
 }
 
 /// Loads and caches home dashboard facility data (offline-first).
@@ -121,6 +124,7 @@ class HomeRepository {
         lastUpdated: now,
         isOffline: nearby.isOffline || !online,
         activeQueue: _queue.getActiveSession(),
+        searchOrigin: origin,
       );
     } catch (error, stackTrace) {
       developer.log(
@@ -139,6 +143,7 @@ class HomeRepository {
           isOffline: true,
           activeQueue: _queue.getActiveSession(),
           loadError: error.toString(),
+          searchOrigin: origin,
         );
       }
 
@@ -149,6 +154,7 @@ class HomeRepository {
         isOffline: true,
         activeQueue: _queue.getActiveSession(),
         loadError: error.toString(),
+        searchOrigin: origin,
       );
     }
   }
