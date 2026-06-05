@@ -5,12 +5,14 @@ RUN apk add --no-cache wget
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json* ./
+# Repo root context (see docker-compose.yml) — package + source + migrations for import CLI scripts
+COPY backend/package.json backend/package-lock.json* ./
 RUN npm ci
 
-COPY tsconfig.json ./
-COPY src ./src
+COPY backend/tsconfig.json ./
+COPY backend/src ./src
+COPY supabase/migrations ./supabase/migrations
 
 EXPOSE 3000
 USER node
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["node_modules/.bin/tsx", "src/index.ts"]

@@ -293,8 +293,8 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   smarthealth-api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: smarthealth-api
     restart: unless-stopped
     logging: *default-logging

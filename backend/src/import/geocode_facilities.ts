@@ -11,10 +11,10 @@
  *   npm run geocode:facilities -- --skip-remote
  *   npm run geocode:facilities -- --import-source HPA --reset --clear-cache --csv geocode-failures.csv
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { closePool, pool, withTransaction } from './db.js';
+import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import {
   createCityCentroidMap,
   facilityInputSignature,
@@ -154,19 +154,9 @@ function cityFallback(
   };
 }
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-async function ensureGeocodeQualityColumns(): Promise<void> {
-  const sqlPath = resolve(
-    __dirname,
-    '../../../supabase/migrations/20260602100000_facility_geocode_quality.sql',
-  );
-  await pool.query(readFileSync(sqlPath, 'utf8'));
-}
-
 async function run(): Promise<void> {
   const opts = parseArgs();
-  await ensureGeocodeQualityColumns();
+  await ensureGeocodeQualityColumns(pool);
 
   const summary = {
     scanned: 0,

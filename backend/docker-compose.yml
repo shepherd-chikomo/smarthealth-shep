@@ -1,8 +1,8 @@
 services:
   smarthealth-api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: smarthealth-api
     ports:
       - "${API_PORT:-3000}:3000"

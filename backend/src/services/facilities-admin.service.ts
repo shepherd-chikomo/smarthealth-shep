@@ -14,6 +14,8 @@ import {
   locationDedupKeyFromRawRows,
   parseHpaRawRow,
 } from '../lib/registry-keys.js';
+import { inferProvinceFromCity } from '../import/normalize_registry.js';
+import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
 import { upsertImportResolutionRule } from './import-resolution.service.js';
 
 function requireSuperAdmin(user: AuthenticatedUser): void {
@@ -233,23 +235,33 @@ async function upsertFacilityFromFields(opts: {
   normalizedNameKey?: string;
 }): Promise<string> {
   const slug = opts.facilityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 80);
+  const province = inferProvinceFromCity(opts.city);
   const insert = await query<{ id: string }>(
     `INSERT INTO public.facilities (
        name, slug, facility_type, address_line1, city, province,
        is_verified, is_claimed, verification_status, import_source, registry_key
      ) VALUES (
-       $1, $2, 'clinic', $3, $4, 'Harare'::public.zimbabwe_province,
-       false, false, 'draft', 'HPA', $5
+       $1, $2, 'clinic', $3, $4, $5::public.zimbabwe_province,
+       false, false, 'draft', 'HPA', $6
      )
      ON CONFLICT (registry_key) WHERE registry_key IS NOT NULL AND deleted_at IS NULL
      DO UPDATE SET
        name = EXCLUDED.name,
        address_line1 = EXCLUDED.address_line1,
-       city = EXCLUDED.city
+       city = EXCLUDED.city,
+       province = EXCLUDED.province
      RETURNING id`,
-    [opts.facilityName, slug, opts.address, opts.city, opts.registryKey],
+    [opts.facilityName, slug, opts.address, opts.city, province, opts.registryKey],
   );
   const facilityId = insert.rows[0].id;
+
+  await geocodeFacilityRecord({
+    facilityId,
+    name: opts.facilityName,
+    addressLine1: opts.address,
+    city: opts.city,
+    province,
+  });
   const nameKey = opts.normalizedNameKey ?? buildFullNameKey(
     opts.practitionerFirstName ?? null,
     opts.practitionerLastName ?? null,

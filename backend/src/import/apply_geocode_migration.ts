@@ -1,22 +1,13 @@
 #!/usr/bin/env node
 /** Apply facility geocode_quality migration (local dev helper). */
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { pool } from '../lib/db.js';
+import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import { logger } from './logger.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 async function run(): Promise<void> {
-  const sqlPath = resolve(
-    __dirname,
-    '../../../supabase/migrations/20260602100000_facility_geocode_quality.sql',
-  );
-  const sql = readFileSync(sqlPath, 'utf8');
   await pool.query('SET lock_timeout = 10000');
   try {
-    await pool.query(sql);
+    await ensureGeocodeQualityColumns(pool);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('lock timeout') || msg.includes('canceling statement')) {

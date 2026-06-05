@@ -12,6 +12,7 @@ import { buildPaginationMeta } from '../lib/pagination.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
 import { normalizeZimbabwePhone } from '../lib/supabase-auth.js';
 import { logAppointmentAudit, logPermissionAudit } from '../lib/audit-log.js';
+import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
 import type { RequestContext } from '../lib/request-context.js';
 
@@ -254,6 +255,23 @@ export async function updateFacilityProfile(
 ) {
   await requireFacilityAdmin(user, facilityId);
 
+  const existing = await query<{
+    address_line1: string | null;
+    city: string | null;
+    province: string | null;
+    name: string;
+  }>(
+    `SELECT address_line1, city, province::text AS province, name
+     FROM public.facilities WHERE id = $1`,
+    [facilityId],
+  );
+  const prior = existing.rows[0];
+  if (!prior) throw new NotFoundError('Facility', facilityId);
+
+  const addressChanged =
+    (data.addressLine1 !== undefined && data.addressLine1 !== prior.address_line1) ||
+    (data.city !== undefined && data.city !== prior.city);
+
   const result = await query(
     `UPDATE public.facilities SET
        name = COALESCE($2, name),
@@ -280,7 +298,20 @@ export async function updateFacilityProfile(
     ],
   );
 
-  return { facility: mapFacility(result.rows[0]) };
+  const row = result.rows[0];
+
+  if (addressChanged) {
+    await geocodeFacilityRecord({
+      facilityId,
+      name: String(row.name ?? prior.name),
+      addressLine1: row.address_line1 ? String(row.address_line1) : null,
+      city: row.city ? String(row.city) : null,
+      province: row.province ? String(row.province) : prior.province,
+      clearOnFailure: true,
+    });
+  }
+
+  return { facility: mapFacility(row) };
 }
 
 // --- Doctors ---

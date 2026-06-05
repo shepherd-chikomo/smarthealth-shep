@@ -6,21 +6,9 @@
  *   npm run audit:geocode
  *   npm run audit:geocode -- --import-source HPA
  */
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { closePool, pool, query } from './db.js';
+import { ensureGeocodeQualityColumns } from './ensure_geocode_quality.js';
 import { logger } from './logger.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-async function ensureGeocodeQualityColumns(): Promise<void> {
-  const sqlPath = resolve(
-    __dirname,
-    '../../../supabase/migrations/20260602100000_facility_geocode_quality.sql',
-  );
-  await pool.query(readFileSync(sqlPath, 'utf8'));
-}
 
 function parseImportSource(): string | null {
   const argv = process.argv.slice(2);
@@ -31,7 +19,7 @@ function parseImportSource(): string | null {
 }
 
 async function run(): Promise<void> {
-  await ensureGeocodeQualityColumns();
+  await ensureGeocodeQualityColumns(pool);
   const importSource = parseImportSource();
   const sourceClause = importSource ? 'AND f.import_source = $1' : '';
   const sourceParams = importSource ? [importSource] : [];

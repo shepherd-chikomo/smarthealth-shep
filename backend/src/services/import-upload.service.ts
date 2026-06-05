@@ -177,7 +177,7 @@ export async function importFacilitiesUpload(
           failed: r.failed,
           ambiguous: r.ambiguous,
           manualAssociation: r.manualAssociation,
-          geocodingDeferred: skipGeocoding,
+          geocodingDeferred: skipGeocoding ? 1 : 0,
         },
       };
     },
