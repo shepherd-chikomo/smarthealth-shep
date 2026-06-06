@@ -1,0 +1,10 @@
+docker/certbot
+.git
+.dart_tool
+build
+node_modules
+**/node_modules
+android/build
+ios/Pods
+*.csv
+pilot-results-50.csv
