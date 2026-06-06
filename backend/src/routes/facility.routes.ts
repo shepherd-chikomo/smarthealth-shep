@@ -50,17 +50,33 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: {
         tags: ['Facility Portal'],
         querystring: z.object({ facilityId: z.string().uuid() }),
-        body: z.object({
-          name: z.string().optional(),
-          description: z.string().optional(),
-          addressLine1: z.string().optional(),
-          addressLine2: z.string().optional(),
-          city: z.string().optional(),
-          phone: z.string().optional(),
-          email: z.string().optional(),
-          website: z.string().optional(),
-          facilityTypes: z.array(z.enum(FACILITY_TYPE_VALUES)).min(1).optional(),
-        }),
+        body: z
+          .object({
+            name: z.string().optional(),
+            description: z.string().optional(),
+            addressLine1: z.string().optional(),
+            addressLine2: z.string().optional(),
+            city: z.string().optional(),
+            phone: z.string().optional(),
+            email: z.string().optional(),
+            website: z.string().optional(),
+            facilityTypes: z.array(z.enum(FACILITY_TYPE_VALUES)).min(1).optional(),
+            latitude: z.number().min(-90).max(90).optional(),
+            longitude: z.number().min(-180).max(180).optional(),
+            locationMode: z.enum(['manual', 'geocode']).optional(),
+          })
+          .refine(
+            (body) =>
+              (body.latitude === undefined && body.longitude === undefined) ||
+              (body.latitude !== undefined && body.longitude !== undefined),
+            { message: 'latitude and longitude must be sent together' },
+          )
+          .refine(
+            (body) =>
+              body.locationMode !== 'manual' ||
+              (body.latitude !== undefined && body.longitude !== undefined),
+            { message: 'locationMode manual requires latitude and longitude' },
+          ),
       },
     },
     async (request) =>

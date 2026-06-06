@@ -12,7 +12,10 @@ import { buildPaginationMeta } from '../lib/pagination.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
 import { normalizeEmail, normalizeZimbabwePhone, ensureAuthUserEmail } from '../lib/supabase-auth.js';
 import { logAppointmentAudit, logPermissionAudit } from '../lib/audit-log.js';
-import { geocodeFacilityRecord } from '../lib/facility-geocode.js';
+import {
+  applyManualFacilityCoordinates,
+  geocodeFacilityRecord,
+} from '../lib/facility-geocode.js';
 import {
   effectiveFacilityTypes,
   normalizeFacilityTypes,
@@ -40,6 +43,9 @@ function mapFacility(row: Record<string, unknown>) {
     phone: row.phone,
     email: row.email,
     website: row.website,
+    latitude: row.latitude != null ? Number(row.latitude) : null,
+    longitude: row.longitude != null ? Number(row.longitude) : null,
+    geocodeQuality: row.geocode_quality != null ? String(row.geocode_quality) : null,
     isVerified: row.is_verified,
     isActive: row.is_active,
     settings: row.settings,
@@ -261,12 +267,20 @@ export async function updateFacilityProfile(
     email?: string;
     website?: string;
     facilityTypes?: string[];
+    latitude?: number;
+    longitude?: number;
+    locationMode?: 'manual' | 'geocode';
   },
 ) {
   await requireFacilityAdmin(user, facilityId);
 
   const normalizedTypes =
     data.facilityTypes !== undefined ? normalizeFacilityTypes(data.facilityTypes) : null;
+
+  const hasManualCoords =
+    data.locationMode === 'manual' &&
+    data.latitude !== undefined &&
+    data.longitude !== undefined;
 
   const existing = await query<{
     address_line1: string | null;
@@ -284,6 +298,9 @@ export async function updateFacilityProfile(
   const addressChanged =
     (data.addressLine1 !== undefined && data.addressLine1 !== prior.address_line1) ||
     (data.city !== undefined && data.city !== prior.city);
+
+  const shouldAutoGeocode =
+    addressChanged && !hasManualCoords && data.locationMode !== 'manual';
 
   const result = await query(
     `UPDATE public.facilities SET
@@ -317,7 +334,9 @@ export async function updateFacilityProfile(
 
   const row = result.rows[0];
 
-  if (addressChanged) {
+  if (hasManualCoords) {
+    await applyManualFacilityCoordinates(facilityId, data.latitude!, data.longitude!);
+  } else if (shouldAutoGeocode) {
     await geocodeFacilityRecord({
       facilityId,
       name: String(row.name ?? prior.name),
@@ -328,7 +347,8 @@ export async function updateFacilityProfile(
     });
   }
 
-  return { facility: mapFacility(row) };
+  const refreshed = await getFacilityOrThrow(facilityId);
+  return { facility: mapFacility(refreshed) };
 }
 
 // --- Doctors ---

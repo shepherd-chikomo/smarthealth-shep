@@ -74,9 +74,10 @@ export async function requireFacilityAdmin(
 
 export async function getFacilityOrThrow(facilityId: string) {
   const result = await query(
-    `SELECT id, name, slug, facility_type, description, address_line1, address_line2,
-            city, province, postal_code, phone, email, website, is_verified, is_active,
-            settings, created_at, updated_at
+    `SELECT id, name, slug, facility_type, facility_types, description, address_line1, address_line2,
+            city, province, postal_code, phone, email, website,
+            latitude, longitude, geocode_quality,
+            is_verified, is_active, settings, created_at, updated_at
      FROM public.facilities
      WHERE id = $1 AND deleted_at IS NULL`,
     [facilityId],

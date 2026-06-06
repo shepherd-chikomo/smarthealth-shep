@@ -2,7 +2,9 @@ import type pg from 'pg';
 import {
   createCityCentroidMap,
   geocodeFacilityInput,
+  isWithinZimbabwe,
 } from '../import/geocode.js';
+import { ValidationError } from './errors.js';
 import { logger } from '../import/logger.js';
 import { resolveProvinceFromCity } from '../import/province_resolve.js';
 import type { GeocodeQuality, GeocodeResult } from '../import/types.js';
@@ -57,6 +59,33 @@ async function clearFacilityGeocode(client: pg.PoolClient, facilityId: string): 
      WHERE id = $1`,
     [facilityId],
   );
+}
+
+/** Apply portal/admin pin-drop coordinates (trusted manual quality). */
+export async function applyManualFacilityCoordinates(
+  facilityId: string,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  if (!isWithinZimbabwe(latitude, longitude)) {
+    throw new ValidationError('Coordinates must be within Zimbabwe');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `UPDATE public.facilities
+       SET latitude = $1,
+           longitude = $2,
+           geocode_quality = 'manual',
+           geocoded_at = timezone('utc', now()),
+           updated_at = timezone('utc', now())
+       WHERE id = $3`,
+      [latitude, longitude, facilityId],
+    );
+  } finally {
+    client.release();
+  }
 }
 
 export interface GeocodeFacilityRecordInput {

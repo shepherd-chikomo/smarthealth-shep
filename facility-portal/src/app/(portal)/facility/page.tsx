@@ -1,11 +1,36 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { FACILITY_CATEGORY_OPTIONS } from '@/lib/facility-categories';
 import { useFacility } from '@/lib/facility-context';
 import { ErrorState, LoadingState, PageHeader } from '@/components/ui';
+import { LocationSaveModal } from '@/components/location-save-modal';
+import type { MapPosition } from '@/components/facility-location-map';
+
+const FacilityLocationMap = dynamic(
+  () =>
+    import('@/components/facility-location-map').then((m) => m.FacilityLocationMap),
+  { ssr: false, loading: () => <p className="text-sm text-[var(--muted)]">Loading map…</p> },
+);
+
+function geocodeQualityLabel(quality: string | null | undefined): string {
+  switch (quality) {
+    case 'manual':
+      return 'Set manually on map';
+    case 'address':
+      return 'Geocoded from address';
+    case 'name':
+      return 'Approximate location from name';
+    case 'city_only':
+    case 'city_centre':
+      return 'City-centre estimate — drag the pin for accuracy';
+    default:
+      return 'Not set — click the map to place your facility';
+  }
+}
 
 export default function FacilityProfilePage() {
   const { facilityId } = useFacility();
@@ -19,8 +44,20 @@ export default function FacilityProfilePage() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [facilityTypes, setFacilityTypes] = useState<string[]>([]);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [mapPosition, setMapPosition] = useState<MapPosition | null>(null);
+  const [pinDirty, setPinDirty] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const pendingPayloadRef = useRef<Record<string, unknown> | null>(null);
 
   const f = data?.facility as Record<string, unknown> | undefined;
+
+  const baseline = useMemo(
+    () => ({
+      addressLine1: f ? String(f.addressLine1 ?? '') : '',
+      city: f ? String(f.city ?? '') : '',
+    }),
+    [f],
+  );
 
   useEffect(() => {
     if (!f) return;
@@ -30,22 +67,66 @@ export default function FacilityProfilePage() {
         ? [String(f.facilityType)]
         : [];
     setFacilityTypes(types);
-  }, [f]);
+
+    const lat = f.latitude != null ? Number(f.latitude) : null;
+    const lng = f.longitude != null ? Number(f.longitude) : null;
+    if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+      setMapPosition({ lat, lng });
+    } else {
+      setMapPosition(null);
+    }
+    setPinDirty(false);
+    setForm({});
+  }, [f?.id, f?.latitude, f?.longitude]);
+
+  const effectiveAddress = form.addressLine1 ?? baseline.addressLine1;
+  const effectiveCity = form.city ?? baseline.city;
+  const addressChanged =
+    effectiveAddress !== baseline.addressLine1 || effectiveCity !== baseline.city;
+
+  const buildPayload = (locationMode?: 'manual' | 'geocode'): Record<string, unknown> => {
+    const body: Record<string, unknown> = { ...form, facilityTypes };
+    if (locationMode) body.locationMode = locationMode;
+    if (locationMode === 'manual' && mapPosition) {
+      body.latitude = mapPosition.lat;
+      body.longitude = mapPosition.lng;
+    }
+    return body;
+  };
+
+  const submitProfile = (body: Record<string, unknown>) =>
+    api.updateFacilityProfile(facilityId!, body);
 
   const save = useMutation({
-    mutationFn: () => {
-      if (facilityTypes.length === 0) {
-        setCategoryError('Select at least one category');
-        return Promise.reject(new Error('Select at least one category'));
-      }
-      setCategoryError(null);
-      return api.updateFacilityProfile(facilityId!, {
-        ...form,
-        facilityTypes,
-      });
+    mutationFn: (body: Record<string, unknown>) => submitProfile(body),
+    onSuccess: () => {
+      setPinDirty(false);
+      setShowLocationModal(false);
+      pendingPayloadRef.current = null;
+      qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] }),
   });
+
+  const handleSave = (locationMode?: 'manual' | 'geocode') => {
+    if (facilityTypes.length === 0) {
+      setCategoryError('Select at least one category');
+      return;
+    }
+    setCategoryError(null);
+
+    if (addressChanged && pinDirty && !locationMode) {
+      pendingPayloadRef.current = buildPayload();
+      setShowLocationModal(true);
+      return;
+    }
+
+    if (pinDirty && mapPosition && locationMode !== 'geocode') {
+      save.mutate(buildPayload('manual'));
+      return;
+    }
+
+    save.mutate(buildPayload(locationMode));
+  };
 
   const toggleCategory = (id: string) => {
     setCategoryError(null);
@@ -67,7 +148,7 @@ export default function FacilityProfilePage() {
           className="card max-w-2xl space-y-6"
           onSubmit={(e) => {
             e.preventDefault();
-            save.mutate();
+            handleSave();
           }}
         >
           {[
@@ -88,6 +169,33 @@ export default function FacilityProfilePage() {
               />
             </div>
           ))}
+
+          <div>
+            <label className="text-sm font-medium">Location on map</label>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Drag the pin or click the map to set where patients find you. This overrides
+              automatic geocoding when you save.
+            </p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              {geocodeQualityLabel(f.geocodeQuality as string | null)}
+              {mapPosition && (
+                <>
+                  {' '}
+                  · {mapPosition.lat.toFixed(5)}, {mapPosition.lng.toFixed(5)}
+                </>
+              )}
+            </p>
+            <div className="mt-3">
+              <FacilityLocationMap
+                position={mapPosition}
+                disabled={save.isPending}
+                onChange={(pos) => {
+                  setMapPosition(pos);
+                  setPinDirty(true);
+                }}
+              />
+            </div>
+          </div>
 
           <div>
             <label className="text-sm font-medium">Facility categories</label>
@@ -132,6 +240,29 @@ export default function FacilityProfilePage() {
           {save.isSuccess && <p className="text-sm text-teal-600">Saved successfully.</p>}
         </form>
       )}
+
+      <LocationSaveModal
+        open={showLocationModal}
+        saving={save.isPending}
+        onCancel={() => {
+          setShowLocationModal(false);
+          pendingPayloadRef.current = null;
+        }}
+        onKeepPin={() => {
+          const base = pendingPayloadRef.current ?? buildPayload();
+          save.mutate({
+            ...base,
+            locationMode: 'manual',
+            latitude: mapPosition?.lat,
+            longitude: mapPosition?.lng,
+          });
+        }}
+        onRegeocode={() => {
+          const base = pendingPayloadRef.current ?? buildPayload();
+          const { latitude: _lat, longitude: _lng, locationMode: _mode, ...rest } = base;
+          save.mutate({ ...rest, locationMode: 'geocode' });
+        }}
+      />
     </div>
   );
 }

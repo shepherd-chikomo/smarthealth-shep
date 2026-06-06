@@ -22,7 +22,9 @@ vi.mock('../src/import/geocode.js', async (importOriginal) => {
   };
 });
 
-const { geocodeFacilityRecord } = await import('../src/lib/facility-geocode.js');
+const { applyManualFacilityCoordinates, geocodeFacilityRecord } = await import(
+  '../src/lib/facility-geocode.js'
+);
 
 const sampleGeo: GeocodeResult = {
   latitude: -17.83,
@@ -32,6 +34,30 @@ const sampleGeo: GeocodeResult = {
   quality: 'address',
   provider: 'google',
 };
+
+describe('applyManualFacilityCoordinates', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockQuery.mockResolvedValue({ rows: [] });
+  });
+
+  it('sets manual geocode quality within Zimbabwe', async () => {
+    await applyManualFacilityCoordinates('fac-1', -17.83, 31.05);
+
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining("geocode_quality = 'manual'"),
+      [-17.83, 31.05, 'fac-1'],
+    );
+    expect(mockRelease).toHaveBeenCalled();
+  });
+
+  it('rejects coordinates outside Zimbabwe', async () => {
+    await expect(applyManualFacilityCoordinates('fac-1', -30, 31.05)).rejects.toThrow(
+      /within Zimbabwe/i,
+    );
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+});
 
 describe('geocodeFacilityRecord', () => {
   beforeEach(() => {
