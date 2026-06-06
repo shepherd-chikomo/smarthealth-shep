@@ -340,6 +340,12 @@ abstract class AppLocalizations {
   /// **'Open in maps'**
   String get facilityOpenInMaps;
 
+  /// No description provided for @facilityMapsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open maps on this device'**
+  String get facilityMapsOpenFailed;
+
   /// No description provided for @searchInputHint.
   ///
   /// In en, this message translates to:

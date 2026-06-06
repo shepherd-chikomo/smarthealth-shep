@@ -74,6 +74,7 @@
     }
   },
   "facilityOpenInMaps": "Open in maps",
+  "facilityMapsOpenFailed": "Could not open maps on this device",
   "searchInputHint": "Search doctors, clinics, conditions…",
   "searchFilterSpecialty": "Filter by Specialty",
   "searchFilterCondition": "Filter by Medical Condition",

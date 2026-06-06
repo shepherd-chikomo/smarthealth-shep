@@ -6,6 +6,7 @@ import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/shared/data/local/facility_cache.dart';
 import 'package:smarthealth_shep/shared/data/local/home_dashboard_facility_cache.dart';
 import 'package:smarthealth_shep/shared/models/facilities_query_result.dart';
@@ -28,15 +29,7 @@ class FacilityRepository {
         _homeDashboardCache = homeDashboardCache ?? HomeDashboardFacilityCache();
 
   factory FacilityRepository.defaults() {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Accept': 'application/json'},
-      ),
-    );
-    return FacilityRepository(api: ApiService(dio));
+    return FacilityRepository(api: ApiService(createApiDio()));
   }
 
   final ApiService _api;

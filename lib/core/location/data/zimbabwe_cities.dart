@@ -13,6 +13,7 @@ abstract final class ZimbabweCities {
     ZimbabweCity(name: 'Kadoma', latitude: -18.3333, longitude: 29.9167, province: 'Mashonaland West'),
     ZimbabweCity(name: 'Chitungwiza', latitude: -18.0125, longitude: 31.0750, province: 'Harare'),
     ZimbabweCity(name: 'Marondera', latitude: -18.1890, longitude: 31.5512, province: 'Mashonaland East'),
+    ZimbabweCity(name: 'Domboshava', latitude: -17.6247, longitude: 31.0714, province: 'Mashonaland East'),
     ZimbabweCity(name: 'Victoria Falls', latitude: -17.9318, longitude: 25.8307, province: 'Matabeleland North'),
     ZimbabweCity(name: 'Hwange', latitude: -18.3644, longitude: 26.5000, province: 'Matabeleland North'),
     ZimbabweCity(name: 'Chinhoyi', latitude: -17.3667, longitude: 30.2000, province: 'Mashonaland West'),

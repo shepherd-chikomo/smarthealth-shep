@@ -32,6 +32,7 @@ const CITY_TO_PROVINCE: Record<string, ZimbabweProvince> = {
   norton: 'Mashonaland West',
   banket: 'Mashonaland West',
   marondera: 'Mashonaland East',
+  domboshava: 'Mashonaland East',
   gweru: 'Midlands',
   kwekwe: 'Midlands',
   masvingo: 'Masvingo',
@@ -131,10 +132,10 @@ export async function resolveProvinceFromCity(
 ): Promise<ZimbabweProvince | null> {
   if (!city?.trim()) return null;
 
-  const fromDb = await lookupProvinceFromDb(client, city);
-  if (fromDb) return fromDb;
+  const fromMap = inferProvinceFromCitySync(city);
+  if (fromMap) return fromMap;
 
-  return inferProvinceFromCitySync(city);
+  return lookupProvinceFromDb(client, city);
 }
 
 export interface CityProvinceLookupResult {

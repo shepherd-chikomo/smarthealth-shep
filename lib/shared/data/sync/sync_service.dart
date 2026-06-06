@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/shared/data/sync/delta_sync_coordinator.dart';
 import 'package:smarthealth_shep/shared/data/sync/optimistic_update_store.dart';
@@ -57,15 +57,7 @@ class SyncService {
   }
 
   static SyncService forBackground() {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Accept': 'application/json'},
-      ),
-    );
-    return SyncService(dio: dio);
+    return SyncService(dio: createApiDio());
   }
 
   Future<void> initialize() async {

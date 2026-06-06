@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_fallback_data.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_facility.dart';
@@ -23,13 +24,7 @@ class EmergencyHubRepository {
 
   Box get _box => Hive.box(HiveBoxes.emergency);
 
-  Dio get _client => _dio ??
-      Dio(BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Accept': 'application/json'},
-      ));
+  Dio get _client => _dio ?? createApiDio();
 
   Future<bool> _isOnline() async {
     final results = await _connectivity.checkConnectivity();

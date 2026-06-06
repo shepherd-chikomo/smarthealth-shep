@@ -15,6 +15,7 @@ describe('inferProvinceFromCitySync', () => {
   it('maps known cities without defaulting to Harare', () => {
     expect(inferProvinceFromCitySync('Banket')).toBe('Mashonaland West');
     expect(inferProvinceFromCitySync('Harare')).toBe('Harare');
+    expect(inferProvinceFromCitySync('Domboshava')).toBe('Mashonaland East');
   });
 
   it('returns null for unknown cities', () => {

@@ -139,6 +139,9 @@ class AppLocalizationsNd extends AppLocalizations {
   String get facilityOpenInMaps => 'Open in maps';
 
   @override
+  String get facilityMapsOpenFailed => 'Could not open maps on this device';
+
+  @override
   String get searchInputHint => 'Search doctors, clinics, conditions…';
 
   @override

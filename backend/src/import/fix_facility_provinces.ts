@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 import { closePool, pool, withTransaction } from './db.js';
 import { logger } from './logger.js';
 import {
+  inferProvinceFromCitySync,
   lookupCityProvinceFromNominatim,
   lookupProvinceFromDb,
   type ZimbabweProvince,
@@ -39,8 +40,13 @@ interface ProvinceChange {
   nominatimQuery: string;
   nominatimStateRaw: string | null;
   facilityCount: number;
-  source: 'db' | 'nominatim' | 'skipped';
+  source: 'curated' | 'db' | 'nominatim' | 'skipped';
 }
+
+/** Known coordinates for curated city→province overrides (see province_resolve CITY_TO_PROVINCE). */
+const CURATED_CITY_COORDINATES: Record<string, { latitude: number; longitude: number }> = {
+  domboshava: { latitude: -17.6247, longitude: 31.0714 },
+};
 
 function parseArgs(): FixOptions {
   const argv = process.argv.slice(2);
@@ -159,6 +165,38 @@ async function run(): Promise<void> {
 
   for (const row of cities.rows) {
     const facilityCount = Number(row.facility_count);
+    const curatedProvince = inferProvinceFromCitySync(row.city);
+    if (curatedProvince) {
+      const coords = CURATED_CITY_COORDINATES[row.city.trim().toLowerCase()];
+      if (curatedProvince !== row.current_province) {
+        changes.push({
+          city: row.city,
+          oldProvince: row.current_province,
+          newProvince: curatedProvince,
+          nominatimQuery: '',
+          nominatimStateRaw: null,
+          facilityCount,
+          source: 'curated',
+        });
+        if (!opts.dryRun) {
+          await withTransaction(async () => {
+            await pool.query(
+              `DELETE FROM public.cities
+               WHERE country_code = 'ZW' AND lower(name) = lower($1)`,
+              [row.city],
+            );
+            if (coords) {
+              await upsertCityCache(row.city, curatedProvince, coords.latitude, coords.longitude);
+            }
+            await updateFacilitiesProvince(row.city, curatedProvince);
+          });
+        }
+      } else if (!opts.dryRun && coords) {
+        await upsertCityCache(row.city, curatedProvince, coords.latitude, coords.longitude);
+      }
+      continue;
+    }
+
     const existingProvince = await lookupProvinceFromDb(pool, row.city);
 
     if (existingProvince && existingProvince !== row.current_province) {

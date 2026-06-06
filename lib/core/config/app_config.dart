@@ -49,6 +49,18 @@ abstract final class AppConfig {
 
   static bool get isReleaseMode => kReleaseMode;
 
+  /// Accept self-signed TLS for dev hosts in debug builds (never in release).
+  static bool get trustDevCertificates {
+    if (kReleaseMode) return false;
+    const fromEnv = bool.fromEnvironment(
+      'TRUST_DEV_CERTIFICATES',
+      defaultValue: false,
+    );
+    if (fromEnv) return true;
+    final host = Uri.tryParse(apiBaseUrl)?.host ?? '';
+    return host == 'dev.smarthealth.co.zw';
+  }
+
   /// Default map centre for Harare when device location is unavailable.
   static const double defaultLatitude = -17.8252;
   static const double defaultLongitude = 31.0335;

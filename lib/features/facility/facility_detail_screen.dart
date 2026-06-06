@@ -66,30 +66,35 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
   }
 
   Future<void> _openMaps(FacilityModel facility) async {
-    var query = facility.mapsQuery;
+    final query = facility.mapsQuery;
     if (query == null) return;
 
-    if (facility.latitude == null || facility.longitude == null) {
-      final coords = await _geocoder.geocodeAddress(query);
-      if (coords != null) {
-        await _repository.rememberCoordinates(
-          facility.id,
-          coords.lat,
-          coords.lon,
-        );
-        if (mounted) {
-          setState(() {
-            _facility = facility.copyWith(
-              latitude: coords.lat,
-              longitude: coords.lon,
-            );
-          });
-        }
-        query = '${coords.lat},${coords.lon}';
-      }
+    final opened = await openInMaps(query);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).facilityMapsOpenFailed)),
+      );
+      return;
     }
 
-    await openInMaps(query);
+    if (facility.latitude != null && facility.longitude != null) return;
+
+    final coords = await _geocoder.geocodeAddress(query);
+    if (coords == null) return;
+
+    await _repository.rememberCoordinates(
+      facility.id,
+      coords.lat,
+      coords.lon,
+    );
+    if (mounted) {
+      setState(() {
+        _facility = facility.copyWith(
+          latitude: coords.lat,
+          longitude: coords.lon,
+        );
+      });
+    }
   }
 
   @override

@@ -25,6 +25,7 @@ from (values
   ('ZW', 'Kadoma', 'Mashonaland West', -18.3333, 29.9167),
   ('ZW', 'Chitungwiza', 'Harare', -18.0125, 31.0750),
   ('ZW', 'Marondera', 'Mashonaland East', -18.1890, 31.5512),
+  ('ZW', 'Domboshava', 'Mashonaland East', -17.6247, 31.0714),
   ('ZW', 'Victoria Falls', 'Matabeleland North', -17.9318, 25.8307),
   ('ZW', 'Hwange', 'Matabeleland North', -18.3644, 26.5000),
   ('ZW', 'Chinhoyi', 'Mashonaland West', -17.3667, 30.2000),

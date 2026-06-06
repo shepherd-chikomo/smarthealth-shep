@@ -24,6 +24,7 @@ const CITY_ALIASES: Record<string, string> = {
   gatooma: 'Kadoma',
   chitungwiza: 'Chitungwiza',
   marondera: 'Marondera',
+  domboshava: 'Domboshava',
   'victoria falls': 'Victoria Falls',
   hwange: 'Hwange',
   wankie: 'Hwange',

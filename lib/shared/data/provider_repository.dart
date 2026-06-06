@@ -6,6 +6,7 @@ import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/core/sync/sync_providers.dart';
 import 'package:smarthealth_shep/core/utils/haversine.dart';
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
@@ -41,17 +42,9 @@ class ProviderRepository {
 
   /// Default wiring for callers outside Riverpod (e.g. legacy repositories).
   factory ProviderRepository.defaults({SyncService? syncService}) {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: AppConfig.apiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {'Accept': 'application/json'},
-      ),
-    );
     return ProviderRepository(
       dao: ProviderDao(),
-      api: ApiService(dio),
+      api: ApiService(createApiDio()),
       syncService: syncService ?? SyncService.instance ?? SyncService.forBackground(),
       seedMockDataOnEmpty: AppConfig.seedMockDataOnEmpty,
     );

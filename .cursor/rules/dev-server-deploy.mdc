@@ -1,0 +1,77 @@
+---
+description: Dev server SSH alias, repo path, and WSL deploy workflow
+alwaysApply: true
+---
+
+# Dev server (smarthealth-dev)
+
+SSH and deploy commands run via **WSL Ubuntu**, not Windows PowerShell SSH.
+
+| Setting | Value |
+|---------|-------|
+| SSH host alias | `smarthealth-dev` |
+| Repo path on server | `/opt/smarthealth` |
+| Public URL | `https://dev.smarthealth.co.zw` |
+
+SSH config lives in WSL: `~/.ssh/config` with `IdentityFile ~/.ssh/smarthealth-dev`.
+
+## Deploy to dev
+
+When the user asks to deploy, push, or update dev, run **both** server deploy and patient app to phone — unless they explicitly say otherwise (e.g. "server only", "skip phone").
+
+### 1. Server (WSL SSH)
+
+```bash
+ssh smarthealth-dev 'cd /opt/smarthealth && git pull origin main'
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose --profile migrate run --rm smarthealth-migrate'
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose build smarthealth-api smarthealth-facility-portal'
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose up -d smarthealth-api smarthealth-facility-portal'
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose restart nginx'
+ssh smarthealth-dev 'cd /opt/smarthealth && sh docker/scripts/healthcheck.sh'
+```
+
+From Windows-hosted terminals, prefix with `wsl` if not already in a WSL shell.
+
+**Scope by change:**
+- Backend/import/geocode only → rebuild `smarthealth-api`
+- Admin UI → rebuild `smarthealth-admin`
+- Facility portal → rebuild `smarthealth-facility-portal`
+- SQL migrations under `supabase/migrations/` → run `smarthealth-migrate` before `up -d`
+- Nginx timeout/routing (`docker/nginx/`) → `docker compose restart nginx` (no rebuild)
+
+**Import/geocode CLI on dev:**
+
+```bash
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose exec smarthealth-api npm run geocode:pilot -- --limit 50 --city Harare'
+ssh smarthealth-dev 'cd /opt/smarthealth && docker compose exec smarthealth-api npm run geocode:facilities -- --import-source HPA --from-csv /tmp/geocode-failures.csv --limit 500'
+```
+
+`GOOGLE_MAPS_API_KEY` belongs in server `/opt/smarthealth/.env` only — never commit it.
+
+### 2. Patient app → phone (required by default)
+
+After server deploy succeeds, install/run the Flutter patient app on the connected Android device.
+
+**Dev server** (default after `deploy to dev`):
+
+```powershell
+.\scripts\run-patient-remote.ps1 -ServerUrl https://dev.smarthealth.co.zw
+```
+
+**Local API on phone** (when testing against PC Docker, not remote dev):
+
+```powershell
+.\scripts\run-patient-device.ps1
+```
+
+- Phone must be connected via USB with USB debugging enabled (`adb devices`).
+- Script auto-picks the first device; pass `-DeviceId SERIAL` if multiple devices.
+- `flutter run` is long-running — run in background or tell the user when the app is launching.
+- Rebuild scope: any change under `lib/`, `pubspec.yaml`, or `assets/` warrants a patient app deploy.
+
+Skip this step only when the user explicitly opts out or the task is server/admin/portal-only with no patient app changes.
+
+## Safety
+
+- Never commit or paste private SSH keys or production secrets.
+- Do not run destructive git commands on the server unless explicitly requested.
