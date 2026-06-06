@@ -5,11 +5,14 @@ import { ValidationError } from './errors.js';
 const ALLOWED_LOGO_MIME = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
+function publicAssetBaseUrl(): string {
+  return (env.SUPABASE_PUBLIC_URL ?? env.SUPABASE_URL).replace(/\/$/, '');
+}
+
 export function buildPublicStorageUrl(bucket: string, path: string | null | undefined): string | null {
   if (!path || path.trim() === '') return null;
-  const base = env.SUPABASE_URL.replace(/\/$/, '');
   const normalized = path.replace(/^\//, '');
-  return `${base}/storage/v1/object/public/${bucket}/${normalized}`;
+  return `${publicAssetBaseUrl()}/storage/v1/object/public/${bucket}/${normalized}`;
 }
 
 export function buildFacilityLogoUrl(logoPath: string | null | undefined): string | null {

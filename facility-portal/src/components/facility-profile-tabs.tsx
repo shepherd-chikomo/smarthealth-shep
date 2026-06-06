@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { PRESET_FACILITY_SERVICES, type FacilityServiceEntry, type ProfileSettings } from '@/lib/facility-services';
 
@@ -92,14 +92,28 @@ export function FacilityProfileTabs({
     },
   });
 
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const url = profileData?.facility?.logoUrl;
+    setLogoPreviewUrl(typeof url === 'string' && url.length > 0 ? url : null);
+  }, [profileData?.facility?.logoUrl]);
+
   const uploadLogo = useMutation({
     mutationFn: (file: File) => api.uploadLogo(facilityId, file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] }),
+    onSuccess: (result) => {
+      const url = (result as { logoUrl?: string })?.logoUrl;
+      if (url) setLogoPreviewUrl(url);
+      qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] });
+    },
   });
 
   const removeLogo = useMutation({
     mutationFn: () => api.removeLogo(facilityId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] }),
+    onSuccess: () => {
+      setLogoPreviewUrl(null);
+      qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] });
+    },
   });
 
   const saveSlots = useMutation({
@@ -201,10 +215,10 @@ export function FacilityProfileTabs({
           <p className="text-sm text-[var(--muted)]">
             Upload PNG, JPG, or WEBP (recommended 512×512). Shown on demand in the MyHealth app.
           </p>
-          {Boolean(facility.logoUrl) && (
+          {logoPreviewUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={String(facility.logoUrl)}
+              src={logoPreviewUrl}
               alt="Facility logo"
               className="h-24 w-24 rounded-xl border object-cover"
             />
@@ -212,15 +226,27 @@ export function FacilityProfileTabs({
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"
+            disabled={uploadLogo.isPending}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) uploadLogo.mutate(file);
+              if (!file) return;
+              const localPreview = URL.createObjectURL(file);
+              setLogoPreviewUrl(localPreview);
+              uploadLogo.mutate(file, {
+                onSettled: () => URL.revokeObjectURL(localPreview),
+              });
             }}
           />
+          {uploadLogo.isPending && (
+            <p className="text-sm text-[var(--muted)]">Uploading logo…</p>
+          )}
+          {uploadLogo.isSuccess && (
+            <p className="text-sm text-teal-600">Logo uploaded successfully.</p>
+          )}
           {uploadLogo.isError && (
             <p className="text-sm text-red-600">{(uploadLogo.error as Error).message}</p>
           )}
-          {Boolean(facility.logoUrl) && (
+          {logoPreviewUrl && (
             <button
               type="button"
               className="btn-danger text-sm"

@@ -9,6 +9,21 @@ vi.mock('../src/lib/db.js', () => ({
 const { parseProfileSettings } = await import('../src/lib/facility-profile-settings.js');
 const { getPublicProfile } = await import('../src/services/facility-public-profile.service.js');
 
+describe('buildFacilityLogoUrl', () => {
+  it('uses SUPABASE_PUBLIC_URL for browser-accessible logo URLs', async () => {
+    vi.stubEnv('SUPABASE_URL', 'http://kong:8000');
+    vi.stubEnv('SUPABASE_PUBLIC_URL', 'https://dev.smarthealth.co.zw');
+    vi.resetModules();
+    const { buildFacilityLogoUrl } = await import('../src/lib/facility-assets.js');
+    const url = buildFacilityLogoUrl('fac-1/logo/test.png');
+    expect(url).toBe(
+      'https://dev.smarthealth.co.zw/storage/v1/object/public/facility-assets/fac-1/logo/test.png',
+    );
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+});
+
 describe('facility profile settings', () => {
   it('parses empty profile defaults', () => {
     const profile = parseProfileSettings(undefined);

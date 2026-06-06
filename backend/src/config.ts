@@ -10,6 +10,8 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   DATABASE_URL: z.string().min(1),
   SUPABASE_URL: z.string().url(),
+  /** Browser-reachable base URL for public storage assets (defaults to SUPABASE_URL). */
+  SUPABASE_PUBLIC_URL: z.string().url().optional(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_JWT_SECRET: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
