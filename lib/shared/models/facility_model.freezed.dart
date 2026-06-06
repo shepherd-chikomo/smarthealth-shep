@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$FacilityModel {
 
- String get id; String get name; String get slug; String get facilityType; List<String> get facilityTypes; String? get description; String? get addressLine1; String get city; String get province; String? get phone; String? get email; String? get website; double? get latitude; double? get longitude; double? get distanceKm; bool get isVerified; String? get logoPath;
+ String get id; String get name; String get slug; String get facilityType; List<String> get facilityTypes; String? get description; String? get addressLine1; String get city; String get province; String? get phone; String? get whatsappPhone; String? get email; String? get website; double? get latitude; double? get longitude; double? get distanceKm; bool get isVerified; String? get logoPath;
 /// Create a copy of FacilityModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $FacilityModelCopyWith<FacilityModel> get copyWith => _$FacilityModelCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FacilityModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.facilityType, facilityType) || other.facilityType == facilityType)&&const DeepCollectionEquality().equals(other.facilityTypes, facilityTypes)&&(identical(other.description, description) || other.description == description)&&(identical(other.addressLine1, addressLine1) || other.addressLine1 == addressLine1)&&(identical(other.city, city) || other.city == city)&&(identical(other.province, province) || other.province == province)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.website, website) || other.website == website)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.logoPath, logoPath) || other.logoPath == logoPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FacilityModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.facilityType, facilityType) || other.facilityType == facilityType)&&const DeepCollectionEquality().equals(other.facilityTypes, facilityTypes)&&(identical(other.description, description) || other.description == description)&&(identical(other.addressLine1, addressLine1) || other.addressLine1 == addressLine1)&&(identical(other.city, city) || other.city == city)&&(identical(other.province, province) || other.province == province)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.whatsappPhone, whatsappPhone) || other.whatsappPhone == whatsappPhone)&&(identical(other.email, email) || other.email == email)&&(identical(other.website, website) || other.website == website)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.logoPath, logoPath) || other.logoPath == logoPath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,slug,facilityType,const DeepCollectionEquality().hash(facilityTypes),description,addressLine1,city,province,phone,email,website,latitude,longitude,distanceKm,isVerified,logoPath);
+int get hashCode => Object.hash(runtimeType,id,name,slug,facilityType,const DeepCollectionEquality().hash(facilityTypes),description,addressLine1,city,province,phone,whatsappPhone,email,website,latitude,longitude,distanceKm,isVerified,logoPath);
 
 @override
 String toString() {
-  return 'FacilityModel(id: $id, name: $name, slug: $slug, facilityType: $facilityType, facilityTypes: $facilityTypes, description: $description, addressLine1: $addressLine1, city: $city, province: $province, phone: $phone, email: $email, website: $website, latitude: $latitude, longitude: $longitude, distanceKm: $distanceKm, isVerified: $isVerified, logoPath: $logoPath)';
+  return 'FacilityModel(id: $id, name: $name, slug: $slug, facilityType: $facilityType, facilityTypes: $facilityTypes, description: $description, addressLine1: $addressLine1, city: $city, province: $province, phone: $phone, whatsappPhone: $whatsappPhone, email: $email, website: $website, latitude: $latitude, longitude: $longitude, distanceKm: $distanceKm, isVerified: $isVerified, logoPath: $logoPath)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $FacilityModelCopyWith<$Res>  {
   factory $FacilityModelCopyWith(FacilityModel value, $Res Function(FacilityModel) _then) = _$FacilityModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String slug, String facilityType, List<String> facilityTypes, String? description, String? addressLine1, String city, String province, String? phone, String? email, String? website, double? latitude, double? longitude, double? distanceKm, bool isVerified, String? logoPath
+ String id, String name, String slug, String facilityType, List<String> facilityTypes, String? description, String? addressLine1, String city, String province, String? phone, String? whatsappPhone, String? email, String? website, double? latitude, double? longitude, double? distanceKm, bool isVerified, String? logoPath
 });
 
 
@@ -65,7 +65,7 @@ class _$FacilityModelCopyWithImpl<$Res>
 
 /// Create a copy of FacilityModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? slug = null,Object? facilityType = null,Object? facilityTypes = null,Object? description = freezed,Object? addressLine1 = freezed,Object? city = null,Object? province = null,Object? phone = freezed,Object? email = freezed,Object? website = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? distanceKm = freezed,Object? isVerified = null,Object? logoPath = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? slug = null,Object? facilityType = null,Object? facilityTypes = null,Object? description = freezed,Object? addressLine1 = freezed,Object? city = null,Object? province = null,Object? phone = freezed,Object? whatsappPhone = freezed,Object? email = freezed,Object? website = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? distanceKm = freezed,Object? isVerified = null,Object? logoPath = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -77,6 +77,7 @@ as String?,addressLine1: freezed == addressLine1 ? _self.addressLine1 : addressL
 as String?,city: null == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
 as String,province: null == province ? _self.province : province // ignore: cast_nullable_to_non_nullable
 as String,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,whatsappPhone: freezed == whatsappPhone ? _self.whatsappPhone : whatsappPhone // ignore: cast_nullable_to_non_nullable
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,website: freezed == website ? _self.website : website // ignore: cast_nullable_to_non_nullable
 as String?,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable
@@ -169,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? whatsappPhone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FacilityModel() when $default != null:
-return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
+return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.whatsappPhone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
   return orElse();
 
 }
@@ -190,10 +191,10 @@ return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facility
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? whatsappPhone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)  $default,) {final _that = this;
 switch (_that) {
 case _FacilityModel():
-return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
+return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.whatsappPhone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +211,10 @@ return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facility
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String slug,  String facilityType,  List<String> facilityTypes,  String? description,  String? addressLine1,  String city,  String province,  String? phone,  String? whatsappPhone,  String? email,  String? website,  double? latitude,  double? longitude,  double? distanceKm,  bool isVerified,  String? logoPath)?  $default,) {final _that = this;
 switch (_that) {
 case _FacilityModel() when $default != null:
-return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
+return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facilityTypes,_that.description,_that.addressLine1,_that.city,_that.province,_that.phone,_that.whatsappPhone,_that.email,_that.website,_that.latitude,_that.longitude,_that.distanceKm,_that.isVerified,_that.logoPath);case _:
   return null;
 
 }
@@ -225,7 +226,7 @@ return $default(_that.id,_that.name,_that.slug,_that.facilityType,_that.facility
 @JsonSerializable()
 
 class _FacilityModel extends FacilityModel {
-  const _FacilityModel({required this.id, required this.name, required this.slug, required this.facilityType, final  List<String> facilityTypes = const [], this.description, this.addressLine1, required this.city, required this.province, this.phone, this.email, this.website, this.latitude, this.longitude, this.distanceKm, this.isVerified = false, this.logoPath}): _facilityTypes = facilityTypes,super._();
+  const _FacilityModel({required this.id, required this.name, required this.slug, required this.facilityType, final  List<String> facilityTypes = const [], this.description, this.addressLine1, required this.city, required this.province, this.phone, this.whatsappPhone, this.email, this.website, this.latitude, this.longitude, this.distanceKm, this.isVerified = false, this.logoPath}): _facilityTypes = facilityTypes,super._();
   factory _FacilityModel.fromJson(Map<String, dynamic> json) => _$FacilityModelFromJson(json);
 
 @override final  String id;
@@ -244,6 +245,7 @@ class _FacilityModel extends FacilityModel {
 @override final  String city;
 @override final  String province;
 @override final  String? phone;
+@override final  String? whatsappPhone;
 @override final  String? email;
 @override final  String? website;
 @override final  double? latitude;
@@ -265,16 +267,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FacilityModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.facilityType, facilityType) || other.facilityType == facilityType)&&const DeepCollectionEquality().equals(other._facilityTypes, _facilityTypes)&&(identical(other.description, description) || other.description == description)&&(identical(other.addressLine1, addressLine1) || other.addressLine1 == addressLine1)&&(identical(other.city, city) || other.city == city)&&(identical(other.province, province) || other.province == province)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.email, email) || other.email == email)&&(identical(other.website, website) || other.website == website)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.logoPath, logoPath) || other.logoPath == logoPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FacilityModel&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.facilityType, facilityType) || other.facilityType == facilityType)&&const DeepCollectionEquality().equals(other._facilityTypes, _facilityTypes)&&(identical(other.description, description) || other.description == description)&&(identical(other.addressLine1, addressLine1) || other.addressLine1 == addressLine1)&&(identical(other.city, city) || other.city == city)&&(identical(other.province, province) || other.province == province)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.whatsappPhone, whatsappPhone) || other.whatsappPhone == whatsappPhone)&&(identical(other.email, email) || other.email == email)&&(identical(other.website, website) || other.website == website)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.logoPath, logoPath) || other.logoPath == logoPath));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,slug,facilityType,const DeepCollectionEquality().hash(_facilityTypes),description,addressLine1,city,province,phone,email,website,latitude,longitude,distanceKm,isVerified,logoPath);
+int get hashCode => Object.hash(runtimeType,id,name,slug,facilityType,const DeepCollectionEquality().hash(_facilityTypes),description,addressLine1,city,province,phone,whatsappPhone,email,website,latitude,longitude,distanceKm,isVerified,logoPath);
 
 @override
 String toString() {
-  return 'FacilityModel(id: $id, name: $name, slug: $slug, facilityType: $facilityType, facilityTypes: $facilityTypes, description: $description, addressLine1: $addressLine1, city: $city, province: $province, phone: $phone, email: $email, website: $website, latitude: $latitude, longitude: $longitude, distanceKm: $distanceKm, isVerified: $isVerified, logoPath: $logoPath)';
+  return 'FacilityModel(id: $id, name: $name, slug: $slug, facilityType: $facilityType, facilityTypes: $facilityTypes, description: $description, addressLine1: $addressLine1, city: $city, province: $province, phone: $phone, whatsappPhone: $whatsappPhone, email: $email, website: $website, latitude: $latitude, longitude: $longitude, distanceKm: $distanceKm, isVerified: $isVerified, logoPath: $logoPath)';
 }
 
 
@@ -285,7 +287,7 @@ abstract mixin class _$FacilityModelCopyWith<$Res> implements $FacilityModelCopy
   factory _$FacilityModelCopyWith(_FacilityModel value, $Res Function(_FacilityModel) _then) = __$FacilityModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String slug, String facilityType, List<String> facilityTypes, String? description, String? addressLine1, String city, String province, String? phone, String? email, String? website, double? latitude, double? longitude, double? distanceKm, bool isVerified, String? logoPath
+ String id, String name, String slug, String facilityType, List<String> facilityTypes, String? description, String? addressLine1, String city, String province, String? phone, String? whatsappPhone, String? email, String? website, double? latitude, double? longitude, double? distanceKm, bool isVerified, String? logoPath
 });
 
 
@@ -302,7 +304,7 @@ class __$FacilityModelCopyWithImpl<$Res>
 
 /// Create a copy of FacilityModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? slug = null,Object? facilityType = null,Object? facilityTypes = null,Object? description = freezed,Object? addressLine1 = freezed,Object? city = null,Object? province = null,Object? phone = freezed,Object? email = freezed,Object? website = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? distanceKm = freezed,Object? isVerified = null,Object? logoPath = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? slug = null,Object? facilityType = null,Object? facilityTypes = null,Object? description = freezed,Object? addressLine1 = freezed,Object? city = null,Object? province = null,Object? phone = freezed,Object? whatsappPhone = freezed,Object? email = freezed,Object? website = freezed,Object? latitude = freezed,Object? longitude = freezed,Object? distanceKm = freezed,Object? isVerified = null,Object? logoPath = freezed,}) {
   return _then(_FacilityModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -314,6 +316,7 @@ as String?,addressLine1: freezed == addressLine1 ? _self.addressLine1 : addressL
 as String?,city: null == city ? _self.city : city // ignore: cast_nullable_to_non_nullable
 as String,province: null == province ? _self.province : province // ignore: cast_nullable_to_non_nullable
 as String,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,whatsappPhone: freezed == whatsappPhone ? _self.whatsappPhone : whatsappPhone // ignore: cast_nullable_to_non_nullable
 as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,website: freezed == website ? _self.website : website // ignore: cast_nullable_to_non_nullable
 as String?,latitude: freezed == latitude ? _self.latitude : latitude // ignore: cast_nullable_to_non_nullable

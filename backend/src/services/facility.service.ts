@@ -17,6 +17,16 @@ import {
   geocodeFacilityRecord,
 } from '../lib/facility-geocode.js';
 import {
+  buildFacilityLogoUrl,
+  deleteStorageObject,
+  uploadFacilityLogo,
+} from '../lib/facility-assets.js';
+import {
+  mergeProfileSettings,
+  parseProfileSettings,
+  type FacilityProfileSettings,
+} from '../lib/facility-profile-settings.js';
+import {
   effectiveFacilityTypes,
   normalizeFacilityTypes,
 } from '../lib/facility-types.js';
@@ -41,8 +51,10 @@ function mapFacility(row: Record<string, unknown>) {
     province: row.province,
     postalCode: row.postal_code,
     phone: row.phone,
+    whatsappPhone: row.whatsapp_phone ?? null,
     email: row.email,
     website: row.website,
+    logoUrl: buildFacilityLogoUrl(row.logo_path as string | null),
     latitude: row.latitude != null ? Number(row.latitude) : null,
     longitude: row.longitude != null ? Number(row.longitude) : null,
     geocodeQuality: row.geocode_quality != null ? String(row.geocode_quality) : null,
@@ -251,7 +263,145 @@ export async function getDashboard(user: AuthenticatedUser, facilityId: string) 
 export async function getFacilityProfile(user: AuthenticatedUser, facilityId: string) {
   await assertFacilityAccess(user, facilityId);
   const row = await getFacilityOrThrow(facilityId);
-  return { facility: mapFacility(row) };
+  const settings = (row.settings ?? {}) as { profile?: unknown };
+  return {
+    facility: mapFacility(row),
+    profileSettings: parseProfileSettings(settings.profile),
+  };
+}
+
+export async function getMedicalAidCatalog() {
+  const row = await query<{ value: unknown }>(
+    `SELECT value FROM public.app_settings
+     WHERE tenant_id IS NULL AND scope = 'platform' AND key = 'medical_aid_catalog'`,
+  );
+  return { schemes: row.rows[0]?.value ?? [] };
+}
+
+export async function updateFacilityProfileSettings(
+  user: AuthenticatedUser,
+  facilityId: string,
+  patch: Partial<FacilityProfileSettings>,
+) {
+  await requireFacilityAdmin(user, facilityId);
+  const existing = await query<{ settings: unknown }>(
+    `SELECT settings FROM public.facilities WHERE id = $1`,
+    [facilityId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Facility', facilityId);
+
+  const currentSettings = (existing.rows[0].settings ?? {}) as Record<string, unknown>;
+  const currentProfile = parseProfileSettings(currentSettings.profile);
+  const merged = mergeProfileSettings(currentProfile, patch);
+  const nextSettings = { ...currentSettings, profile: merged };
+
+  await query(
+    `UPDATE public.facilities SET settings = $2::jsonb, updated_at = now() WHERE id = $1`,
+    [facilityId, JSON.stringify(nextSettings)],
+  );
+
+  return { profileSettings: merged };
+}
+
+export async function uploadFacilityLogoFile(
+  user: AuthenticatedUser,
+  facilityId: string,
+  buffer: Buffer,
+  mimeType: string,
+) {
+  await requireFacilityAdmin(user, facilityId);
+  const existing = await query<{ logo_path: string | null }>(
+    `SELECT logo_path FROM public.facilities WHERE id = $1`,
+    [facilityId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Facility', facilityId);
+
+  const logoPath = await uploadFacilityLogo(facilityId, buffer, mimeType);
+  await query(`UPDATE public.facilities SET logo_path = $2, updated_at = now() WHERE id = $1`, [
+    facilityId,
+    logoPath,
+  ]);
+
+  if (existing.rows[0].logo_path) {
+    await deleteStorageObject('facility-assets', existing.rows[0].logo_path);
+  }
+
+  return { logoPath, logoUrl: buildFacilityLogoUrl(logoPath) };
+}
+
+export async function removeFacilityLogo(user: AuthenticatedUser, facilityId: string) {
+  await requireFacilityAdmin(user, facilityId);
+  const existing = await query<{ logo_path: string | null }>(
+    `SELECT logo_path FROM public.facilities WHERE id = $1`,
+    [facilityId],
+  );
+  if (!existing.rows[0]) throw new NotFoundError('Facility', facilityId);
+
+  await query(
+    `UPDATE public.facilities SET logo_path = NULL, updated_at = now() WHERE id = $1`,
+    [facilityId],
+  );
+
+  if (existing.rows[0].logo_path) {
+    await deleteStorageObject('facility-assets', existing.rows[0].logo_path);
+  }
+
+  return { message: 'Logo removed' };
+}
+
+export async function getDoctorServiceIds(
+  user: AuthenticatedUser,
+  facilityId: string,
+  doctorId: string,
+) {
+  await assertFacilityAccess(user, facilityId);
+  const rows = await query<{ service_id: string }>(
+    `SELECT service_id FROM public.facility_service_providers
+     WHERE facility_id = $1 AND provider_id = $2 AND is_active = true
+     ORDER BY display_order ASC`,
+    [facilityId, doctorId],
+  );
+  return { serviceIds: rows.rows.map((r) => r.service_id) };
+}
+
+export async function updateDoctorServiceIds(
+  user: AuthenticatedUser,
+  facilityId: string,
+  doctorId: string,
+  serviceIds: string[],
+) {
+  await requireFacilityAdmin(user, facilityId);
+
+  const assoc = await query<{ id: string }>(
+    `SELECT p.id
+     FROM public.providers p
+     LEFT JOIN public.provider_facility_links pfl
+       ON pfl.provider_id = p.id AND pfl.facility_id = $1
+     WHERE p.id = $2 AND (p.facility_id = $1 OR pfl.facility_id = $1)
+       AND p.deleted_at IS NULL
+     LIMIT 1`,
+    [facilityId, doctorId],
+  );
+  if (!assoc.rows[0]) throw new NotFoundError('Doctor', doctorId);
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `DELETE FROM public.facility_service_providers
+       WHERE facility_id = $1 AND provider_id = $2`,
+      [facilityId, doctorId],
+    );
+
+    for (let i = 0; i < serviceIds.length; i++) {
+      await client.query(
+        `INSERT INTO public.facility_service_providers (
+           facility_id, service_id, provider_id, display_order, is_active
+         ) VALUES ($1, $2, $3, $4, true)`,
+        [facilityId, serviceIds[i], doctorId, i],
+      );
+    }
+  });
+
+  return { serviceIds };
 }
 
 export async function updateFacilityProfile(
@@ -264,6 +414,7 @@ export async function updateFacilityProfile(
     addressLine2?: string;
     city?: string;
     phone?: string;
+    whatsappPhone?: string;
     email?: string;
     website?: string;
     facilityTypes?: string[];
@@ -310,10 +461,11 @@ export async function updateFacilityProfile(
        address_line2 = COALESCE($5, address_line2),
        city = COALESCE($6, city),
        phone = COALESCE($7, phone),
-       email = COALESCE($8, email),
-       website = COALESCE($9, website),
-       facility_type = COALESCE($10, facility_type),
-       facility_types = COALESCE($11, facility_types),
+       whatsapp_phone = COALESCE($8, whatsapp_phone),
+       email = COALESCE($9, email),
+       website = COALESCE($10, website),
+       facility_type = COALESCE($11, facility_type),
+       facility_types = COALESCE($12, facility_types),
        updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -325,6 +477,7 @@ export async function updateFacilityProfile(
       data.addressLine2 ?? null,
       data.city ?? null,
       data.phone ?? null,
+      data.whatsappPhone ?? null,
       data.email ?? null,
       data.website ?? null,
       normalizedTypes ? normalizedTypes[0] : null,
@@ -398,20 +551,30 @@ export async function listDoctors(user: AuthenticatedUser, facilityId: string, o
   );
 
   return {
-    doctors: rows.rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      specialty: r.specialty,
-      mdpczNumber: r.mdpcz_number,
-      phone: r.phone,
-      email: r.email,
-      isVerified: r.is_verified,
-      isActive: r.facility_is_active,
-      isAcceptingBookings: r.is_accepting_bookings,
-      avgRating: Number(r.avg_rating),
-      reviewCount: r.review_count,
-      createdAt: (r.created_at as Date).toISOString(),
-    })),
+    doctors: await Promise.all(
+      rows.rows.map(async (r) => {
+        const services = await query<{ service_id: string }>(
+          `SELECT service_id FROM public.facility_service_providers
+           WHERE facility_id = $1 AND provider_id = $2 AND is_active = true`,
+          [facilityId, r.id],
+        );
+        return {
+          id: r.id,
+          name: r.name,
+          specialty: r.specialty,
+          mdpczNumber: r.mdpcz_number,
+          phone: r.phone,
+          email: r.email,
+          isVerified: r.is_verified,
+          isActive: r.facility_is_active,
+          isAcceptingBookings: r.is_accepting_bookings,
+          serviceIds: services.rows.map((s) => s.service_id),
+          avgRating: Number(r.avg_rating),
+          reviewCount: r.review_count,
+          createdAt: (r.created_at as Date).toISOString(),
+        };
+      }),
+    ),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
 }

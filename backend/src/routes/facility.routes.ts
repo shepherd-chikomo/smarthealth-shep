@@ -1,6 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { facilityProfileSettingsPatchSchema } from '../lib/facility-profile-settings.js';
 import { FACILITY_TYPE_VALUES } from '../lib/facility-types.js';
+import { ValidationError } from '../lib/errors.js';
 import { getRequestContext } from '../lib/request-context.js';
 import { facilityListQuerySchema, requireFacilityStaffAuth } from '../plugins/facility-guard.js';
 import * as facility from '../services/facility.service.js';
@@ -58,6 +60,7 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
             addressLine2: z.string().optional(),
             city: z.string().optional(),
             phone: z.string().optional(),
+            whatsappPhone: z.string().optional(),
             email: z.string().optional(),
             website: z.string().optional(),
             facilityTypes: z.array(z.enum(FACILITY_TYPE_VALUES)).min(1).optional(),
@@ -81,6 +84,57 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) =>
       facility.updateFacilityProfile(request.user!, request.facilityId!, request.body),
+  );
+
+  app.patch(
+    '/facility/profile-settings',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: facilityProfileSettingsPatchSchema,
+      },
+    },
+    async (request) =>
+      facility.updateFacilityProfileSettings(
+        request.user!,
+        request.facilityId!,
+        request.body,
+      ),
+  );
+
+  app.get(
+    '/facility/medical-aid-catalog',
+    { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },
+    async () => facility.getMedicalAidCatalog(),
+  );
+
+  app.post(
+    '/facility/logo',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        consumes: ['multipart/form-data'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async (request) => {
+      const data = await request.file();
+      if (!data) throw new ValidationError('No file uploaded');
+      const buffer = await data.toBuffer();
+      return facility.uploadFacilityLogoFile(
+        request.user!,
+        request.facilityId!,
+        buffer,
+        data.mimetype,
+      );
+    },
+  );
+
+  app.delete(
+    '/facility/logo',
+    { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },
+    async (request) => facility.removeFacilityLogo(request.user!, request.facilityId!),
   );
 
   // Doctors
@@ -170,6 +224,38 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) =>
       facility.updateDoctor(request.user!, request.facilityId!, request.params.id, request.body),
+  );
+
+  app.get(
+    '/facility/doctors/:id/services',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      facility.getDoctorServiceIds(request.user!, request.facilityId!, request.params.id),
+  );
+
+  app.put(
+    '/facility/doctors/:id/services',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ serviceIds: z.array(z.string()) }),
+      },
+    },
+    async (request) =>
+      facility.updateDoctorServiceIds(
+        request.user!,
+        request.facilityId!,
+        request.params.id,
+        request.body.serviceIds,
+      ),
   );
 
   // Operating hours

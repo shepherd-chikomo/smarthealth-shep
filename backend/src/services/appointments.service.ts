@@ -64,6 +64,7 @@ export async function createAppointment(
   data: {
     facilityId: string;
     providerId: string;
+    serviceId?: string;
     familyMemberId?: string;
     scheduledAt: string;
     durationMinutes: number;
@@ -81,8 +82,16 @@ export async function createAppointment(
   }
 
   const providerCheck = await query(
-    `SELECT p.id FROM public.providers p
-     WHERE p.id = $1 AND p.facility_id = $2 AND p.is_active = true AND p.is_accepting_bookings = true`,
+    `SELECT p.id
+     FROM public.providers p
+     LEFT JOIN public.provider_facility_links pfl
+       ON pfl.provider_id = p.id AND pfl.facility_id = $2
+     WHERE p.id = $1
+       AND (p.facility_id = $2 OR pfl.facility_id = $2)
+       AND p.is_active = true
+       AND p.deleted_at IS NULL
+       AND COALESCE(pfl.is_accepting_bookings, p.is_accepting_bookings) = true
+       AND COALESCE(pfl.is_active, p.is_active) = true`,
     [data.providerId, data.facilityId],
   );
   if (providerCheck.rowCount === 0) {
@@ -91,11 +100,13 @@ export async function createAppointment(
 
   const referenceNumber = generateReferenceNumber();
 
+  const metadata = data.serviceId ? JSON.stringify({ serviceId: data.serviceId }) : '{}';
+
   const result = await query<AppointmentRow>(
     `INSERT INTO public.appointments (
        reference_number, facility_id, provider_id, patient_id,
-       family_member_id, scheduled_at, duration_minutes, status, notes, booked_by
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $4)
+       family_member_id, scheduled_at, duration_minutes, status, notes, booked_by, metadata
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $4, $9::jsonb)
      RETURNING id, reference_number, facility_id, provider_id, patient_id,
                family_member_id, scheduled_at, duration_minutes, status,
                notes, cancellation_reason, created_at, updated_at,
@@ -109,6 +120,7 @@ export async function createAppointment(
       data.scheduledAt,
       data.durationMinutes,
       data.notes ?? null,
+      metadata,
     ],
   );
 

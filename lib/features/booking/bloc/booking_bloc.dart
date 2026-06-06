@@ -12,8 +12,14 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
   BookingBloc({
     required String providerId,
     BookingRepository? repository,
+    String? facilityId,
+    String? serviceId,
   })  : _repository = repository ?? BookingRepository(),
-        super(BookingState(providerId: providerId)) {
+        super(BookingState(
+          providerId: providerId,
+          facilityId: facilityId,
+          serviceId: serviceId,
+        )) {
     on<LoadAvailability>(_onLoadAvailability);
     on<DateSelected>(_onDateSelected);
     on<TimeSelected>(_onTimeSelected);
@@ -107,8 +113,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
 
     try {
-      final slots =
-          await _repository.getTimeSlots(provider.id, normalized);
+      final slots = await _repository.getTimeSlots(
+        provider.id,
+        normalized,
+        facilityId: state.facilityId,
+        serviceId: state.serviceId,
+      );
       emit(
         state.copyWith(
           status: BookingStatus.ready,
@@ -191,6 +201,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         time: time,
         patient: patient,
         notes: notes,
+        facilityId: state.facilityId,
+        serviceId: state.serviceId,
       );
 
       emit(

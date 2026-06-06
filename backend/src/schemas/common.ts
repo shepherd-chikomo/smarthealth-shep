@@ -216,6 +216,7 @@ export const appointmentSchema = z.object({
 export const createAppointmentSchema = z.object({
   facilityId: z.string().uuid(),
   providerId: z.string().uuid(),
+  serviceId: z.string().optional(),
   familyMemberId: z.string().uuid().optional(),
   scheduledAt: z.string().datetime(),
   durationMinutes: z.number().int().min(15).max(240).default(30),

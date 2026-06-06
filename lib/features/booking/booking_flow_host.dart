@@ -12,11 +12,15 @@ class BookingFlowHost extends StatelessWidget {
     required this.providerId,
     this.provider,
     this.repository,
+    this.facilityId,
+    this.serviceId,
   });
 
   final String providerId;
   final ProviderModel? provider;
   final BookingRepository? repository;
+  final String? facilityId;
+  final String? serviceId;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +28,8 @@ class BookingFlowHost extends StatelessWidget {
       create: (_) => BookingBloc(
         providerId: providerId,
         repository: repository,
+        facilityId: facilityId,
+        serviceId: serviceId,
       ),
       child: const BookingDateScreen(),
     );

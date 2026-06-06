@@ -13,6 +13,8 @@ import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
 import 'package:smarthealth_shep/shared/data/mock_data.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_service.dart';
+import 'package:smarthealth_shep/core/network/api_service.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 const _logName = 'BookingRepository';
@@ -40,13 +42,15 @@ class BookingRepository {
     SyncService? syncService,
     Connectivity? connectivity,
     AppointmentsRepository? appointmentsRepository,
+    ApiService? api,
   })  : _providerDao = providerDao ?? ProviderDao(),
         _familyDao = familyMemberDao ?? FamilyMemberDao(),
         _bookingDao = bookingDao ?? BookingDao(),
         _appointmentsRepository =
             appointmentsRepository ?? AppointmentsRepository(),
         _syncService = syncService ?? SyncService.instance ?? SyncService.forBackground(),
-        _connectivity = connectivity ?? Connectivity();
+        _connectivity = connectivity ?? Connectivity(),
+        _api = api ?? ApiService(createApiDio());
 
   final ProviderDao _providerDao;
   final FamilyMemberDao _familyDao;
@@ -54,6 +58,7 @@ class BookingRepository {
   final AppointmentsRepository _appointmentsRepository;
   final SyncService _syncService;
   final Connectivity _connectivity;
+  final ApiService _api;
 
   static const slotTimes = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
@@ -101,9 +106,41 @@ class BookingRepository {
     );
   }
 
-  Future<List<TimeSlot>> getTimeSlots(String providerId, DateTime date) async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
+  Future<List<TimeSlot>> getTimeSlots(
+    String providerId,
+    DateTime date, {
+    String? facilityId,
+    String? serviceId,
+  }) async {
+    if (facilityId != null && await isOnline()) {
+      try {
+        final days = await _api.fetchFacilityAvailability(
+          facilityId,
+          serviceId: serviceId,
+          days: 14,
+        );
+        final key = '${date.year.toString().padLeft(4, '0')}-'
+            '${date.month.toString().padLeft(2, '0')}-'
+            '${date.day.toString().padLeft(2, '0')}';
+        for (final day in days) {
+          if (day.date != key) continue;
+          return day.slots
+              .where((slot) => slot.providerId == providerId)
+              .map((slot) => TimeSlot(time: slot.time, isAvailable: true))
+              .toList();
+        }
+        return const [];
+      } catch (error, stackTrace) {
+        developer.log(
+          'Remote slot fetch failed, using fallback',
+          name: _logName,
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
 
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     final seed = providerId.hashCode + date.day + date.month * 31;
     return slotTimes.map((time) {
       final index = slotTimes.indexOf(time);
@@ -145,6 +182,7 @@ class BookingRepository {
     required PatientOption patient,
     String? notes,
     String? facilityId,
+    String? serviceId,
   }) async {
     final localId = 'appt_${DateTime.now().millisecondsSinceEpoch}';
     final reference = await _bookingDao.nextReferenceNumber();
@@ -168,6 +206,7 @@ class BookingRepository {
       'referenceNumber': reference,
       'facilityId': facilityId ?? provider.id,
       'providerId': provider.id,
+      if (serviceId != null) 'serviceId': serviceId,
       'familyMemberId': patient.id == PatientOption.selfId ? null : patient.id,
       'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'durationMinutes': _defaultDurationMinutes,

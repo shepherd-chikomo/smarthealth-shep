@@ -3,6 +3,7 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/shared/models/facility_model.dart';
+import 'package:smarthealth_shep/shared/models/facility_public_profile.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
 import 'package:smarthealth_shep/shared/models/specialty_model.dart';
@@ -207,6 +208,62 @@ class ApiService {
     final data = response.data?['facility'];
     if (data is! Map<String, dynamic>) return null;
     return FacilityModel.fromJson(data);
+  }
+
+  Future<FacilityPublicProfile?> fetchFacilityPublicProfile(
+    String id, {
+    double? distanceKm,
+  }) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/facilities/$id/public-profile',
+      queryParameters: {
+        if (distanceKm != null) 'distanceKm': distanceKm,
+      },
+      bypassCache: true,
+    );
+    final data = response.data;
+    if (data == null) return null;
+    return FacilityPublicProfile.fromJson(data);
+  }
+
+  Future<List<FacilitySpecialistSummary>> fetchFacilitySpecialists(
+    String facilityId, {
+    int limit = 5,
+    String? serviceId,
+  }) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/facilities/$facilityId/specialists',
+      queryParameters: {
+        'limit': limit,
+        if (serviceId != null) 'serviceId': serviceId,
+      },
+      bypassCache: true,
+    );
+    final list = response.data?['specialists'];
+    if (list is! List) return [];
+    return list
+        .map((e) => FacilitySpecialistSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<FacilityAvailabilityDay>> fetchFacilityAvailability(
+    String facilityId, {
+    String? serviceId,
+    int days = 2,
+  }) async {
+    final response = await _get<Map<String, dynamic>>(
+      '/facilities/$facilityId/availability',
+      queryParameters: {
+        'days': days,
+        if (serviceId != null) 'serviceId': serviceId,
+      },
+      bypassCache: true,
+    );
+    final list = response.data?['days'];
+    if (list is! List) return [];
+    return list
+        .map((e) => FacilityAvailabilityDay.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<ProviderSyncPayload> syncProviders({DateTime? since}) async {

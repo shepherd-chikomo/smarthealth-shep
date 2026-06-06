@@ -22,6 +22,7 @@ import 'package:smarthealth_shep/features/notifications/screens/notifications_sc
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/features/profile/settings_screen.dart';
 import 'package:smarthealth_shep/features/facility/facility_detail_screen.dart';
+import 'package:smarthealth_shep/features/facility/facility_service_picker_screen.dart';
 import 'package:smarthealth_shep/features/provider_profile/provider_profile_screen.dart';
 import 'package:smarthealth_shep/features/queue/queue_flow_host.dart';
 import 'package:smarthealth_shep/features/queue/queue_status_host.dart';
@@ -128,11 +129,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           final tab = int.tryParse(state.uri.queryParameters['tab'] ?? '') ?? 0;
+          final distanceKm = double.tryParse(state.uri.queryParameters['distanceKm'] ?? '');
           return FacilityDetailScreen(
             facilityId: id,
             parentTabIndex: tab,
+            distanceKm: distanceKm,
           );
         },
+        routes: [
+          GoRoute(
+            path: 'book',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return FacilityServicePickerScreen(facilityId: id);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/booking/:providerId',
@@ -145,7 +157,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
         builder: (context, state) {
           final providerId = state.pathParameters['providerId']!;
-          return BookingFlowHost(providerId: providerId);
+          final serviceId = state.uri.queryParameters['serviceId'];
+          final facilityId = state.uri.queryParameters['facilityId'];
+          return BookingFlowHost(
+            providerId: providerId,
+            facilityId: facilityId,
+            serviceId: serviceId,
+          );
         },
       ),
       GoRoute(

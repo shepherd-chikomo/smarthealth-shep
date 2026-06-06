@@ -19,6 +19,8 @@ class BookingState extends Equatable {
   const BookingState({
     this.status = BookingStatus.initial,
     this.providerId,
+    this.facilityId,
+    this.serviceId,
     this.provider,
     this.focusedDay,
     this.selectedDate,
@@ -37,6 +39,8 @@ class BookingState extends Equatable {
 
   final BookingStatus status;
   final String? providerId;
+  final String? facilityId;
+  final String? serviceId;
   final ProviderModel? provider;
   final DateTime? focusedDay;
   final DateTime? selectedDate;
@@ -67,6 +71,8 @@ class BookingState extends Equatable {
   BookingState copyWith({
     BookingStatus? status,
     String? providerId,
+    String? facilityId,
+    String? serviceId,
     ProviderModel? provider,
     DateTime? focusedDay,
     DateTime? selectedDate,
@@ -88,6 +94,8 @@ class BookingState extends Equatable {
     return BookingState(
       status: status ?? this.status,
       providerId: providerId ?? this.providerId,
+      facilityId: facilityId ?? this.facilityId,
+      serviceId: serviceId ?? this.serviceId,
       provider: provider ?? this.provider,
       focusedDay: focusedDay ?? this.focusedDay,
       selectedDate: selectedDate ?? this.selectedDate,
@@ -111,6 +119,8 @@ class BookingState extends Equatable {
   List<Object?> get props => [
         status,
         providerId,
+        facilityId,
+        serviceId,
         provider,
         focusedDay,
         selectedDate,

@@ -18,6 +18,7 @@ abstract class FacilityModel with _$FacilityModel {
     required String city,
     required String province,
     String? phone,
+    String? whatsappPhone,
     String? email,
     String? website,
     double? latitude,

@@ -22,6 +22,17 @@ export default function DoctorsPage() {
     { found: boolean; provider?: NonNullable<Awaited<ReturnType<typeof api.lookupProvider>>['provider']> } | null
   >(null);
   const [hoursFor, setHoursFor] = useState<string | null>(null);
+  const [servicesFor, setServicesFor] = useState<string | null>(null);
+
+  const profileQuery = useQuery({
+    queryKey: ['facility-profile', facilityId],
+    queryFn: () => api.facilityProfile(facilityId!),
+    enabled: !!facilityId,
+  });
+  const offeredServices = (
+    (profileQuery.data?.profileSettings as { services?: { id: string; name: string }[] } | undefined)
+      ?.services ?? []
+  );
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['doctors', facilityId, page, q],
@@ -195,6 +206,17 @@ export default function DoctorsPage() {
                       >
                         {hoursFor === String(d.id) ? 'Close hours' : 'Manage hours'}
                       </button>
+                      {offeredServices.length > 0 && (
+                        <button
+                          type="button"
+                          className="btn-secondary text-sm"
+                          onClick={() =>
+                            setServicesFor(servicesFor === String(d.id) ? null : String(d.id))
+                          }
+                        >
+                          {servicesFor === String(d.id) ? 'Close services' : 'Services'}
+                        </button>
+                      )}
                       <Link
                         href={`/availability?providerId=${String(d.id)}&name=${encodeURIComponent(String(d.name))}`}
                         className="btn-secondary text-sm"
@@ -232,6 +254,15 @@ export default function DoctorsPage() {
                       onClose={() => setHoursFor(null)}
                     />
                   )}
+                  {servicesFor === String(d.id) && (
+                    <DoctorServicesEditor
+                      facilityId={facilityId!}
+                      providerId={String(d.id)}
+                      services={offeredServices}
+                      initialIds={(d.serviceIds as string[] | undefined) ?? []}
+                      onClose={() => setServicesFor(null)}
+                    />
+                  )}
                 </SectionCard>
               );
             })}
@@ -250,6 +281,67 @@ export default function DoctorsPage() {
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 type EditorRow = { dayOfWeek: number; opensAt: string; closesAt: string; isClosed: boolean };
+
+function DoctorServicesEditor({
+  facilityId,
+  providerId,
+  services,
+  initialIds,
+  onClose,
+}: {
+  facilityId: string;
+  providerId: string;
+  services: { id: string; name: string }[];
+  initialIds: string[];
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<string[]>(initialIds);
+  const save = useMutation({
+    mutationFn: () => api.updateDoctorServices(facilityId, providerId, selected),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['doctors', facilityId] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="mt-4 rounded-lg border bg-slate-50 p-4">
+      <h4 className="font-medium">Services offered by this provider</h4>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {services.map((service) => (
+          <label key={service.id} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selected.includes(service.id)}
+              onChange={() =>
+                setSelected((prev) =>
+                  prev.includes(service.id)
+                    ? prev.filter((id) => id !== service.id)
+                    : [...prev, service.id],
+                )
+              }
+            />
+            {service.name}
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          className="btn-primary text-sm"
+          disabled={save.isPending}
+          onClick={() => save.mutate()}
+        >
+          Save services
+        </button>
+        <button type="button" className="btn-secondary text-sm" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function DoctorHoursEditor({
   facilityId,

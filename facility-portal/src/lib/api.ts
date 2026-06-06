@@ -106,10 +106,43 @@ export const api = {
     request<{ stats: Record<string, unknown> }>(`/facility/dashboard`, fid),
 
   facilityProfile: (fid: string) =>
-    request<{ facility: Record<string, unknown> }>(`/facility/profile`, fid),
+    request<{ facility: Record<string, unknown>; profileSettings?: Record<string, unknown> }>(
+      `/facility/profile`,
+      fid,
+    ),
 
   updateFacilityProfile: (fid: string, body: Record<string, unknown>) =>
     request(`/facility/profile`, fid, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  updateProfileSettings: (fid: string, body: Record<string, unknown>) =>
+    request(`/facility/profile-settings`, fid, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  medicalAidCatalog: (fid: string) =>
+    request<{ schemes: unknown[] }>(`/facility/medical-aid-catalog`, fid),
+
+  uploadLogo: async (fid: string, file: File) => {
+    const token = await getToken();
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${API_BASE}/facility/logo?facilityId=${fid}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  removeLogo: (fid: string) => request(`/facility/logo`, fid, { method: 'DELETE' }),
+
+  updateDoctorServices: (fid: string, doctorId: string, serviceIds: string[]) =>
+    request(`/facility/doctors/${doctorId}/services`, fid, {
+      method: 'PUT',
+      body: JSON.stringify({ serviceIds }),
+    }),
 
   doctors: (fid: string, params?: ListParams) =>
     request<{ doctors: unknown[]; pagination: PaginationMeta }>(
