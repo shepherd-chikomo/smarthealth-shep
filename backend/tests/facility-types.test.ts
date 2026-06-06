@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   effectiveFacilityTypes,
   normalizeFacilityTypes,
+  parseFacilityTypesField,
   sqlFacilityMatchesType,
 } from '../src/lib/facility-types.js';
 
@@ -30,6 +31,19 @@ describe('effectiveFacilityTypes', () => {
     expect(effectiveFacilityTypes({ facility_type: 'pharmacy', facility_types: [] })).toEqual([
       'pharmacy',
     ]);
+  });
+
+  it('parses Postgres text array representation from node-pg', () => {
+    expect(
+      effectiveFacilityTypes({ facility_type: 'clinic', facility_types: '{pharmacy,dental}' }),
+    ).toEqual(['pharmacy', 'dental']);
+  });
+});
+
+describe('parseFacilityTypesField', () => {
+  it('handles null and empty', () => {
+    expect(parseFacilityTypesField(null)).toEqual([]);
+    expect(parseFacilityTypesField('{}')).toEqual([]);
   });
 });
 

@@ -66,7 +66,7 @@ class HomeRepository {
   static const _cacheUpdatedKey = 'home_last_updated';
   static const _cacheSchemaKey = 'home_facilities_cache_schema';
   /// Bump when home facility API semantics change (e.g. after geocoding backfill).
-  static const _cacheSchemaVersion = 6;
+  static const _cacheSchemaVersion = 7;
 
   Box get _box => Hive.box(HiveBoxes.homeDashboard);
 

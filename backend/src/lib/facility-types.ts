@@ -50,11 +50,27 @@ export function normalizeFacilityTypes(types: string[]): FacilityTypeValue[] {
   return out;
 }
 
+/** Parse facility_types from pg (array) or Postgres text representation `{a,b}`. */
+export function parseFacilityTypesField(value: unknown): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value !== 'string') return [];
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '{}') return [];
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    const inner = trimmed.slice(1, -1).trim();
+    if (!inner) return [];
+    return inner.split(',').map((part) => part.trim().replace(/^"(.*)"$/, '$1'));
+  }
+  return [trimmed];
+}
+
 export function effectiveFacilityTypes(row: {
   facility_type: string;
-  facility_types?: string[] | null;
+  facility_types?: unknown;
 }): FacilityTypeValue[] {
-  const listed = row.facility_types?.filter(isFacilityTypeValue) ?? [];
+  const listed = parseFacilityTypesField(row.facility_types).filter(isFacilityTypeValue);
   if (listed.length > 0) return listed;
   return isFacilityTypeValue(row.facility_type) ? [row.facility_type] : ['clinic'];
 }
