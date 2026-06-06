@@ -52,7 +52,7 @@ values (
   'Platform medical aid scheme catalog',
   true
 )
-on conflict (scope, key) do update set
+on conflict (tenant_id, scope, key) do update set
   value = excluded.value,
   description = excluded.description,
   is_public = excluded.is_public,
