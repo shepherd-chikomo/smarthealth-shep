@@ -15,6 +15,7 @@ _EmergencyHubData _$EmergencyHubDataFromJson(Map<String, dynamic> json) =>
           .map((e) => EmergencyFacility.fromJson(e as Map<String, dynamic>))
           .toList(),
       cachedAt: DateTime.parse(json['cachedAt'] as String),
+      locationRequired: json['locationRequired'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$EmergencyHubDataToJson(_EmergencyHubData instance) =>
@@ -22,4 +23,5 @@ Map<String, dynamic> _$EmergencyHubDataToJson(_EmergencyHubData instance) =>
       'services': instance.services,
       'facilities': instance.facilities,
       'cachedAt': instance.cachedAt.toIso8601String(),
+      'locationRequired': instance.locationRequired,
     };

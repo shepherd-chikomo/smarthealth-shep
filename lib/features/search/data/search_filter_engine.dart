@@ -9,10 +9,19 @@ abstract final class SearchFilterEngine {
     required List<FacilityModel> facilities,
     required String query,
     String? facilityType,
+    Set<String> medicalAidSchemeKeys = const {},
   }) {
     var results = facilities;
     if (facilityType != null) {
-      results = results.where((f) => f.matchesCategory(facilityType!)).toList();
+      results = results.where((f) => f.matchesCategory(facilityType)).toList();
+    }
+    if (medicalAidSchemeKeys.isNotEmpty) {
+      results = results.where((facility) {
+        if (facility.acceptedMedicalAidSchemeKeys.isEmpty) return true;
+        return medicalAidSchemeKeys.any(
+          facility.acceptedMedicalAidSchemeKeys.contains,
+        );
+      }).toList();
     }
     if (query.trim().isEmpty) return results;
 

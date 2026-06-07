@@ -29,7 +29,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
 
     try {
       final isOffline = !(await _repository.isOnline());
-      final members = await _repository.loadMembers();
+      final members = await _repository.loadMembers(syncRemote: true);
       emit(
         state.copyWith(
           status: FamilyStatus.loaded,
@@ -61,7 +61,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
 
     try {
       final saved = await _repository.addMember(event.member);
-      final members = await _repository.loadMembers();
+      final members = await _repository.loadMembers(syncRemote: true);
       final isOffline = !(await _repository.isOnline());
 
       emit(
@@ -98,7 +98,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
 
     try {
       await _repository.updateMember(event.member);
-      final members = await _repository.loadMembers();
+      final members = await _repository.loadMembers(syncRemote: true);
       final isOffline = !(await _repository.isOnline());
 
       emit(
@@ -133,7 +133,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
 
     try {
       await _repository.deleteMember(event.memberId);
-      final members = await _repository.loadMembers();
+      final members = await _repository.loadMembers(syncRemote: true);
       final isOffline = !(await _repository.isOnline());
 
       emit(

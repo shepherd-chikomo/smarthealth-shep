@@ -11,6 +11,7 @@ abstract class EmergencyHubData with _$EmergencyHubData {
     required List<EmergencyService> services,
     required List<EmergencyFacility> facilities,
     required DateTime cachedAt,
+    @Default(false) bool locationRequired,
   }) = _EmergencyHubData;
 
   factory EmergencyHubData.fromJson(Map<String, dynamic> json) =>

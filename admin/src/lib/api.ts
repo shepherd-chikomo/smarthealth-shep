@@ -112,6 +112,36 @@ export interface EmergencyServiceInput {
   isActive?: boolean;
 }
 
+export interface ProfileConditionRecord {
+  id: string;
+  slug: string;
+  label: string;
+  isCommon: boolean;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface ProfileConditionInput {
+  label: string;
+  isCommon?: boolean;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface ConditionSubmissionRecord {
+  id: string;
+  userId: string;
+  familyMemberId: string | null;
+  proposedLabel: string;
+  proposedSlug: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  resultingConditionId: string | null;
+  createdAt: string;
+  userEmail?: string | null;
+}
+
 export interface PlatformBroadcast {
   id: string;
   title: string;
@@ -384,6 +414,43 @@ export const api = {
 
   deleteEmergencyService: (id: string) =>
     request(`/admin/content/emergency/${id}`, { method: 'DELETE' }),
+
+  profileConditions: (params?: ListParams) =>
+    request<{ conditions: ProfileConditionRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/conditions${qs(params)}`,
+    ),
+
+  createProfileCondition: (body: ProfileConditionInput) =>
+    request<{ condition: ProfileConditionRecord }>('/admin/content/conditions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateProfileCondition: (id: string, body: Partial<ProfileConditionInput>) =>
+    request<{ condition: ProfileConditionRecord }>(`/admin/content/conditions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteProfileCondition: (id: string) =>
+    request(`/admin/content/conditions/${id}`, { method: 'DELETE' }),
+
+  conditionSubmissions: (params?: ListParams) =>
+    request<{ submissions: ConditionSubmissionRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/condition-submissions${qs(params)}`,
+    ),
+
+  approveConditionSubmission: (id: string, body: { isCommon?: boolean }) =>
+    request<{ submission: ConditionSubmissionRecord; condition: ProfileConditionRecord }>(
+      `/admin/content/condition-submissions/${id}/approve`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  rejectConditionSubmission: (id: string) =>
+    request<{ submission: ConditionSubmissionRecord }>(
+      `/admin/content/condition-submissions/${id}/reject`,
+      { method: 'POST' },
+    ),
 
   broadcastNotification: (body: { title: string; body: string; actionUrl?: string }) =>
     request<{ broadcastId: string; recipientCount: number }>('/admin/notifications/broadcast', {

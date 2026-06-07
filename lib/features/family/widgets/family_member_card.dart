@@ -23,14 +23,14 @@ class FamilyMemberCard extends StatelessWidget {
         : 'Not set';
 
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: member.isPrimaryAccountHolder
-                ? HomeDashboardColors.primary
+                ? HomeDashboardColors.of(context).primary
                 : const Color(0xFFE5E8EE),
             width: member.isPrimaryAccountHolder ? 1.5 : 1,
           ),
@@ -50,7 +50,7 @@ class FamilyMemberCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           member.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -58,32 +58,32 @@ class FamilyMemberCard extends StatelessWidget {
                       ),
                       if (member.isPrimaryAccountHolder)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: HomeDashboardColors.primary
+                            color: HomeDashboardColors.of(context).primary
                                 .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Primary',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: HomeDashboardColors.primary,
+                              color: HomeDashboardColors.of(context).primary,
                             ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     member.relationship,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -113,7 +113,7 @@ class FamilyMemberCard extends StatelessWidget {
 }
 
 class _MetaRow extends StatelessWidget {
-  const _MetaRow({required this.icon, required this.label});
+  _MetaRow({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -122,14 +122,14 @@ class _MetaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: HomeDashboardColors.textSecondary),
-        const SizedBox(width: 6),
+        Icon(icon, size: 16, color: HomeDashboardColors.of(context).textSecondary),
+        SizedBox(width: 6),
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: HomeDashboardColors.textSecondary,
+              color: HomeDashboardColors.of(context).textSecondary,
             ),
           ),
         ),

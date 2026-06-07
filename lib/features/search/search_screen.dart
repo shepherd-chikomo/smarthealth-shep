@@ -7,6 +7,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/search/bloc/search_bloc.dart';
 import 'package:smarthealth_shep/features/search/bloc/search_event.dart';
 import 'package:smarthealth_shep/features/search/bloc/search_state.dart';
+import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
 import 'package:smarthealth_shep/features/search/data/search_repository.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/features/search/widgets/search_filter_chip.dart';
@@ -27,14 +28,14 @@ class SearchScreen extends ConsumerWidget {
   }
 }
 
-class _SearchView extends StatefulWidget {
+class _SearchView extends ConsumerStatefulWidget {
   const _SearchView();
 
   @override
-  State<_SearchView> createState() => _SearchViewState();
+  ConsumerState<_SearchView> createState() => _SearchViewState();
 }
 
-class _SearchViewState extends State<_SearchView> {
+class _SearchViewState extends ConsumerState<_SearchView> {
   late final TextEditingController _controller;
 
   @override
@@ -52,6 +53,7 @@ class _SearchViewState extends State<_SearchView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final medicalAidCatalog = ref.watch(medicalAidCatalogProvider);
 
     return BlocListener<SearchBloc, SearchState>(
       listenWhen: (previous, current) => current.navigateToResults,
@@ -59,10 +61,10 @@ class _SearchViewState extends State<_SearchView> {
         context.push('/search/results', extra: state.criteria);
       },
       child: AppShellScaffold(
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
         appBar: AppBar(
           title: Text(l10n.navSearch),
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
         ),
         body: BlocBuilder<SearchBloc, SearchState>(
           builder: (context, state) {
@@ -95,7 +97,7 @@ class _SearchViewState extends State<_SearchView> {
                         label: l10n.homeRetry,
                         onPressed: () => context
                             .read<SearchBloc>()
-                            .add(const SearchReloadRequested()),
+                            .add(SearchReloadRequested()),
                       ),
                     ],
                   ),
@@ -108,17 +110,17 @@ class _SearchViewState extends State<_SearchView> {
                 if (state.isOffline)
                   Container(
                     width: double.infinity,
-                    color: HomeDashboardColors.warning.withValues(alpha: 0.15),
-                    padding: const EdgeInsets.symmetric(
+                    color: HomeDashboardColors.of(context).warning.withValues(alpha: 0.15),
+                    padding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 8,
                     ),
                     child: Text(
                       l10n.searchOfflineHint,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ),
@@ -226,6 +228,49 @@ class _SearchViewState extends State<_SearchView> {
                             .read<SearchBloc>()
                             .add(FilterToggled(group: group, filterId: id)),
                       ),
+                      medicalAidCatalog.when(
+                        data: (schemes) {
+                          if (schemes.isEmpty) return const SizedBox.shrink();
+                          final options = schemes
+                              .map(
+                                (scheme) => SearchFilterOption(
+                                  id: scheme.schemeKey,
+                                  label: scheme.name,
+                                ),
+                              )
+                              .toList();
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SearchFilterSection(
+                                title: 'Medical aid',
+                                options: options,
+                                selectedIds: state.medicalAidSchemes,
+                                group: SearchFilterGroup.medicalAid,
+                                onToggle: (group, id) => context
+                                    .read<SearchBloc>()
+                                    .add(
+                                      FilterToggled(group: group, filterId: id),
+                                    ),
+                              ),
+                              if (state.userMedicalAidSchemeKey != null)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                  child: FilterChip(
+                                    label: const Text('Accepts my medical aid'),
+                                    selected: state.acceptsMyMedicalAid,
+                                    onSelected: (selected) => context
+                                        .read<SearchBloc>()
+                                        .add(AcceptsMyMedicalAidToggled(selected)),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
                       const SizedBox(height: 88),
                     ],
                   ),
@@ -280,42 +325,42 @@ class _SearchInputField extends StatelessWidget {
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Symbols.search,
-            color: HomeDashboardColors.textSecondary,
+            color: HomeDashboardColors.of(context).textSecondary,
           ),
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
             builder: (context, value, _) {
-              if (value.text.isEmpty) return const SizedBox.shrink();
+              if (value.text.isEmpty) return SizedBox.shrink();
               return Semantics(
                 button: true,
                 label: 'Clear search',
                 child: IconButton(
-                  icon: const Icon(Symbols.close),
+                  icon: Icon(Symbols.close),
                   onPressed: onClear,
                 ),
               );
             },
           ),
           filled: true,
-          fillColor: HomeDashboardColors.surface,
-          contentPadding: const EdgeInsets.symmetric(
+          fillColor: HomeDashboardColors.of(context).surface,
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFE5E8EE)),
+            borderSide: BorderSide(color: Color(0xFFE5E8EE)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFE5E8EE)),
+            borderSide: BorderSide(color: Color(0xFFE5E8EE)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(
-              color: HomeDashboardColors.primary,
+            borderSide: BorderSide(
+              color: HomeDashboardColors.of(context).primary,
               width: 2,
             ),
           ),

@@ -32,24 +32,24 @@ class ClaimListingCta extends StatelessWidget {
 
     if (status == ClaimOperationalStatus.verifiedFacility ||
         status == ClaimOperationalStatus.verifiedPractitioner) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     if (status == ClaimOperationalStatus.claimPending) {
       return Padding(
-        padding: const EdgeInsets.only(top: 16),
+        padding: EdgeInsets.only(top: 16),
         child: Text(
           'Claim pending review',
           style: TextStyle(
             fontSize: 13,
-            color: HomeDashboardColors.textSecondary.withValues(alpha: 0.85),
+            color: HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.85),
           ),
         ),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 20),
+      padding: EdgeInsets.only(top: 20),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -58,20 +58,20 @@ class ClaimListingCta extends StatelessWidget {
               isFacilityListing ? 'Own this facility?' : 'Own this listing?',
               style: TextStyle(
                 fontSize: 13,
-                color: HomeDashboardColors.textSecondary.withValues(alpha: 0.75),
+                color: HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.75),
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Semantics(
               button: true,
               label: 'Claim listing',
               child: TextButton(
                 onPressed: () => _openPortal(context),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: HomeDashboardColors.textSecondary,
+                  foregroundColor: HomeDashboardColors.of(context).textSecondary,
                 ),
                 child: Text(
                   'Claim listing',
@@ -79,7 +79,7 @@ class ClaimListingCta extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.underline,
-                    decorationColor: HomeDashboardColors.textSecondary
+                    decorationColor: HomeDashboardColors.of(context).textSecondary
                         .withValues(alpha: 0.5),
                   ),
                 ),

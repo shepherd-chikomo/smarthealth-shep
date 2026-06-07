@@ -19,9 +19,9 @@ class SearchSortBar extends StatelessWidget {
       height: 36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         itemCount: SearchSortOption.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => SizedBox(width: 8),
         itemBuilder: (context, index) {
           final option = SearchSortOption.values[index];
           final isSelected = option == selected;
@@ -31,21 +31,21 @@ class SearchSortBar extends StatelessWidget {
             label: 'Sort by ${option.label}',
             child: Material(
               color: isSelected
-                  ? HomeDashboardColors.primary.withValues(alpha: 0.12)
-                  : HomeDashboardColors.surface,
+                  ? HomeDashboardColors.of(context).primary.withValues(alpha: 0.12)
+                  : HomeDashboardColors.of(context).surface,
               borderRadius: BorderRadius.circular(999),
               child: InkWell(
                 onTap: () => onChanged(option),
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
                       color: isSelected
-                          ? HomeDashboardColors.primary
-                          : const Color(0xFFE5E8EE),
+                          ? HomeDashboardColors.of(context).primary
+                          : Color(0xFFE5E8EE),
                     ),
                   ),
                   child: Text(
@@ -55,8 +55,8 @@ class SearchSortBar extends StatelessWidget {
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
-                          ? HomeDashboardColors.primary
-                          : HomeDashboardColors.textPrimary,
+                          ? HomeDashboardColors.of(context).primary
+                          : HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ),

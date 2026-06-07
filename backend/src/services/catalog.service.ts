@@ -36,6 +36,7 @@ export async function listCatalogSpecialties(options: { page: number; limit: num
 }
 
 const CONDITION_LABELS: Record<string, string> = {
+  diabetes_type_2: 'Diabetes Type 2',
   diabetes: 'Diabetes',
   hypertension: 'Hypertension',
   malaria: 'Malaria',
@@ -127,4 +128,33 @@ export async function listConditionCatalog() {
 export async function listAgeGroupCatalog() {
   const { items } = await listUnnestedCatalog('age_groups', AGE_GROUP_LABELS, DEFAULT_AGE_GROUPS);
   return { ageGroups: items };
+}
+
+const DEFAULT_MEDICAL_AID_SCHEMES = [
+  { schemeKey: 'cimas', name: 'Cimas' },
+  { schemeKey: 'psmas', name: 'PSMAS' },
+  { schemeKey: 'first_mutual', name: 'First Mutual' },
+  { schemeKey: 'cellmed', name: 'CellMed' },
+  { schemeKey: 'alliance_health', name: 'Alliance Health' },
+] as const;
+
+export async function listMedicalAidCatalog() {
+  const row = await query<{ value: unknown }>(
+    `SELECT value FROM public.app_settings
+     WHERE tenant_id IS NULL AND scope = 'platform' AND key = 'medical_aid_catalog'`,
+  );
+  const raw = row.rows[0]?.value;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return { schemes: [...DEFAULT_MEDICAL_AID_SCHEMES] };
+  }
+
+  const schemes = raw
+    .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
+    .map((item) => ({
+      schemeKey: String(item.schemeKey ?? '').trim(),
+      name: String(item.name ?? '').trim(),
+    }))
+    .filter((item) => item.schemeKey.length > 0 && item.name.length > 0);
+
+  return { schemes: schemes.length > 0 ? schemes : [...DEFAULT_MEDICAL_AID_SCHEMES] };
 }

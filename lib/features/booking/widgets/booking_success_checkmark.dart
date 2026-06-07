@@ -48,15 +48,15 @@ class _BookingSuccessCheckmarkState extends State<BookingSuccessCheckmark>
         width: 96,
         height: 96,
         decoration: BoxDecoration(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.15),
+          color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.15),
           shape: BoxShape.circle,
         ),
         child: FadeTransition(
           opacity: _checkOpacity,
-          child: const Icon(
+          child: Icon(
             Icons.check_rounded,
             size: 56,
-            color: HomeDashboardColors.secondary,
+            color: HomeDashboardColors.of(context).secondary,
           ),
         ),
       ),

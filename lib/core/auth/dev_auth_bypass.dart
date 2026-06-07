@@ -12,10 +12,13 @@ abstract final class DevAuthBypass {
   static const email = 'tendai@example.com';
 
   static const PatientProfile profile = PatientProfile(
+    id: '918d9e49-a03b-4422-9d10-9111848344c9',
     firstName: firstName,
     lastName: lastName,
     displayName: '$firstName $lastName',
     phone: phone,
     email: email,
+    dateOfBirth: '1984-03-15',
+    gender: 'male',
   );
 }

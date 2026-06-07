@@ -9,13 +9,13 @@ import 'package:smarthealth_shep/features/home/bloc/home_event.dart';
 import 'package:smarthealth_shep/features/home/bloc/home_state.dart';
 import 'package:smarthealth_shep/features/home/data/home_repository.dart';
 import 'package:smarthealth_shep/features/home/models/facility_load_mode.dart';
-import 'package:flutter/foundation.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/shared/data/category_repository.dart';
 import 'package:smarthealth_shep/shared/data/facility_repository.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
+import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_header_card.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.dart';
 import 'package:smarthealth_shep/features/home/widgets/service_category_grid.dart';
@@ -43,29 +43,31 @@ class HomeScreen extends ConsumerWidget {
         ),
         categoryRepository: ref.read(categoryRepositoryProvider),
       )..add(LoadHomeData(nearMeLabel: nearMeLabel)),
-      child: const _HomeDashboardView(),
+      child: _HomeDashboardView(),
     );
   }
 }
 
 class _HomeDashboardView extends ConsumerWidget {
-  const _HomeDashboardView();
+  _HomeDashboardView();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
 
+    ref.watch(homeMedicalSummaryProvider);
+
     return AppShellScaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       body: Stack(
         children: [
           MedicalTextureBackground(
-        baseColor: HomeDashboardColors.background,
+        baseColor: HomeDashboardColors.of(context).background,
         patternOpacity: HomeDashboardColors.textureOpacityBody,
         child: BlocBuilder<HomeBloc, HomeState>(
           builder: (context, state) {
             return RefreshIndicator(
-              color: HomeDashboardColors.primary,
+              color: HomeDashboardColors.of(context).primary,
               onRefresh: () async {
                 context.read<HomeBloc>().add(const RefreshHomeData());
                 await context.read<HomeBloc>().stream.firstWhere(
@@ -111,7 +113,6 @@ class _HomeDashboardView extends ConsumerWidget {
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: HomeUpcomingAppointmentBanner(),
                           ),
-                          if (kDebugMode) _HomeDebugStatus(state: state),
                           const SizedBox(height: 20),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -125,12 +126,12 @@ class _HomeDashboardView extends ConsumerWidget {
                           ),
                           if (_cityFallbackHint(state, l10n) != null)
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
                               child: Text(
                                 _cityFallbackHint(state, l10n)!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: HomeDashboardColors.textSecondary,
+                                  color: HomeDashboardColors.of(context).textSecondary,
                                 ),
                               ),
                             ),
@@ -266,10 +267,10 @@ class _HomeDashboardView extends ConsumerWidget {
 
       return [
         if (isRefreshing)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: LinearProgressIndicator(
               minHeight: 2,
-              color: HomeDashboardColors.primary,
+              color: HomeDashboardColors.of(context).primary,
             ),
           ),
         SliverPadding(
@@ -311,7 +312,7 @@ class _HomeDashboardView extends ConsumerWidget {
 }
 
 class _ActiveQueueBanner extends StatelessWidget {
-  const _ActiveQueueBanner({required this.session});
+  _ActiveQueueBanner({required this.session});
 
   final QueueSession session;
 
@@ -320,12 +321,12 @@ class _ActiveQueueBanner extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Your Queue',
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: HomeDashboardColors.textPrimary,
+            color: HomeDashboardColors.of(context).textPrimary,
           ),
         ),
         const SizedBox(height: 8),
@@ -338,70 +339,6 @@ class _ActiveQueueBanner extends StatelessWidget {
       ],
     );
   }
-}
-
-class _HomeDebugStatus extends StatelessWidget {
-  const _HomeDebugStatus({required this.state});
-
-  final HomeState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final count = switch (state) {
-      HomeLoaded(:final facilities) => facilities.length,
-      HomeOffline(:final facilities) => facilities.length,
-      _ => 0,
-    };
-    final filter = _categoryFromState(state) ?? 'near_me';
-    final error = switch (state) {
-      HomeLoaded(:final loadError) => loadError,
-      _ => null,
-    };
-
-    final categoryCount = switch (state) {
-      HomeLoading(:final categories) => categories.length,
-      HomeLoaded(:final categories) => categories.length,
-      HomeOffline(:final categories) => categories.length,
-      HomeError(:final categories) => categories.length,
-      _ => 0,
-    };
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Text(
-        'API: ${AppConfig.apiBaseUrl}\n'
-        'Loaded: $count · categories: $categoryCount · filter: $filter'
-        '${_originDebugLine(state)}'
-        '${error != null ? '\n$error' : ''}',
-        style: const TextStyle(
-          fontSize: 10,
-          color: HomeDashboardColors.textSecondary,
-        ),
-      ),
-    );
-  }
-
-  String _originDebugLine(HomeState state) {
-    final AppPosition? origin = switch (state) {
-      HomeLoaded(:final searchOrigin) => searchOrigin,
-      HomeOffline(:final searchOrigin) => searchOrigin,
-      _ => null,
-    };
-    if (origin == null) return '';
-
-    final citySuffix =
-        origin.cityName != null ? ' · ${origin.cityName}' : '';
-    return '\nOrigin: ${origin.latitude.toStringAsFixed(4)}, '
-        '${origin.longitude.toStringAsFixed(4)} '
-        '(${origin.source.name})$citySuffix · '
-        'radius: ${AppConfig.defaultSearchRadiusKm}km';
-  }
-
-  String? _categoryFromState(HomeState state) => switch (state) {
-        HomeLoaded(:final selectedCategoryId) => selectedCategoryId,
-        HomeOffline(:final selectedCategoryId) => selectedCategoryId,
-        _ => null,
-      };
 }
 
 class _HomeEmptyFacilities extends StatelessWidget {
@@ -440,16 +377,16 @@ class _HomeEmptyFacilities extends StatelessWidget {
               ? 'Could not reach the server.\n${AppConfig.apiBaseUrl}'
               : l10n.homeNoProviders,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: HomeDashboardColors.textSecondary),
+          style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
         ),
         if (loadError != null) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             loadError,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: HomeDashboardColors.textSecondary,
+              color: HomeDashboardColors.of(context).textSecondary,
             ),
           ),
         ],
@@ -471,7 +408,7 @@ class _HomeEmptyFacilities extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.trailing});
+  _SectionHeader({required this.title, this.trailing});
 
   final String title;
   final Widget? trailing;
@@ -483,10 +420,10 @@ class _SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              color: HomeDashboardColors.textPrimary,
+              color: HomeDashboardColors.of(context).textPrimary,
               letterSpacing: -0.17,
             ),
           ),
@@ -507,29 +444,29 @@ class _HomeErrorView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Symbols.error_outline,
             size: 48,
-            color: HomeDashboardColors.emergency,
+            color: HomeDashboardColors.of(context).emergency,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             l10n.homeErrorTitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: HomeDashboardColors.textPrimary,
+              color: HomeDashboardColors.of(context).textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: HomeDashboardColors.textSecondary),
+            style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
           ),
           const SizedBox(height: 24),
           PrimaryButton(

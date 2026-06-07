@@ -24,21 +24,21 @@ class SearchFilterChip extends StatelessWidget {
       label: label,
       child: Material(
         color: selected
-            ? HomeDashboardColors.primary.withValues(alpha: 0.12)
-            : HomeDashboardColors.surface,
+            ? HomeDashboardColors.of(context).primary.withValues(alpha: 0.12)
+            : HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            constraints: const BoxConstraints(minHeight: 36),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            constraints: BoxConstraints(minHeight: 36),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: selected
-                    ? HomeDashboardColors.primary
-                    : const Color(0xFFE5E8EE),
+                    ? HomeDashboardColors.of(context).primary
+                    : Color(0xFFE5E8EE),
               ),
             ),
             child: Text(
@@ -47,8 +47,8 @@ class SearchFilterChip extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected
-                    ? HomeDashboardColors.primary
-                    : HomeDashboardColors.textPrimary,
+                    ? HomeDashboardColors.of(context).primary
+                    : HomeDashboardColors.of(context).textPrimary,
               ),
             ),
           ),
@@ -81,13 +81,13 @@ class SearchFilterSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: HomeDashboardColors.textPrimary,
+              color: HomeDashboardColors.of(context).textPrimary,
             ),
           ),
         ),

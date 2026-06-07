@@ -81,7 +81,7 @@ class _FamilyMembersView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove family member?'),
+        title: Text('Remove family member?'),
         content: Text(
           'Remove ${member.name} from your family list? '
           'This cannot be undone.',
@@ -89,14 +89,14 @@ class _FamilyMembersView extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
-              backgroundColor: HomeDashboardColors.emergency,
+              backgroundColor: HomeDashboardColors.of(context).emergency,
             ),
-            child: const Text('Delete'),
+            child: Text('Delete'),
           ),
         ],
       ),
@@ -107,10 +107,10 @@ class _FamilyMembersView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: HomeDashboardColors.surface,
-        foregroundColor: HomeDashboardColors.textPrimary,
+        backgroundColor: HomeDashboardColors.of(context).surface,
+        foregroundColor: HomeDashboardColors.of(context).textPrimary,
         title: const Text('Family Members'),
       ),
       body: BlocConsumer<FamilyBloc, FamilyState>(
@@ -126,7 +126,7 @@ class _FamilyMembersView extends StatelessWidget {
         builder: (context, state) {
           if (state.status == FamilyStatus.loading &&
               state.members.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator());
           }
 
           return Column(
@@ -134,15 +134,15 @@ class _FamilyMembersView extends StatelessWidget {
               if (state.isOffline)
                 Container(
                   width: double.infinity,
-                  color: HomeDashboardColors.warning.withValues(alpha: 0.15),
+                  color: HomeDashboardColors.of(context).warning.withValues(alpha: 0.15),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: const Text(
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
                     'Offline — changes saved locally and will sync when online',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
                 ),
@@ -157,7 +157,7 @@ class _FamilyMembersView extends StatelessWidget {
               ),
               Expanded(
                 child: state.members.isEmpty
-                    ? const _EmptyState()
+                    ? _EmptyState()
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         itemCount: state.members.length,
@@ -213,9 +213,9 @@ class _DismissibleMemberCard extends StatelessWidget {
       },
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: HomeDashboardColors.emergency,
+          color: HomeDashboardColors.of(context).emergency,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white),
@@ -226,34 +226,34 @@ class _DismissibleMemberCard extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  _EmptyState();
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Symbols.group,
               size: 56,
-              color: HomeDashboardColors.textSecondary.withValues(alpha: 0.5),
+              color: HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.5),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'No family members yet',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'Add dependents to book appointments on their behalf.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: HomeDashboardColors.textSecondary),
+              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
             ),
           ],
         ),

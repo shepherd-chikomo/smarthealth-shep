@@ -13,7 +13,13 @@ class SettingsScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.navProfile)),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: ListView(
         children: [
           if (auth.isAuthenticated && auth.phone != null)
@@ -42,6 +48,13 @@ class SettingsScreen extends ConsumerWidget {
             title: Text(l10n.notificationsPreferences),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/notifications/preferences'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Backup & Restore'),
+            subtitle: const Text('Encrypted Health Vault (.healthvault)'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/profile/backup'),
           ),
           ListTile(
             leading: const Icon(Icons.group_outlined),

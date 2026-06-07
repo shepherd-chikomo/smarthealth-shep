@@ -66,21 +66,21 @@ class BookingSuccessScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Spacer(),
-                  const BookingSuccessCheckmark(),
-                  const SizedBox(height: 24),
-                  const Text(
+                  Spacer(),
+                  BookingSuccessCheckmark(),
+                  SizedBox(height: 24),
+                  Text(
                     'Booking Confirmed!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -93,22 +93,22 @@ class BookingSuccessScreen extends StatelessWidget {
                     patientName: confirmation.patientName,
                     notes: confirmation.notes,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     children: [
                       Icon(
                         Symbols.sms,
                         size: 18,
-                        color: HomeDashboardColors.textSecondary
+                        color: HomeDashboardColors.of(context).textSecondary
                             .withValues(alpha: 0.8),
                       ),
-                      const SizedBox(width: 8),
-                      const Expanded(
+                      SizedBox(width: 8),
+                      Expanded(
                         child: Text(
                           'SMS reminder will be sent 24 hours before',
                           style: TextStyle(
                             fontSize: 13,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ),
@@ -122,17 +122,17 @@ class BookingSuccessScreen extends StatelessWidget {
                       context.go('/bookings');
                     },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: OutlinedButton.icon(
                       onPressed: () => _addToCalendar(state),
-                      icon: const Icon(Symbols.calendar_add_on),
-                      label: const Text('Add to Calendar'),
+                      icon: Icon(Symbols.calendar_add_on),
+                      label: Text('Add to Calendar'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: HomeDashboardColors.primary,
-                        side: const BorderSide(color: HomeDashboardColors.primary),
+                        foregroundColor: HomeDashboardColors.of(context).primary,
+                        side: BorderSide(color: HomeDashboardColors.of(context).primary),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

@@ -61,7 +61,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.appointmentsCheckIn)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -74,58 +74,58 @@ class _CheckInScreenState extends State<CheckInScreen> {
     }
 
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.appointmentsCheckIn),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: HomeDashboardColors.surface,
+                color: HomeDashboardColors.of(context).surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E8EE)),
+                border: Border.all(color: Color(0xFFE5E8EE)),
               ),
               child: Column(
                 children: [
-                  const Icon(
+                  Icon(
                     Symbols.location_on,
                     size: 40,
-                    color: HomeDashboardColors.primary,
+                    color: HomeDashboardColors.of(context).primary,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     l10n.appointmentsCheckInPrompt,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     appointment.facilityName,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: HomeDashboardColors.textSecondary,
+                    style: TextStyle(
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(l10n.appointmentsAssignQueue),
               subtitle: Text(l10n.appointmentsAssignQueueHint),
               value: _assignQueue,
-              activeTrackColor: HomeDashboardColors.primary,
+              activeTrackColor: HomeDashboardColors.of(context).primary,
               onChanged: _submitting
                   ? null
                   : (value) => setState(() => _assignQueue = value),

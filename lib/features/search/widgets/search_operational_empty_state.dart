@@ -23,32 +23,32 @@ class SearchOperationalEmptyState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _resolveIcon(),
               size: 48,
-              color: HomeDashboardColors.textSecondary.withValues(alpha: 0.6),
+              color: HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.6),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               l10n.searchNoResultsHint,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: HomeDashboardColors.textSecondary,
+                color: HomeDashboardColors.of(context).textSecondary,
                 height: 1.4,
               ),
             ),

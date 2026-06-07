@@ -15,6 +15,9 @@ class SearchState extends Equatable {
     this.conditions = const {},
     this.ageGroups = const {},
     this.operational = const {},
+    this.medicalAidSchemes = const {},
+    this.acceptsMyMedicalAid = false,
+    this.userMedicalAidSchemeKey,
     this.sortBy = SearchSortOption.distance,
     this.allProviders = const [],
     this.filteredProviders = const [],
@@ -35,6 +38,9 @@ class SearchState extends Equatable {
   final Set<String> conditions;
   final Set<String> ageGroups;
   final Set<String> operational;
+  final Set<String> medicalAidSchemes;
+  final bool acceptsMyMedicalAid;
+  final String? userMedicalAidSchemeKey;
   final SearchSortOption sortBy;
   final List<ProviderModel> allProviders;
   final List<ProviderModel> filteredProviders;
@@ -55,7 +61,9 @@ class SearchState extends Equatable {
       specialties.isNotEmpty ||
       conditions.isNotEmpty ||
       ageGroups.isNotEmpty ||
-      operational.isNotEmpty;
+      operational.isNotEmpty ||
+      medicalAidSchemes.isNotEmpty ||
+      acceptsMyMedicalAid;
 
   SearchCriteria get criteria => SearchCriteria(
         query: query,
@@ -63,6 +71,9 @@ class SearchState extends Equatable {
         conditions: conditions,
         ageGroups: ageGroups,
         operational: operational,
+        medicalAidSchemes: medicalAidSchemes,
+        acceptsMyMedicalAid: acceptsMyMedicalAid,
+        userMedicalAidSchemeKey: userMedicalAidSchemeKey,
         providers: filteredProviders,
         facilities: filteredFacilities,
         isOffline: isOffline,
@@ -76,6 +87,9 @@ class SearchState extends Equatable {
     Set<String>? conditions,
     Set<String>? ageGroups,
     Set<String>? operational,
+    Set<String>? medicalAidSchemes,
+    bool? acceptsMyMedicalAid,
+    String? userMedicalAidSchemeKey,
     SearchSortOption? sortBy,
     List<ProviderModel>? allProviders,
     List<ProviderModel>? filteredProviders,
@@ -97,6 +111,10 @@ class SearchState extends Equatable {
       conditions: conditions ?? this.conditions,
       ageGroups: ageGroups ?? this.ageGroups,
       operational: operational ?? this.operational,
+      medicalAidSchemes: medicalAidSchemes ?? this.medicalAidSchemes,
+      acceptsMyMedicalAid: acceptsMyMedicalAid ?? this.acceptsMyMedicalAid,
+      userMedicalAidSchemeKey:
+          userMedicalAidSchemeKey ?? this.userMedicalAidSchemeKey,
       sortBy: sortBy ?? this.sortBy,
       allProviders: allProviders ?? this.allProviders,
       filteredProviders: filteredProviders ?? this.filteredProviders,
@@ -123,6 +141,9 @@ class SearchState extends Equatable {
         conditions,
         ageGroups,
         operational,
+        medicalAidSchemes,
+        acceptsMyMedicalAid,
+        userMedicalAidSchemeKey,
         sortBy,
         allProviders,
         filteredProviders,

@@ -35,15 +35,15 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
             MaterialPageRoute<void>(
               builder: (_) => BlocProvider.value(
                 value: context.read<BookingBloc>(),
-                child: const BookingSuccessScreen(),
+                child: BookingSuccessScreen(),
               ),
             ),
           );
         } else if (state.status == BookingStatus.offlineBlocked) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Booking requires internet'),
-              backgroundColor: HomeDashboardColors.warning,
+              content: Text('Booking requires internet'),
+              backgroundColor: HomeDashboardColors.of(context).warning,
               action: state.draftSaved
                   ? SnackBarAction(
                       label: 'Draft saved',
@@ -67,18 +67,18 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
 
         if (provider == null || date == null || time == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Confirm Booking')),
-            body: const Center(child: Text('Missing booking details')),
+            appBar: AppBar(title: Text('Confirm Booking')),
+            body: Center(child: Text('Missing booking details')),
           );
         }
 
         final isConfirming = state.status == BookingStatus.confirming;
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           appBar: AppBar(
-            backgroundColor: HomeDashboardColors.surface,
-            foregroundColor: HomeDashboardColors.textPrimary,
+            backgroundColor: HomeDashboardColors.of(context).surface,
+            foregroundColor: HomeDashboardColors.of(context).textPrimary,
             title: const Text('Confirm Booking'),
             elevation: 0,
           ),
@@ -115,14 +115,14 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
                       'Additional notes (optional)',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     TextField(
                       controller: _notesController,
                       enabled: !isConfirming,
@@ -130,7 +130,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                       decoration: InputDecoration(
                         hintText: 'Symptoms, accessibility needs, etc.',
                         filled: true,
-                        fillColor: HomeDashboardColors.surface,
+                        fillColor: HomeDashboardColors.of(context).surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
@@ -147,7 +147,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                 ),
               ),
               SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                minimum: EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -161,7 +161,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
                                 );
                           },
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.secondary,
+                      backgroundColor: HomeDashboardColors.of(context).secondary,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
@@ -209,21 +209,21 @@ class _PatientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? HomeDashboardColors.secondary.withValues(alpha: 0.08)
-          : HomeDashboardColors.surface,
+          ? HomeDashboardColors.of(context).secondary.withValues(alpha: 0.08)
+          : HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: enabled ? onSelected : null,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? HomeDashboardColors.secondary
-                  : const Color(0xFFE5E8EE),
+                  ? HomeDashboardColors.of(context).secondary
+                  : Color(0xFFE5E8EE),
             ),
           ),
           child: Row(
@@ -231,23 +231,23 @@ class _PatientTile extends StatelessWidget {
               Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_off,
                 color: selected
-                    ? HomeDashboardColors.secondary
-                    : HomeDashboardColors.textSecondary,
+                    ? HomeDashboardColors.of(context).secondary
+                    : HomeDashboardColors.of(context).textSecondary,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       patient.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       patient.relationship,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ],

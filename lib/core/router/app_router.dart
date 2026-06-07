@@ -20,6 +20,10 @@ import 'package:smarthealth_shep/features/home/home_screen.dart';
 import 'package:smarthealth_shep/features/notifications/screens/notification_preferences_screen.dart';
 import 'package:smarthealth_shep/features/notifications/screens/notifications_screen.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
+import 'package:smarthealth_shep/features/profile/edit_emergency_medical_profile_screen.dart';
+import 'package:smarthealth_shep/features/profile/emergency_medical_profile_screen.dart';
+import 'package:smarthealth_shep/features/profile/profile_completion_screen.dart';
+import 'package:smarthealth_shep/features/profile/backup_restore_screen.dart';
 import 'package:smarthealth_shep/features/profile/settings_screen.dart';
 import 'package:smarthealth_shep/features/facility/facility_detail_screen.dart';
 import 'package:smarthealth_shep/features/facility/facility_service_picker_screen.dart';
@@ -288,7 +292,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/profile',
-                builder: (context, state) => const SettingsScreen(),
+                builder: (context, state) =>
+                    const EmergencyMedicalProfileScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'settings',
+                    builder: (context, state) => const SettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'backup',
+                    builder: (context, state) => const BackupRestoreScreen(),
+                  ),
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => EditEmergencyMedicalProfileScreen(
+                      focusSection: state.uri.queryParameters['section'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'completion',
+                    builder: (context, state) =>
+                        const ProfileCompletionScreen(),
+                  ),
+                ],
               ),
             ],
           ),

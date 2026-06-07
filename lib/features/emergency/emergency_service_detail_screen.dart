@@ -36,10 +36,10 @@ class EmergencyServiceDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return AppShellScaffold(      backgroundColor: HomeDashboardColors.background,
+    return AppShellScaffold(      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(service.name),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -56,55 +56,55 @@ class EmergencyServiceDetailScreen extends StatelessWidget {
                 width: 88,
                 height: 88,
               ),
-            ),            const SizedBox(height: 16),
+            ),            SizedBox(height: 16),
             Text(
               service.name,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             if (service.nearestProviderName != null) ...[
               Text(
                 l10n.emergencyNearestProvider,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 service.nearestProviderName!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 l10n.emergencyNearestDistance(service.nearestDistanceKm),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ),
             ],
-            const Spacer(),
+            Spacer(),
             EmergencyCallNowButton(
               label: l10n.emergencyCallNow,
               onPressed: () => _call(service.phone),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             SizedBox(
               height: AppConstants.minTapTarget,
               child: OutlinedButton(
                 onPressed: _directions,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: HomeDashboardColors.primary,
-                  side: const BorderSide(color: HomeDashboardColors.primary),
+                  foregroundColor: HomeDashboardColors.of(context).primary,
+                  side: BorderSide(color: HomeDashboardColors.of(context).primary),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

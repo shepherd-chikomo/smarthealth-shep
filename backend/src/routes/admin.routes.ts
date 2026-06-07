@@ -12,6 +12,14 @@ import * as facilitiesAdmin from '../services/facilities-admin.service.js';
 import * as registryDiff from '../services/registry-diff.service.js';
 import * as practitionerClaim from '../services/practitioner-claim.service.js';
 import * as platformBroadcast from '../services/platform-broadcast.service.js';
+import * as profileConditions from '../services/profile-conditions.service.js';
+import {
+  approveConditionSubmissionSchema,
+  conditionSubmissionSchema,
+  createProfileConditionSchema,
+  profileConditionAdminSchema,
+  updateProfileConditionSchema,
+} from '../schemas/common.js';
 
 const emergencyServiceBodySchema = z.object({
   name: z.string().min(1),
@@ -365,6 +373,133 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { tags: ['Admin'], querystring: adminListQuerySchema },
     },
     async (request) => platformBroadcast.listPlatformBroadcasts(request.query),
+  );
+
+  app.get(
+    '/admin/content/conditions',
+    {
+      preHandler: requireStaffAuth,
+      schema: {
+        tags: ['Admin'],
+        querystring: adminListQuerySchema,
+        response: {
+          200: z.object({
+            conditions: z.array(profileConditionAdminSchema),
+            pagination: z.object({
+              page: z.number(),
+              limit: z.number(),
+              total: z.number(),
+              totalPages: z.number(),
+            }),
+          }),
+        },
+      },
+    },
+    async (request) => profileConditions.listConditionsAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/conditions',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        body: createProfileConditionSchema,
+        response: { 201: z.object({ condition: profileConditionAdminSchema }) },
+      },
+    },
+    async (request, reply) => {
+      const result = await profileConditions.createCondition(request.body);
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.put(
+    '/admin/content/conditions/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: updateProfileConditionSchema,
+        response: { 200: z.object({ condition: profileConditionAdminSchema }) },
+      },
+    },
+    async (request) =>
+      profileConditions.updateCondition(request.params.id, request.body),
+  );
+
+  app.delete(
+    '/admin/content/conditions/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+      },
+    },
+    async (request) => profileConditions.deleteCondition(request.params.id),
+  );
+
+  app.get(
+    '/admin/content/condition-submissions',
+    {
+      preHandler: requireStaffAuth,
+      schema: {
+        tags: ['Admin'],
+        querystring: adminListQuerySchema,
+        response: {
+          200: z.object({
+            submissions: z.array(conditionSubmissionSchema),
+            pagination: z.object({
+              page: z.number(),
+              limit: z.number(),
+              total: z.number(),
+              totalPages: z.number(),
+            }),
+          }),
+        },
+      },
+    },
+    async (request) => profileConditions.listSubmissionsAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/condition-submissions/:id/approve',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: approveConditionSubmissionSchema,
+        response: {
+          200: z.object({
+            submission: conditionSubmissionSchema,
+            condition: profileConditionAdminSchema,
+          }),
+        },
+      },
+    },
+    async (request) =>
+      profileConditions.approveSubmission(
+        request.params.id,
+        request.user!.id,
+        request.body,
+      ),
+  );
+
+  app.post(
+    '/admin/content/condition-submissions/:id/reject',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        response: { 200: z.object({ submission: conditionSubmissionSchema }) },
+      },
+    },
+    async (request) =>
+      profileConditions.rejectSubmission(request.params.id, request.user!.id),
   );
 
   app.get(

@@ -28,30 +28,30 @@ class ProviderAvailabilitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!_hasAvailabilityInfo) return const SizedBox.shrink();
+    if (!_hasAvailabilityInfo) return SizedBox.shrink();
 
     final todayHours = _todayHours(provider.weeklyHours);
     final padding = compact ? 12.0 : 16.0;
 
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.all(padding),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E8EE)),
+          border: Border.all(color: Color(0xFFE5E8EE)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Availability',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
             const SizedBox(height: 10),
@@ -65,7 +65,7 @@ class ProviderAvailabilitySection extends StatelessWidget {
               ),
             ],
             if (todayHours != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _InfoRow(
                 icon: Symbols.schedule,
                 label: "Today's hours",
@@ -73,7 +73,7 @@ class ProviderAvailabilitySection extends StatelessWidget {
                     ? 'Closed'
                     : (todayHours.hours ?? '—'),
                 valueColor: todayHours.isClosed
-                    ? HomeDashboardColors.emergency
+                    ? HomeDashboardColors.of(context).emergency
                     : null,
               ),
             ],
@@ -153,26 +153,26 @@ class _InfoRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: HomeDashboardColors.primary),
-        const SizedBox(width: 10),
+        Icon(icon, size: 18, color: HomeDashboardColors.of(context).primary),
+        SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(
                 value,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: valueColor ?? HomeDashboardColors.textPrimary,
+                  color: valueColor ?? HomeDashboardColors.of(context).textPrimary,
                 ),
               ),
             ],

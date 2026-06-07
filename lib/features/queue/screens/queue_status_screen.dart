@@ -58,37 +58,37 @@ class QueueStatusScreen extends StatelessWidget {
         final session = state.session;
         if (session == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Queue Status')),
-            body: const Center(child: Text('No active queue session')),
+            appBar: AppBar(title: Text('Queue Status')),
+            body: Center(child: Text('No active queue session')),
           );
         }
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           appBar: AppBar(
-            backgroundColor: HomeDashboardColors.surface,
-            foregroundColor: HomeDashboardColors.textPrimary,
+            backgroundColor: HomeDashboardColors.of(context).surface,
+            foregroundColor: HomeDashboardColors.of(context).textPrimary,
             title: const Text('Queue Status'),
             elevation: 0,
             actions: [
               IconButton(
                 icon: state.isRefreshing
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.refresh),
+                    : Icon(Icons.refresh),
                 onPressed: state.isRefreshing
                     ? null
                     : () => context
                         .read<QueueBloc>()
-                        .add(const RefreshQueueStatus()),
+                        .add(RefreshQueueStatus()),
               ),
             ],
           ),
           body: RefreshIndicator(
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
             onRefresh: () async {
               context.read<QueueBloc>().add(const RefreshQueueStatus());
               await context.read<QueueBloc>().stream.firstWhere(
@@ -159,55 +159,55 @@ class QueueStatusScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      context.read<QueueBloc>().add(const LeaveQueueRequested());
+      context.read<QueueBloc>().add(LeaveQueueRequested());
     }
   }
 }
 
 class _ProviderInfo extends StatelessWidget {
-  const _ProviderInfo({required this.session});
+  _ProviderInfo({required this.session});
 
   final QueueSession session;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E8EE)),
+          border: Border.all(color: Color(0xFFE5E8EE)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               session.providerName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
             if (session.providerSpecialty != null) ...[
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 session.providerSpecialty!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: HomeDashboardColors.primary,
+                  color: HomeDashboardColors.of(context).primary,
                 ),
               ),
             ],
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               session.facilityName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: HomeDashboardColors.textSecondary,
+                color: HomeDashboardColors.of(context).textSecondary,
               ),
             ),
           ],
@@ -218,36 +218,36 @@ class _ProviderInfo extends StatelessWidget {
 }
 
 class _StatusHint extends StatelessWidget {
-  const _StatusHint({required this.message});
+  _StatusHint({required this.message});
 
   final String message;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: HomeDashboardColors.secondary.withValues(alpha: 0.08),
+        color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.25),
+          color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.info_outline,
             size: 18,
-            color: HomeDashboardColors.secondary,
+            color: HomeDashboardColors.of(context).secondary,
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: HomeDashboardColors.textSecondary,
+                color: HomeDashboardColors.of(context).textSecondary,
               ),
             ),
           ),

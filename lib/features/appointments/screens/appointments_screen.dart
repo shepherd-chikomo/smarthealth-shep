@@ -19,23 +19,23 @@ class AppointmentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AppointmentsBloc(repository: AppointmentsRepository()),
-      child: const _AppointmentsView(),
+      child: _AppointmentsView(),
     );
   }
 }
 
 class _AppointmentsView extends StatelessWidget {
-  const _AppointmentsView();
+  _AppointmentsView();
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
     return AppShellScaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.navBookings),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: BlocBuilder<AppointmentsBloc, AppointmentsState>(
         builder: (context, state) {
@@ -58,7 +58,7 @@ class _AppointmentsView extends StatelessWidget {
                       label: l10n.homeRetry,
                       onPressed: () => context
                           .read<AppointmentsBloc>()
-                          .add(const AppointmentsLoadRequested()),
+                          .add(AppointmentsLoadRequested()),
                     ),
                   ],
                 ),
@@ -67,11 +67,10 @@ class _AppointmentsView extends StatelessWidget {
           }
 
           final upcoming = state.upcoming;
-          final past = state.past;
           final nextReminder = upcoming.isEmpty ? null : upcoming.first;
 
           return RefreshIndicator(
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
             onRefresh: () async {
               context
                   .read<AppointmentsBloc>()
@@ -102,33 +101,20 @@ class _AppointmentsView extends StatelessWidget {
                         '/appointments/${appointment.id}',
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                   ],
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                 ] else
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
                       l10n.appointmentsEmptyUpcoming,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: HomeDashboardColors.textSecondary,
+                      style: TextStyle(
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ),
-                if (past.isNotEmpty) ...[
-                  _SectionTitle(l10n.appointmentsPast),
-                  const SizedBox(height: 10),
-                  for (final appointment in past) ...[
-                    AppointmentCard(
-                      appointment: appointment,
-                      onTap: () => context.push(
-                        '/appointments/${appointment.id}',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ],
               ],
             ),
           );
@@ -139,7 +125,7 @@ class _AppointmentsView extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
+  _SectionTitle(this.title);
 
   final String title;
 
@@ -147,10 +133,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: HomeDashboardColors.textPrimary,
+        color: HomeDashboardColors.of(context).textPrimary,
       ),
     );
   }

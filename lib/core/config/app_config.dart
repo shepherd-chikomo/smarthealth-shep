@@ -61,6 +61,20 @@ abstract final class AppConfig {
     return host == 'dev.smarthealth.co.zw';
   }
 
+  /// Public web base for shareable facility profile links (no trailing slash).
+  static String get publicWebBaseUrl {
+    const fromEnv = String.fromEnvironment('PUBLIC_WEB_BASE_URL');
+    if (fromEnv.isNotEmpty) return fromEnv.replaceAll(RegExp(r'/+$'), '');
+    return 'https://myhealth.smarthealth.co.zw';
+  }
+
+  /// App download landing page appended to facility share messages.
+  static String get appDownloadUrl {
+    const fromEnv = String.fromEnvironment('APP_DOWNLOAD_URL');
+    if (fromEnv.isNotEmpty) return fromEnv;
+    return 'https://smarthealth.co.zw/download';
+  }
+
   /// Default map centre for Harare when device location is unavailable.
   static const double defaultLatitude = -17.8252;
   static const double defaultLongitude = 31.0335;

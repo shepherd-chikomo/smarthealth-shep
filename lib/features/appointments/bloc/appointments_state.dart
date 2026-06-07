@@ -15,20 +15,19 @@ class AppointmentsState extends Equatable {
   final List<AppointmentModel> appointments;
   final String? errorMessage;
 
-  List<AppointmentModel> get upcoming => appointments
-      .where(
-        (a) =>
-            a.isUpcoming ||
-            a.isActive ||
-            a.status == AppointmentOperationalStatus.rescheduled,
-      )
-      .toList()
-    ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-  List<AppointmentModel> get past => appointments
-      .where((a) => a.isTerminal)
-      .toList()
-    ..sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
+  List<AppointmentModel> get upcoming {
+    final now = DateTime.now();
+    return appointments
+        .where(
+          (a) =>
+              !a.isTerminal &&
+              (a.isActive ||
+                  a.scheduledAt.isAfter(now) ||
+                  a.status == AppointmentOperationalStatus.rescheduled),
+        )
+        .toList()
+      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+  }
 
   AppointmentsState copyWith({
     AppointmentsStatus? status,

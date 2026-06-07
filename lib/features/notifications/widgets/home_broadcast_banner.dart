@@ -52,38 +52,38 @@ class _HomeBroadcastBannerState extends ConsumerState<HomeBroadcastBanner> {
       color: Colors.black54,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Material(
             borderRadius: BorderRadius.circular(16),
             color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     banner.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     banner.body,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.4,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   FilledButton(
                     onPressed: _dismiss,
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.primary,
+                      backgroundColor: HomeDashboardColors.of(context).primary,
                     ),
                     child: const Text('Close'),
                   ),

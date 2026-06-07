@@ -1,7 +1,13 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { paginationMetaSchema, paginationQuerySchema } from '../schemas/common.js';
+import {
+  paginationMetaSchema,
+  paginationQuerySchema,
+  profileConditionPublicSchema,
+  profileConditionsGroupedSchema,
+} from '../schemas/common.js';
 import * as catalogService from '../services/catalog.service.js';
+import * as profileConditions from '../services/profile-conditions.service.js';
 
 const facilityTypeCatalogItemSchema = z.object({
   facilityType: z.string(),
@@ -22,6 +28,11 @@ const catalogFilterItemSchema = z.object({
   id: z.string(),
   label: z.string(),
   count: z.number(),
+});
+
+const medicalAidSchemeSchema = z.object({
+  schemeKey: z.string(),
+  name: z.string(),
 });
 
 export const catalogRoutes: FastifyPluginAsyncZod = async (app) => {
@@ -95,5 +106,54 @@ export const catalogRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async () => catalogService.listAgeGroupCatalog(),
+  );
+
+  app.get(
+    '/catalog/profile-conditions',
+    {
+      schema: {
+        tags: ['Catalog'],
+        summary: 'Medical profile condition picker (common and non-common groups)',
+        response: { 200: profileConditionsGroupedSchema },
+      },
+    },
+    async () => profileConditions.listProfileConditions(),
+  );
+
+  app.get(
+    '/catalog/profile-conditions/suggest',
+    {
+      schema: {
+        tags: ['Catalog'],
+        summary: 'Autocomplete suggestions for profile condition entry',
+        querystring: z.object({
+          q: z.string().default(''),
+          limit: z.coerce.number().int().min(1).max(20).default(8),
+        }),
+        response: {
+          200: z.object({
+            suggestions: z.array(profileConditionPublicSchema),
+          }),
+        },
+      },
+    },
+    async (request) =>
+      profileConditions.suggestProfileConditions(request.query.q, request.query.limit),
+  );
+
+  app.get(
+    '/catalog/medical-aids',
+    {
+      schema: {
+        tags: ['Catalog'],
+        summary: 'Platform medical aid schemes for patient profiles',
+        response: {
+          200: z.object({
+            schemes: z.array(medicalAidSchemeSchema),
+          }),
+        },
+      },
+    },
+    async () => catalogService.listMedicalAidCatalog(),
   );
 };

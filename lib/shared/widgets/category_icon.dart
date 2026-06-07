@@ -9,11 +9,11 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 
 /// Renders a home category icon from bundled raster or vector assets.
 class CategoryIcon extends StatelessWidget {
-  const CategoryIcon({
+  CategoryIcon({
     super.key,
     required this.assetPath,
     this.size = 48,
-    this.color = HomeDashboardColors.primary,
+    this.color,
     this.applyTint = true,
     this.fit = BoxFit.contain,
     this.removeLightMatte = false,
@@ -21,7 +21,7 @@ class CategoryIcon extends StatelessWidget {
 
   final String assetPath;
   final double size;
-  final Color color;
+  final Color? color;
   final bool applyTint;
   final BoxFit fit;
 
@@ -37,6 +37,8 @@ class CategoryIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tintColor = color ?? HomeDashboardColors.of(context).primary;
+
     if (_isRaster && removeLightMatte) {
       return _KnockoutMatteImage(
         assetPath: assetPath,
@@ -62,7 +64,7 @@ class CategoryIcon extends StatelessWidget {
       height: size,
       fit: fit,
       colorFilter: applyTint
-          ? ColorFilter.mode(color, BlendMode.srcIn)
+          ? ColorFilter.mode(tintColor, BlendMode.srcIn)
           : null,
     );
   }

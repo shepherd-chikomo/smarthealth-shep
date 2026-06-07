@@ -21,7 +21,7 @@ class TimeSlotsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(24),
           child: CircularProgressIndicator(),
@@ -30,11 +30,11 @@ class TimeSlotsGrid extends StatelessWidget {
     }
 
     if (slots.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Text(
           'Select a date to view available times',
-          style: TextStyle(color: HomeDashboardColors.textSecondary),
+          style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
         ),
       );
     }
@@ -61,18 +61,18 @@ class TimeSlotsGrid extends StatelessWidget {
               labelStyle: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: !enabled
-                    ? HomeDashboardColors.textSecondary.withValues(alpha: 0.5)
+                    ? HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.5)
                     : selected
                         ? Colors.white
-                        : HomeDashboardColors.textPrimary,
+                        : HomeDashboardColors.of(context).textPrimary,
               ),
-              selectedColor: HomeDashboardColors.primary,
+              selectedColor: HomeDashboardColors.of(context).primary,
               backgroundColor: enabled
-                  ? HomeDashboardColors.surface
-                  : HomeDashboardColors.skeleton.withValues(alpha: 0.5),
+                  ? HomeDashboardColors.of(context).surface
+                  : HomeDashboardColors.of(context).skeleton.withValues(alpha: 0.5),
               side: BorderSide(
                 color: selected
-                    ? HomeDashboardColors.primary
+                    ? HomeDashboardColors.of(context).primary
                     : const Color(0xFFE5E8EE),
               ),
               shape: RoundedRectangleBorder(

@@ -18,6 +18,17 @@ void goToMainTab(BuildContext context, int index) {
   context.go(mainTabRoutes[index]);
 }
 
+/// Resolves the bottom-nav highlight from the active route (handles nested tab routes).
+int mainTabIndexForLocation(String location) {
+  if (location.startsWith('/profile')) return 4;
+  if (location.startsWith('/bookings') || location.startsWith('/appointments')) {
+    return 3;
+  }
+  if (location.startsWith('/emergency')) return 2;
+  if (location.startsWith('/search')) return 1;
+  return 0;
+}
+
 /// Bottom navigation bar shared by [AppShell] and overlay routes (e.g. facility detail).
 class AppBottomNavigationBar extends StatelessWidget {
   const AppBottomNavigationBar({
@@ -114,7 +125,7 @@ class _BottomNavBar extends StatelessWidget {
                 children: List.generate(items.length, (index) {
                   final item = items[index];
                   if (item.isEmergency) {
-                    return const Expanded(child: SizedBox());
+                    return Expanded(child: SizedBox());
                   }
                   final selected = selectedIndex == index;
                   return Expanded(
@@ -127,10 +138,10 @@ class _BottomNavBar extends StatelessWidget {
                             item.outlinedIcon,
                             size: 24,
                             color: selected
-                                ? HomeDashboardColors.primary
-                                : HomeDashboardColors.textSecondary,
+                                ? HomeDashboardColors.of(context).primary
+                                : HomeDashboardColors.of(context).textSecondary,
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             item.label,
                             style: TextStyle(
@@ -138,8 +149,8 @@ class _BottomNavBar extends StatelessWidget {
                               fontWeight:
                                   selected ? FontWeight.w600 : FontWeight.w500,
                               color: selected
-                                  ? HomeDashboardColors.primary
-                                  : HomeDashboardColors.textSecondary,
+                                  ? HomeDashboardColors.of(context).primary
+                                  : HomeDashboardColors.of(context).textSecondary,
                             ),
                           ),
                         ],
@@ -181,7 +192,7 @@ class _EmergencyNavButton extends StatelessWidget {
       children: [
         Material(
           elevation: 4,
-          color: HomeDashboardColors.emergency,
+          color: HomeDashboardColors.of(context).emergency,
           shape: const CircleBorder(),
           child: InkWell(
             onTap: onTap,
@@ -197,15 +208,15 @@ class _EmergencyNavButton extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             color: selected
-                ? HomeDashboardColors.emergency
-                : HomeDashboardColors.textSecondary,
+                ? HomeDashboardColors.of(context).emergency
+                : HomeDashboardColors.of(context).textSecondary,
           ),
         ),
       ],

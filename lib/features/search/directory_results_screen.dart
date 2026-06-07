@@ -5,6 +5,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/search/data/search_sort_engine.dart';
 import 'package:smarthealth_shep/features/search/models/search_criteria.dart';
 import 'package:smarthealth_shep/features/search/models/search_sort_option.dart';
+import 'package:smarthealth_shep/features/search/widgets/search_filter_chip.dart';
 import 'package:smarthealth_shep/features/search/widgets/search_operational_empty_state.dart';
 import 'package:smarthealth_shep/features/search/widgets/search_sort_bar.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
@@ -52,10 +53,10 @@ class _DirectoryResultsScreenState extends State<DirectoryResultsScreen> {
     );
 
     return AppShellScaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.searchResultsTitle),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
         leading: Semantics(
           button: true,
           label: 'Back',
@@ -88,46 +89,72 @@ class _DirectoryResultsScreenState extends State<DirectoryResultsScreen> {
         children: [
           if (widget.criteria.isOffline)
             Container(
-              color: HomeDashboardColors.warning.withValues(alpha: 0.15),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: HomeDashboardColors.of(context).warning.withValues(alpha: 0.15),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 l10n.searchOfflineHint,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ),
             ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
               l10n.searchResultsCount(_totalResults),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
           ),
+          if (widget.criteria.medicalAidSchemes.isNotEmpty ||
+              widget.criteria.acceptsMyMedicalAid) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (widget.criteria.acceptsMyMedicalAid)
+                    SearchFilterChip(
+                      label: 'Accepts my medical aid',
+                      selected: true,
+                      onTap: () {},
+                    ),
+                  ...widget.criteria.medicalAidSchemes.map(
+                    (schemeKey) => SearchFilterChip(
+                      label: schemeKey,
+                      selected: true,
+                      onTap: () {},
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           if (_totalResults > 0) ...[
             SearchSortBar(
               selected: _sortBy,
               onChanged: (sort) => setState(() => _sortBy = sort),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
           ],
           Expanded(
             child: _totalResults == 0
                 ? operationalEmpty ??
                     Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: EdgeInsets.all(24),
                         child: Text(
                           l10n.searchNoResults,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: HomeDashboardColors.textSecondary,
+                          style: TextStyle(
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ),
@@ -173,7 +200,7 @@ class _DirectoryResultsScreenState extends State<DirectoryResultsScreen> {
 }
 
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.title});
+  _SectionLabel({required this.title});
 
   final String title;
 
@@ -181,10 +208,10 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: HomeDashboardColors.textPrimary,
+        color: HomeDashboardColors.of(context).textPrimary,
       ),
     );
   }
@@ -202,6 +229,9 @@ extension on SearchCriteria {
       conditions: conditions,
       ageGroups: ageGroups,
       operational: operational,
+      medicalAidSchemes: medicalAidSchemes,
+      acceptsMyMedicalAid: acceptsMyMedicalAid,
+      userMedicalAidSchemeKey: userMedicalAidSchemeKey,
       providers: List.from(sortedProviders),
       facilities: List.from(sortedFacilities),
       isOffline: isOffline,

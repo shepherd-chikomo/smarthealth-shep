@@ -80,7 +80,7 @@ class VerificationBadge extends StatelessWidget {
 
 /// Compact source label matching provider card header styling.
 class _SourceBadge extends StatelessWidget {
-  const _SourceBadge({required this.source, this.label});
+  _SourceBadge({required this.source, this.label});
 
   final String source;
   final String? label;
@@ -92,9 +92,9 @@ class _SourceBadge extends StatelessWidget {
     return Semantics(
       label: displayLabel,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.12),
+          color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -104,18 +104,18 @@ class _SourceBadge extends StatelessWidget {
               AppAssets.verifiedBadge,
               width: 14,
               height: 14,
-              colorFilter: const ColorFilter.mode(
-                HomeDashboardColors.secondary,
+              colorFilter: ColorFilter.mode(
+                HomeDashboardColors.of(context).secondary,
                 BlendMode.srcIn,
               ),
             ),
-            const SizedBox(width: 2),
+            SizedBox(width: 2),
             Text(
               displayLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.secondary,
+                color: HomeDashboardColors.of(context).secondary,
               ),
             ),
           ],

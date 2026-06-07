@@ -100,27 +100,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 Text(
                   'Sign in to MyHealth',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: HomeDashboardColors.textPrimary,
+                        color: HomeDashboardColors.of(context).textPrimary,
                       ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Choose email or phone. We will send a one-time verification code.',
-                  style: TextStyle(color: HomeDashboardColors.textSecondary),
+                  style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
                 ),
                 const SizedBox(height: 24),
                 SegmentedButton<OtpChannel>(
@@ -186,17 +186,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onFieldSubmitted: (_) => _sendOtp(),
                   ),
                 if (_error != null) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     _error!,
-                    style: const TextStyle(color: HomeDashboardColors.emergency),
+                    style: TextStyle(color: HomeDashboardColors.of(context).emergency),
                   ),
                 ],
-                const Spacer(),
+                Spacer(),
                 FilledButton(
                   onPressed: _loading ? null : _sendOtp,
                   style: FilledButton.styleFrom(
-                    backgroundColor: HomeDashboardColors.primary,
+                    backgroundColor: HomeDashboardColors.of(context).primary,
                     minimumSize: const Size.fromHeight(48),
                   ),
                   child: _loading

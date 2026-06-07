@@ -11,7 +11,8 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = navigationShell.currentIndex;
+    final location = GoRouterState.of(context).uri.path;
+    final selected = mainTabIndexForLocation(location);
 
     return Column(
       children: [
@@ -21,7 +22,7 @@ class AppShell extends StatelessWidget {
         ),
         AppBottomNavigationBar(
           selectedIndex: selected,
-          onSelected: navigationShell.goBranch,
+          onSelected: (index) => goToMainTab(context, index),
         ),
       ],
     );

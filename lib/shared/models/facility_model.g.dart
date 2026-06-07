@@ -30,6 +30,12 @@ _FacilityModel _$FacilityModelFromJson(Map<String, dynamic> json) =>
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
       isVerified: json['isVerified'] as bool? ?? false,
       logoPath: json['logoPath'] as String?,
+      acceptedMedicalAidSchemeKeys:
+          (json['acceptedMedicalAidSchemeKeys'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      acceptsYourMedicalAid: json['acceptsYourMedicalAid'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$FacilityModelToJson(_FacilityModel instance) =>
@@ -52,4 +58,6 @@ Map<String, dynamic> _$FacilityModelToJson(_FacilityModel instance) =>
       'distanceKm': instance.distanceKm,
       'isVerified': instance.isVerified,
       'logoPath': instance.logoPath,
+      'acceptedMedicalAidSchemeKeys': instance.acceptedMedicalAidSchemeKeys,
+      'acceptsYourMedicalAid': instance.acceptsYourMedicalAid,
     };

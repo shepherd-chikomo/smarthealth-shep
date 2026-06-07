@@ -56,33 +56,33 @@ class AppointmentSummaryCard extends StatelessWidget {
     final dateLabel = DateFormat('EEE, d MMM yyyy').format(date);
 
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E8EE)),
+          border: Border.all(color: Color(0xFFE5E8EE)),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (referenceNumber != null) ...[
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Symbols.confirmation_number,
                     size: 18,
-                    color: HomeDashboardColors.secondary,
+                    color: HomeDashboardColors.of(context).secondary,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     referenceNumber!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: HomeDashboardColors.secondary,
+                      color: HomeDashboardColors.of(context).secondary,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -122,7 +122,7 @@ class AppointmentSummaryCard extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({
+  _Row({
     required this.icon,
     required this.label,
     this.sublabel,
@@ -137,27 +137,27 @@ class _Row extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: HomeDashboardColors.primary),
-        const SizedBox(width: 12),
+        Icon(icon, size: 20, color: HomeDashboardColors.of(context).primary),
+        SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: HomeDashboardColors.textPrimary,
+                  color: HomeDashboardColors.of(context).textPrimary,
                 ),
               ),
               if (sublabel != null) ...[
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(
                   sublabel!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: HomeDashboardColors.textSecondary,
+                    color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
               ],

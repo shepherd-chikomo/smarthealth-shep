@@ -1,6 +1,7 @@
 import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/shared/models/category_model.dart';
 import 'package:smarthealth_shep/shared/models/emergency_service_model.dart';
+import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
@@ -237,16 +238,38 @@ abstract final class MockData {
     ),
   ];
 
-  static const familyMembers = <FamilyMemberModel>[
+  static final familyMembers = <FamilyMemberModel>[
     FamilyMemberModel(
       id: 'self',
-      name: 'Tendai Moyo',
+      name: 'John Doe',
       relationship: 'Self',
-      dateOfBirth: '1988-02-14',
+      dateOfBirth: '1984-03-15',
       gender: FamilyGender.male,
-      medicalConditions: ['hypertension'],
+      medicalConditions: ['diabetes_type_2', 'hypertension', 'asthma'],
       allergies: 'Penicillin',
       isPrimaryAccountHolder: true,
+      metadata: const EmergencyMedicalMetadata(
+        bloodGroup: 'O+',
+        medications: [
+          MedicationEntry(name: 'Metformin 500mg', frequency: 'BD'),
+          MedicationEntry(name: 'Amlodipine 5mg', frequency: 'OD'),
+        ],
+        emergencyContact: EmergencyContactInfo(
+          name: 'Mary Doe',
+          relationship: 'Wife',
+          phone: '+263 77 123 4567',
+        ),
+        medicalAid: MedicalAidInfo(
+          provider: 'CIMAS',
+          memberNumber: '12345678',
+        ),
+        primaryProvider: PrimaryProviderInfo(
+          facilityName: 'ABC Medical Centre',
+          doctorName: 'Dr. T. Ncube',
+          phone: '+263 24 212 3456',
+        ),
+      ),
+      updatedAt: DateTime.utc(2026, 6, 6, 8, 30),
     ),
     FamilyMemberModel(
       id: 'f1',

@@ -35,7 +35,7 @@ class ProviderCard extends StatelessWidget {
       button: onTap != null,
       label: _semanticLabel(l10n),
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         elevation: 0,
         child: InkWell(
@@ -51,7 +51,7 @@ class ProviderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Thumbnail(imageSource: imageSource),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,10 +62,10 @@ class ProviderCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               provider.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                                 height: 1.3,
                               ),
                             ),
@@ -78,66 +78,66 @@ class ProviderCard extends StatelessWidget {
                             ),
                           ],
                           if (provider.rating != null) ...[
-                            const SizedBox(width: 6),
+                            SizedBox(width: 6),
                             _RatingBadge(rating: provider.rating!),
                           ],
                         ],
                       ),
                       if (provider.specialty != null) ...[
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
                         Text(
                           provider.specialty!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: HomeDashboardColors.primary,
+                            color: HomeDashboardColors.of(context).primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                       if (provider.facilityName != null) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           provider.facilityName!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ],
                       if (hasOperationalInfo) ...[
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         AvailabilityIndicator.fromProvider(provider),
                         if (_hasOperationalBadges(provider)) ...[
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           _OperationalBadges(provider: provider),
                         ],
                       ],
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Row(
                         children: [
                           if (distance != null) ...[
-                            const Icon(
+                            Icon(
                               Icons.near_me_outlined,
                               size: 14,
-                              color: HomeDashboardColors.textSecondary,
+                              color: HomeDashboardColors.of(context).textSecondary,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               distance,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: HomeDashboardColors.textSecondary,
+                                color: HomeDashboardColors.of(context).textSecondary,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12),
                           ],
                           if (provider.hours != null && !hasOperationalInfo)
                             Expanded(
                               child: Text(
                                 provider.hours!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: HomeDashboardColors.textSecondary,
+                                  color: HomeDashboardColors.of(context).textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -207,33 +207,33 @@ class _OperationalBadges extends StatelessWidget {
 }
 
 class _RatingBadge extends StatelessWidget {
-  const _RatingBadge({required this.rating});
+  _RatingBadge({required this.rating});
 
   final double rating;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: HomeDashboardColors.primary.withValues(alpha: 0.12),
+        color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.star_rounded,
             size: 14,
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
           ),
-          const SizedBox(width: 2),
+          SizedBox(width: 2),
           Text(
             rating.toStringAsFixed(1),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: HomeDashboardColors.primary,
+              color: HomeDashboardColors.of(context).primary,
             ),
           ),
         ],
@@ -263,10 +263,10 @@ class _Thumbnail extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: HomeDashboardColors.skeleton,
+          color: HomeDashboardColors.of(context).skeleton,
           borderRadius: BorderRadius.circular(size / 2),
         ),
-        child: const Center(
+        child: Center(
           child: SizedBox(
             width: 20,
             height: 20,
@@ -278,12 +278,12 @@ class _Thumbnail extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: HomeDashboardColors.background,
+          color: HomeDashboardColors.of(context).background,
           borderRadius: BorderRadius.circular(size / 2),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.local_hospital_outlined,
-          color: HomeDashboardColors.primary,
+          color: HomeDashboardColors.of(context).primary,
           size: 32,
         ),
       ),

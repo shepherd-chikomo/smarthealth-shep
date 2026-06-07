@@ -5,14 +5,14 @@ import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
 
 /// Compact provider header shown at the top of the booking date screen.
-class ProviderMiniCard extends StatelessWidget {  const ProviderMiniCard({super.key, required this.provider});
+class ProviderMiniCard extends StatelessWidget {  ProviderMiniCard({super.key, required this.provider});
 
   final ProviderModel provider;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
@@ -32,38 +32,38 @@ class ProviderMiniCard extends StatelessWidget {  const ProviderMiniCard({super.
                 fit: BoxFit.cover,
                 error: _PlaceholderAvatar(name: provider.name),
               ),
-            ),            const SizedBox(width: 12),
+            ),            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     provider.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                   if (provider.specialty != null) ...[
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       provider.specialty!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ],
                   if (provider.facilityName != null) ...[
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2),
                     Text(
                       provider.facilityName!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ],
@@ -71,10 +71,10 @@ class ProviderMiniCard extends StatelessWidget {  const ProviderMiniCard({super.
               ),
             ),
             if (provider.isVerified)
-              const Icon(
+              Icon(
                 Icons.verified,
                 size: 20,
-                color: HomeDashboardColors.primary,
+                color: HomeDashboardColors.of(context).primary,
               ),          ],
         ),
       ),
@@ -83,7 +83,7 @@ class ProviderMiniCard extends StatelessWidget {  const ProviderMiniCard({super.
 }
 
 class _PlaceholderAvatar extends StatelessWidget {
-  const _PlaceholderAvatar({required this.name});
+  _PlaceholderAvatar({required this.name});
 
   final String name;
 
@@ -91,14 +91,14 @@ class _PlaceholderAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
     return ColoredBox(
-      color: HomeDashboardColors.primary.withValues(alpha: 0.12),
+      color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.12),
       child: Center(
         child: Text(
           initial,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
           ),
         ),
       ),

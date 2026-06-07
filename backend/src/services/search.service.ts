@@ -277,7 +277,15 @@ export interface FacilitySearchOptions {
   lat?: number;
   lon?: number;
   radiusKm?: number;
+  medicalAidSchemeKeys?: string[];
+  userMedicalAidSchemeKey?: string;
 }
+
+const ACCEPTED_MEDICAL_AID_KEYS_SQL = `(
+  SELECT COALESCE(array_agg(elem->>'schemeKey'), ARRAY[]::text[])
+  FROM jsonb_array_elements(COALESCE(f.settings->'profile'->'medicalAids', '[]'::jsonb)) elem
+  WHERE elem->>'schemeKey' IS NOT NULL AND elem->>'schemeKey' <> ''
+)`;
 
 export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
   const q = normalizeSearchQuery(options.q);
@@ -326,6 +334,15 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
   }
   if (options.hasQueue) {
     conditions.push('public.facility_has_active_queue(f.id) = true');
+  }
+  if (options.medicalAidSchemeKeys?.length) {
+    conditions.push(`
+      EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(COALESCE(f.settings->'profile'->'medicalAids', '[]'::jsonb)) elem
+        WHERE elem->>'schemeKey' = ANY($${idx++}::text[])
+      )`);
+    params.push(options.medicalAidSchemeKeys);
   }
 
   const hasGeo = options.lat != null && options.lon != null;
@@ -394,6 +411,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     has_queue: boolean;
     rank_score: number;
     provider_count: number;
+    accepted_medical_aid_scheme_keys: string[];
   }>(
     `SELECT f.id, f.name, f.slug, f.facility_type, f.facility_types, f.description, f.address_line1,
             f.city, f.province, f.phone, f.email, f.website,
@@ -402,7 +420,8 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
             public.facility_has_active_queue(f.id) AS has_queue,
             (${distanceExpr})::float AS distance_km,
             (SELECT COUNT(*)::int FROM public.providers p WHERE p.facility_id = f.id AND p.is_active) AS provider_count,
-            (${rankExpr})::float AS rank_score
+            (${rankExpr})::float AS rank_score,
+            ${ACCEPTED_MEDICAL_AID_KEYS_SQL} AS accepted_medical_aid_scheme_keys
      FROM public.facilities f
      WHERE ${where}
      ORDER BY rank_score DESC, f.name ASC
@@ -411,29 +430,39 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
   );
 
   return {
-    facilities: result.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      facilityType: row.facility_type,
-      facilityTypes: effectiveFacilityTypes(row),
-      description: row.description,
-      addressLine1: row.address_line1,
-      city: row.city,
-      province: row.province,
-      phone: row.phone,
-      email: row.email,
-      website: row.website,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      ...(row.distance_km != null ? { distanceKm: Number(row.distance_km) } : {}),
-      isVerified: row.is_verified,
-      logoPath: row.logo_path,
-      isOpenNow: row.is_open_now,
-      hasQueue: row.has_queue,
-      providerCount: row.provider_count,
-      relevanceScore: Number(row.rank_score),
-    })),
+    facilities: result.rows.map((row) => {
+      const acceptedMedicalAidSchemeKeys = row.accepted_medical_aid_scheme_keys ?? [];
+      const userScheme = options.userMedicalAidSchemeKey?.trim();
+      return {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        facilityType: row.facility_type,
+        facilityTypes: effectiveFacilityTypes(row),
+        description: row.description,
+        addressLine1: row.address_line1,
+        city: row.city,
+        province: row.province,
+        phone: row.phone,
+        email: row.email,
+        website: row.website,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        ...(row.distance_km != null ? { distanceKm: Number(row.distance_km) } : {}),
+        isVerified: row.is_verified,
+        logoPath: row.logo_path,
+        isOpenNow: row.is_open_now,
+        hasQueue: row.has_queue,
+        providerCount: row.provider_count,
+        relevanceScore: Number(row.rank_score),
+        acceptedMedicalAidSchemeKeys,
+        ...(userScheme
+          ? {
+              acceptsYourMedicalAid: acceptedMedicalAidSchemeKeys.includes(userScheme),
+            }
+          : {}),
+      };
+    }),
     pagination: buildPaginationMeta(options.page, options.limit, total),
   };
 }

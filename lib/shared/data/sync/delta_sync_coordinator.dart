@@ -1,8 +1,11 @@
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
+import 'package:smarthealth_shep/core/directory/directory_search_service.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/storage/app_database.dart';
+import 'package:smarthealth_shep/features/appointments/data/local/appointment_dao.dart';
+import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
 import 'package:smarthealth_shep/shared/data/local/emergency_cache.dart';
 import 'package:smarthealth_shep/shared/data/local/facility_cache.dart';
 import 'package:smarthealth_shep/shared/data/local/operating_hours_cache.dart';
@@ -24,10 +27,12 @@ class DeltaSyncCoordinator {
     EmergencyCache? emergencyCache,
     FacilityCache? facilityCache,
     OperatingHoursCache? operatingHoursCache,
+    AppointmentDao? appointmentDao,
     AppDatabase? database,
   })  : _dio = dio,
         _api = apiService ?? ApiService(dio),
         _providerDao = providerDao ?? ProviderDao(),
+        _appointmentDao = appointmentDao ?? AppointmentDao(),
         _emergencyCache = emergencyCache ?? EmergencyCache(),
         _facilityCache = facilityCache ?? FacilityCache(),
         _operatingHoursCache = operatingHoursCache ?? OperatingHoursCache(),
@@ -36,6 +41,7 @@ class DeltaSyncCoordinator {
   final Dio _dio;
   final ApiService _api;
   final ProviderDao _providerDao;
+  final AppointmentDao _appointmentDao;
   final EmergencyCache _emergencyCache;
   final FacilityCache _facilityCache;
   final OperatingHoursCache _operatingHoursCache;
@@ -50,6 +56,7 @@ class DeltaSyncCoordinator {
     await _pullFacilities();
     await _pullOperatingHours();
     await _pullAppointments();
+    await DirectorySearchService().rebuildIndex();
   }
 
   Future<void> _pullEmergency() async {
@@ -172,14 +179,29 @@ class DeltaSyncCoordinator {
 
   Future<void> _pullAppointments() async {
     final since = await _readLastSync(SyncEntityType.appointment);
+    final now = DateTime.now().toUtc();
     final response = await _dio.get<Map<String, dynamic>>(
       '/appointments',
       queryParameters: {
+        'from': now.toIso8601String(),
+        'page': 1,
+        'limit': 100,
         if (since != null) 'since': since.toUtc().toIso8601String(),
       },
     );
 
-    final syncedAt = _parseSyncedAt(response.data?['syncedAt']);
+    final raw = response.data?['appointments'] as List<dynamic>? ?? const [];
+    for (final item in raw) {
+      if (item is! Map<String, dynamic>) continue;
+      final appointment = AppointmentModel.fromApiJson(item);
+      if (!appointment.isTerminal) {
+        await _appointmentDao.upsertFromApi(appointment);
+      }
+    }
+    await _appointmentDao.purgeSeedRows();
+    await _appointmentDao.deleteTerminal();
+
+    final syncedAt = _parseSyncedAt(response.data?['syncedAt'] ?? now.toIso8601String());
     await _writeLastSync(SyncEntityType.appointment, syncedAt);
     developer.log('Appointment delta pull complete', name: _logName);
   }

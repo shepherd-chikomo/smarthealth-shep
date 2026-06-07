@@ -21,6 +21,26 @@
   "homeGoodMorning": "Good morning",
   "homeGoodAfternoon": "Good afternoon",
   "homeGoodEvening": "Good evening",
+  "homeProfileComplete": "Profile Complete",
+  "homeProfileCompleteHint": "Complete your health profile",
+  "homeMedicalProfile": "Medical Profile",
+  "homeBloodType": "Blood Type",
+  "homeAge": "Age",
+  "homeGender": "Gender",
+  "homeNoKnownAllergies": "No Known Allergies",
+  "homeAllergyAlert": "{allergen} Allergy",
+  "@homeAllergyAlert": {
+    "placeholders": {
+      "allergen": {
+        "type": "String"
+      }
+    }
+  },
+  "homeViewMedicalProfile": "Tap to view full profile →",
+  "profileCompletionTitle": "Profile Completion",
+  "profileCompletionSubtitle": "Complete your medical profile to help providers deliver safer care.",
+  "profileCompletionCta": "Complete profile",
+  "profileCompletionViewProfile": "View medical profile",
   "homeNearbyProviders": "Nearby providers",
   "homeSeeAll": "See all",
   "homeNearbyFacilities": "Nearby Facilities",

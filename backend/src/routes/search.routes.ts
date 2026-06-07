@@ -39,6 +39,8 @@ const facilitySearchResultSchema = z.object({
   hasQueue: z.boolean(),
   providerCount: z.number(),
   relevanceScore: z.number(),
+  acceptedMedicalAidSchemeKeys: z.array(z.string()).default([]),
+  acceptsYourMedicalAid: z.boolean().optional(),
 });
 
 const specialtySearchResultSchema = z.object({
@@ -176,6 +178,8 @@ export const searchRoutes: FastifyPluginAsyncZod = async (app) => {
         lat: q.lat,
         lon: q.lon,
         radiusKm: q.radiusKm,
+        medicalAidSchemeKeys: parseCsv(q.medicalAidSchemeKeys),
+        userMedicalAidSchemeKey: q.userMedicalAidSchemeKey,
       });
     },
   );

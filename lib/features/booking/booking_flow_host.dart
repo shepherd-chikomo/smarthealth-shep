@@ -31,7 +31,7 @@ class BookingFlowHost extends StatelessWidget {
         facilityId: facilityId,
         serviceId: serviceId,
       ),
-      child: const BookingDateScreen(),
+      child: BookingDateScreen(),
     );
   }
 }

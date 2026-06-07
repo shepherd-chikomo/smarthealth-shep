@@ -61,6 +61,15 @@ final class RecentSearchesLoaded extends SearchEvent {
   List<Object?> get props => [searches];
 }
 
+final class AcceptsMyMedicalAidToggled extends SearchEvent {
+  const AcceptsMyMedicalAidToggled(this.enabled);
+
+  final bool enabled;
+
+  @override
+  List<Object?> get props => [enabled];
+}
+
 final class RecentSearchRemoved extends SearchEvent {
   const RecentSearchRemoved(this.query);
 

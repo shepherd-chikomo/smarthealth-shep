@@ -66,7 +66,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.appointmentsDetailTitle)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -79,10 +79,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.appointmentsDetailTitle),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -217,7 +217,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       actions.add(
         Text(
           l10n.appointmentsNoActions,
-          style: const TextStyle(color: HomeDashboardColors.textSecondary),
+          style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
         ),
       );
     }
@@ -319,7 +319,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 }
 
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.label);
+  _SectionLabel(this.label);
 
   final String label;
 
@@ -327,17 +327,17 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: HomeDashboardColors.textPrimary,
+        color: HomeDashboardColors.of(context).textPrimary,
       ),
     );
   }
 }
 
 class _QueuePanel extends StatelessWidget {
-  const _QueuePanel({required this.appointment});
+  _QueuePanel({required this.appointment});
 
   final AppointmentModel appointment;
 
@@ -345,18 +345,18 @@ class _QueuePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: HomeDashboardColors.secondary.withValues(alpha: 0.08),
+        color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.25),
+          color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
         children: [
-          const Icon(Symbols.groups, color: HomeDashboardColors.secondary),
-          const SizedBox(width: 12),
+          Icon(Symbols.groups, color: HomeDashboardColors.of(context).secondary),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,17 +365,17 @@ class _QueuePanel extends StatelessWidget {
                   appointment.queuePosition != null
                       ? 'Queue position ${appointment.queuePosition}'
                       : 'In queue',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: HomeDashboardColors.textPrimary,
+                    color: HomeDashboardColors.of(context).textPrimary,
                   ),
                 ),
                 if (appointment.estimatedWaitMinutes != null)
                   Text(
                     'Estimated wait ~${appointment.estimatedWaitMinutes} min',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
               ],
@@ -388,7 +388,7 @@ class _QueuePanel extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({
+  _ActionTile({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -403,12 +403,12 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color =
-        destructive ? HomeDashboardColors.emergency : HomeDashboardColors.primary;
+        destructive ? HomeDashboardColors.of(context).emergency : HomeDashboardColors.of(context).primary;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8),
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -418,12 +418,12 @@ class _ActionTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
             child: Row(
               children: [
                 Icon(icon, color: color, size: 20),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     label,
@@ -431,8 +431,8 @@ class _ActionTile extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: destructive
-                          ? HomeDashboardColors.emergency
-                          : HomeDashboardColors.textPrimary,
+                          ? HomeDashboardColors.of(context).emergency
+                          : HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ),

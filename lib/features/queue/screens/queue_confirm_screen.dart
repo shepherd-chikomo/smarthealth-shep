@@ -19,44 +19,44 @@ class QueueConfirmScreen extends StatelessWidget {
 
         if (provider == null || patient == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Confirm Queue')),
-            body: const Center(child: Text('Missing queue details')),
+            appBar: AppBar(title: Text('Confirm Queue')),
+            body: Center(child: Text('Missing queue details')),
           );
         }
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           appBar: AppBar(
-            backgroundColor: HomeDashboardColors.surface,
-            foregroundColor: HomeDashboardColors.textPrimary,
-            title: const Text('Confirm Queue'),
+            backgroundColor: HomeDashboardColors.of(context).surface,
+            foregroundColor: HomeDashboardColors.of(context).textPrimary,
+            title: Text('Confirm Queue'),
             elevation: 0,
           ),
           body: Column(
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   children: [
                     Material(
-                      color: HomeDashboardColors.surface,
+                      color: HomeDashboardColors.of(context).surface,
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E8EE)),
+                          border: Border.all(color: Color(0xFFE5E8EE)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Walk-in summary',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
-                                color: HomeDashboardColors.textSecondary,
+                                color: HomeDashboardColors.of(context).textSecondary,
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -78,22 +78,22 @@ class QueueConfirmScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: HomeDashboardColors.primary.withValues(alpha: 0.08),
+                        color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: HomeDashboardColors.primary.withValues(alpha: 0.2),
+                          color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.2),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
                           Icon(
                             Icons.info_outline,
                             size: 18,
-                            color: HomeDashboardColors.primary,
+                            color: HomeDashboardColors.of(context).primary,
                           ),
                           SizedBox(width: 10),
                           Expanded(
@@ -101,7 +101,7 @@ class QueueConfirmScreen extends StatelessWidget {
                               'You will receive a queue number and live updates on your wait time.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: HomeDashboardColors.textSecondary,
+                                color: HomeDashboardColors.of(context).textSecondary,
                               ),
                             ),
                           ),
@@ -112,7 +112,7 @@ class QueueConfirmScreen extends StatelessWidget {
                 ),
               ),
               SafeArea(
-                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                minimum: EdgeInsets.fromLTRB(16, 8, 16, 16),
                 child: SizedBox(
                   width: double.infinity,
                   child: FilledButton(
@@ -120,9 +120,9 @@ class QueueConfirmScreen extends StatelessWidget {
                         ? null
                         : () => context
                             .read<QueueBloc>()
-                            .add(const QueueJoinConfirmed()),
+                            .add(QueueJoinConfirmed()),
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.primary,
+                      backgroundColor: HomeDashboardColors.of(context).primary,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
@@ -162,7 +162,7 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -170,19 +170,19 @@ class _SummaryRow extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: HomeDashboardColors.textSecondary,
+                color: HomeDashboardColors.of(context).textSecondary,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
           ),

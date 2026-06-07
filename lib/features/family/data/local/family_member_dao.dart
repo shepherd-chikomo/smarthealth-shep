@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/storage/app_database.dart';
+import 'package:smarthealth_shep/features/family/data/family_member_ids.dart';
 import 'package:smarthealth_shep/shared/data/mock_data.dart';
+import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -16,7 +18,9 @@ class FamilyMemberDao {
   Future<Database> get _db => _database.database;
 
   Future<List<FamilyMemberModel>> getAll() async {
-    await _ensureSeeded();
+    if (!AppConfig.useMainDatabase) {
+      await _ensureSeeded();
+    }
     final db = await _db;
     final rows = await db.query(
       'family_members',
@@ -65,6 +69,57 @@ class FamilyMemberDao {
   Future<void> delete(String id) async {
     final db = await _db;
     await db.delete('family_members', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> replaceAll(List<FamilyMemberModel> members) async {
+    final db = await _db;
+    await db.delete('family_members');
+    final batch = db.batch();
+    for (final member in members) {
+      batch.insert(
+        'family_members',
+        _modelToRow(member),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> purgeLocalOnlyMembers() async {
+    final db = await _db;
+    final rows = await db.query('family_members');
+    final batch = db.batch();
+    for (final row in rows) {
+      final id = row['id']! as String;
+      if (!isServerFamilyMemberId(id)) {
+        batch.delete('family_members', where: 'id = ?', whereArgs: [id]);
+      }
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> upsertServerMember(
+    FamilyMemberModel member, {
+    String? previousLocalId,
+  }) async {
+    final db = await _db;
+    if (member.isPrimaryAccountHolder) {
+      await _clearPrimaryFlags(db, exceptId: member.id);
+    }
+    if (previousLocalId != null &&
+        previousLocalId != member.id &&
+        !isServerFamilyMemberId(previousLocalId)) {
+      await db.delete(
+        'family_members',
+        where: 'id = ?',
+        whereArgs: [previousLocalId],
+      );
+    }
+    await db.insert(
+      'family_members',
+      _modelToRow(member),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> _ensureSeeded() async {
@@ -122,6 +177,20 @@ class FamilyMemberDao {
       }
     }
 
+    EmergencyMedicalMetadata? metadata;
+    final metadataRaw = row['metadata'] as String?;
+    if (metadataRaw != null && metadataRaw.isNotEmpty) {
+      try {
+        metadata = EmergencyMedicalMetadata.fromJson(
+          jsonDecode(metadataRaw) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        metadata = null;
+      }
+    }
+
+    final updatedRaw = row['updated_at'] as String?;
+
     return FamilyMemberModel(
       id: row['id']! as String,
       name: row['name']! as String,
@@ -131,6 +200,8 @@ class FamilyMemberDao {
       medicalConditions: conditions,
       allergies: row['allergies'] as String?,
       isPrimaryAccountHolder: (row['is_primary'] as int? ?? 0) == 1,
+      metadata: metadata,
+      updatedAt: updatedRaw != null ? DateTime.tryParse(updatedRaw) : null,
     );
   }
 
@@ -144,6 +215,8 @@ class FamilyMemberDao {
       'medical_conditions': jsonEncode(member.medicalConditions),
       'allergies': member.allergies,
       'is_primary': member.isPrimaryAccountHolder ? 1 : 0,
+      'metadata': jsonEncode(member.metadata?.toJson() ?? {}),
+      'updated_at': member.updatedAt?.toUtc().toIso8601String(),
     };
   }
 }

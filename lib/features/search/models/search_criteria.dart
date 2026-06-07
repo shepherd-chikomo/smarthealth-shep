@@ -13,6 +13,9 @@ class SearchCriteria extends Equatable {
     required this.operational,
     required this.providers,
     required this.facilities,
+    this.medicalAidSchemes = const {},
+    this.acceptsMyMedicalAid = false,
+    this.userMedicalAidSchemeKey,
     this.isOffline = false,
     this.sortBy = SearchSortOption.distance,
   });
@@ -22,6 +25,9 @@ class SearchCriteria extends Equatable {
   final Set<String> conditions;
   final Set<String> ageGroups;
   final Set<String> operational;
+  final Set<String> medicalAidSchemes;
+  final bool acceptsMyMedicalAid;
+  final String? userMedicalAidSchemeKey;
   final List<ProviderModel> providers;
   final List<FacilityModel> facilities;
   final bool isOffline;
@@ -34,7 +40,9 @@ class SearchCriteria extends Equatable {
       specialties.isNotEmpty ||
       conditions.isNotEmpty ||
       ageGroups.isNotEmpty ||
-      operational.isNotEmpty;
+      operational.isNotEmpty ||
+      medicalAidSchemes.isNotEmpty ||
+      acceptsMyMedicalAid;
 
   @override
   List<Object?> get props => [
@@ -43,6 +51,9 @@ class SearchCriteria extends Equatable {
         conditions,
         ageGroups,
         operational,
+        medicalAidSchemes,
+        acceptsMyMedicalAid,
+        userMedicalAidSchemeKey,
         providers,
         facilities,
         isOffline,

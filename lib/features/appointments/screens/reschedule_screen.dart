@@ -76,21 +76,21 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
     if (_loading) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.appointmentsReschedule)),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.appointmentsReschedule),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: Column(
         children: [
           TableCalendar(
             firstDay: DateTime.now(),
-            lastDay: DateTime.now().add(const Duration(days: 60)),
+            lastDay: DateTime.now().add(Duration(days: 60)),
             focusedDay: _selectedDay ?? DateTime.now(),
             selectedDayPredicate: (day) =>
                 _selectedDay != null && isSameDay(_selectedDay, day),
@@ -98,13 +98,13 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                 _bookingRepository.isDateAvailable(day, _availableDates),
             onDaySelected: (selected, _) =>
                 setState(() => _selectedDay = selected),
-            calendarStyle: const CalendarStyle(
+            calendarStyle: CalendarStyle(
               selectedDecoration: BoxDecoration(
-                color: HomeDashboardColors.primary,
+                color: HomeDashboardColors.of(context).primary,
                 shape: BoxShape.circle,
               ),
               todayDecoration: BoxDecoration(
-                color: HomeDashboardColors.secondary,
+                color: HomeDashboardColors.of(context).secondary,
                 shape: BoxShape.circle,
               ),
             ),
@@ -118,21 +118,21 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                       _selectedDay!,
                     ),
               builder: (context, snapshot) {
-                final slots = snapshot.data ?? const [];
+                final slots = snapshot.data ?? [];
                 if (slots.isEmpty) {
                   return Center(
                     child: Text(
                       l10n.appointmentsSelectDate,
-                      style: const TextStyle(
-                        color: HomeDashboardColors.textSecondary,
+                      style: TextStyle(
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   );
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: EdgeInsets.all(16),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     mainAxisSpacing: 8,
                     crossAxisSpacing: 8,
@@ -144,8 +144,8 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                     final selected = _selectedTime == slot.time;
                     return Material(
                       color: selected
-                          ? HomeDashboardColors.primary.withValues(alpha: 0.12)
-                          : HomeDashboardColors.surface,
+                          ? HomeDashboardColors.of(context).primary.withValues(alpha: 0.12)
+                          : HomeDashboardColors.of(context).surface,
                       borderRadius: BorderRadius.circular(12),
                       child: InkWell(
                         onTap: slot.isAvailable
@@ -158,8 +158,8 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: selected
-                                  ? HomeDashboardColors.primary
-                                  : const Color(0xFFE5E8EE),
+                                  ? HomeDashboardColors.of(context).primary
+                                  : Color(0xFFE5E8EE),
                             ),
                           ),
                           child: Text(
@@ -167,8 +167,8 @@ class _RescheduleScreenState extends State<RescheduleScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: slot.isAvailable
-                                  ? HomeDashboardColors.textPrimary
-                                  : HomeDashboardColors.textSecondary,
+                                  ? HomeDashboardColors.of(context).textPrimary
+                                  : HomeDashboardColors.of(context).textSecondary,
                             ),
                           ),
                         ),

@@ -1,5 +1,14 @@
+import { formatDateOnly } from '../lib/date-format.js';
 import { query } from '../lib/db.js';
 import { NotFoundError } from '../lib/errors.js';
+import {
+  mergeMetadata,
+  metadataForResponse,
+  metadataForStorage,
+  normalizeFamilyRelationship,
+  normalizeMetadata,
+  sanitizeMetadataInput,
+} from '../lib/family-metadata.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
 import type { RequestContext } from '../lib/request-context.js';
 import { sanitizeUserInput } from '../lib/sanitize.js';
@@ -10,7 +19,7 @@ interface ProfileRow {
   display_name: string | null;
   phone: string | null;
   email: string | null;
-  date_of_birth: string | null;
+  date_of_birth: string | Date | null;
   gender: string | null;
   preferred_language: string;
   timezone: string;
@@ -24,11 +33,12 @@ interface FamilyRow {
   first_name: string;
   last_name: string | null;
   relationship: string;
-  date_of_birth: string | null;
+  date_of_birth: string | Date | null;
   gender: string | null;
   medical_conditions: string[];
   allergies: string | null;
   is_primary_account_holder: boolean;
+  metadata: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -41,7 +51,7 @@ function mapProfile(row: ProfileRow) {
     displayName: row.display_name,
     phone: row.phone,
     email: row.email,
-    dateOfBirth: row.date_of_birth,
+    dateOfBirth: formatDateOnly(row.date_of_birth),
     gender: row.gender,
     preferredLanguage: row.preferred_language,
     timezone: row.timezone,
@@ -57,11 +67,12 @@ function mapFamily(row: FamilyRow) {
     firstName: row.first_name,
     lastName: row.last_name,
     relationship: row.relationship,
-    dateOfBirth: row.date_of_birth,
+    dateOfBirth: formatDateOnly(row.date_of_birth),
     gender: row.gender,
     medicalConditions: row.medical_conditions ?? [],
     allergies: row.allergies,
     isPrimaryAccountHolder: row.is_primary_account_holder,
+    metadata: metadataForResponse(row.metadata),
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
@@ -146,7 +157,7 @@ export async function updatePatientProfile(
 export async function listFamilyMembers(userId: string, context?: RequestContext) {
   const result = await query<FamilyRow>(
     `SELECT id, first_name, last_name, relationship, date_of_birth, gender,
-            medical_conditions, allergies, is_primary_account_holder,
+            medical_conditions, allergies, is_primary_account_holder, metadata,
             created_at, updated_at
      FROM public.family_members
      WHERE account_holder_id = $1
@@ -176,25 +187,43 @@ export async function createFamilyMember(
     gender?: string;
     medicalConditions?: string[];
     allergies?: string;
+    metadata?: Record<string, unknown>;
+    isPrimaryAccountHolder?: boolean;
   },
 ) {
+  const relationship = normalizeFamilyRelationship(data.relationship);
+  const isPrimary = data.isPrimaryAccountHolder === true || relationship === 'self';
+  const metadata = metadataForStorage(data.metadata ?? {});
+
+  if (isPrimary) {
+    await query(
+      `UPDATE public.family_members
+       SET is_primary_account_holder = false
+       WHERE account_holder_id = $1`,
+      [userId],
+    );
+  }
+
   const result = await query<FamilyRow>(
     `INSERT INTO public.family_members (
        account_holder_id, first_name, last_name, relationship,
-       date_of_birth, gender, medical_conditions, allergies
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       date_of_birth, gender, medical_conditions, allergies, metadata,
+       is_primary_account_holder
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10)
      RETURNING id, first_name, last_name, relationship, date_of_birth, gender,
-               medical_conditions, allergies, is_primary_account_holder,
+               medical_conditions, allergies, is_primary_account_holder, metadata,
                created_at, updated_at`,
     [
       userId,
-      data.firstName,
-      data.lastName ?? null,
-      data.relationship,
+      sanitizeUserInput(data.firstName),
+      data.lastName ? sanitizeUserInput(data.lastName) : null,
+      relationship,
       data.dateOfBirth ?? null,
       data.gender ?? null,
       data.medicalConditions ?? [],
-      data.allergies ?? null,
+      data.allergies ? sanitizeUserInput(data.allergies) : null,
+      metadata,
+      isPrimary,
     ],
   );
 
@@ -208,14 +237,41 @@ export async function updateFamilyMember(
 ) {
   await assertFamilyMemberOwnership(userId, memberId);
 
+  let payload = data;
+  if (data.metadata !== undefined && typeof data.metadata === 'object' && data.metadata !== null) {
+    const existingRow = await getFamilyMemberRow(userId, memberId);
+    payload = {
+      ...data,
+      metadata: mergeMetadata(
+        normalizeMetadata(existingRow.metadata),
+        sanitizeMetadataInput(data.metadata),
+      ),
+    };
+  }
+
+  if (payload.isPrimaryAccountHolder === true) {
+    await query(
+      `UPDATE public.family_members
+       SET is_primary_account_holder = false
+       WHERE account_holder_id = $1`,
+      [userId],
+    );
+  }
+
   const mapping: Record<string, unknown> = {
-    first_name: data.firstName,
-    last_name: data.lastName,
-    relationship: data.relationship,
-    date_of_birth: data.dateOfBirth,
-    gender: data.gender,
-    medical_conditions: data.medicalConditions,
-    allergies: data.allergies,
+    first_name: payload.firstName,
+    last_name: payload.lastName,
+    relationship:
+      payload.relationship !== undefined
+        ? normalizeFamilyRelationship(String(payload.relationship))
+        : undefined,
+    date_of_birth: payload.dateOfBirth,
+    gender: payload.gender,
+    medical_conditions: payload.medicalConditions,
+    allergies: payload.allergies,
+    metadata:
+      payload.metadata !== undefined ? metadataForStorage(payload.metadata) : undefined,
+    is_primary_account_holder: payload.isPrimaryAccountHolder,
   };
 
   const fields: string[] = [];
@@ -224,7 +280,11 @@ export async function updateFamilyMember(
 
   for (const [column, value] of Object.entries(mapping)) {
     if (value !== undefined) {
-      fields.push(`${column} = $${idx++}`);
+      if (column === 'metadata') {
+        fields.push(`metadata = $${idx++}::jsonb`);
+      } else {
+        fields.push(`${column} = $${idx++}`);
+      }
       values.push(value);
     }
   }
@@ -238,7 +298,7 @@ export async function updateFamilyMember(
      SET ${fields.join(', ')}, updated_at = timezone('utc', now())
      WHERE id = $1 AND account_holder_id = $2
      RETURNING id, first_name, last_name, relationship, date_of_birth, gender,
-               medical_conditions, allergies, is_primary_account_holder,
+               medical_conditions, allergies, is_primary_account_holder, metadata,
                created_at, updated_at`,
     values,
   );
@@ -261,10 +321,10 @@ export async function deleteFamilyMember(userId: string, memberId: string) {
   }
 }
 
-async function getFamilyMember(userId: string, memberId: string) {
+async function getFamilyMemberRow(userId: string, memberId: string) {
   const result = await query<FamilyRow>(
     `SELECT id, first_name, last_name, relationship, date_of_birth, gender,
-            medical_conditions, allergies, is_primary_account_holder,
+            medical_conditions, allergies, is_primary_account_holder, metadata,
             created_at, updated_at
      FROM public.family_members
      WHERE id = $1 AND account_holder_id = $2`,
@@ -272,7 +332,11 @@ async function getFamilyMember(userId: string, memberId: string) {
   );
 
   if (!result.rows[0]) throw new NotFoundError('Family member', memberId);
-  return mapFamily(result.rows[0]);
+  return result.rows[0];
+}
+
+async function getFamilyMember(userId: string, memberId: string) {
+  return mapFamily(await getFamilyMemberRow(userId, memberId));
 }
 
 async function assertFamilyMemberOwnership(userId: string, memberId: string) {

@@ -21,6 +21,11 @@ subprojects {
             compileSdk = 36
         }
     }
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)?.apply {
+            compileSdk = 36
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(":app")

@@ -90,7 +90,7 @@ class _CategoryTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
+                duration: Duration(milliseconds: 180),
                 width: ServiceCategoryGrid._tileSize,
                 height: ServiceCategoryGrid._tileSize,
                 decoration: BoxDecoration(
@@ -99,7 +99,7 @@ class _CategoryTile extends StatelessWidget {
                       BorderRadius.circular(ServiceCategoryGrid._tileRadius),
                   border: Border.all(
                     color: selected
-                        ? HomeDashboardColors.primary
+                        ? HomeDashboardColors.of(context).primary
                         : const Color(0xFFE8EAED),
                     width: selected ? 2 : 1,
                   ),
@@ -125,7 +125,7 @@ class _CategoryTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 label,
                 maxLines: 1,
@@ -134,7 +134,7 @@ class _CategoryTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: HomeDashboardColors.textPrimary,
+                  color: HomeDashboardColors.of(context).textPrimary,
                   height: 1.1,
                 ),
               ),

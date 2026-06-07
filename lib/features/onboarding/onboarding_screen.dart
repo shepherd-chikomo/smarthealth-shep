@@ -85,24 +85,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             fit: BoxFit.contain,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         Text(
                           text,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: HomeDashboardColors.textPrimary,
+                            color: HomeDashboardColors.of(context).textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         Text(
                           body,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             height: 1.45,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -117,14 +117,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: List.generate(
                 _slides.length,
                 (index) => AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  duration: Duration(milliseconds: 200),
+                  margin: EdgeInsets.symmetric(horizontal: 4),
                   width: _index == index ? 20 : 8,
                   height: 8,
                   decoration: BoxDecoration(
                     color: _index == index
-                        ? HomeDashboardColors.primary
-                        : HomeDashboardColors.primary.withValues(alpha: 0.25),
+                        ? HomeDashboardColors.of(context).primary
+                        : HomeDashboardColors.of(context).primary.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -132,7 +132,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              padding: EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
@@ -142,12 +142,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       return;
                     }
                     _controller.nextPage(
-                      duration: const Duration(milliseconds: 280),
+                      duration: Duration(milliseconds: 280),
                       curve: Curves.easeOut,
                     );
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: HomeDashboardColors.primary,
+                    backgroundColor: HomeDashboardColors.of(context).primary,
                     minimumSize: const Size.fromHeight(48),
                   ),
                   child: Text(

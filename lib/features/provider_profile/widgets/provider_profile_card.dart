@@ -10,7 +10,7 @@ import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
 
 class ProviderProfileCard extends StatelessWidget {
-  const ProviderProfileCard({super.key, required this.provider});
+  ProviderProfileCard({super.key, required this.provider});
 
   final ProviderModel provider;
 
@@ -22,7 +22,7 @@ class ProviderProfileCard extends StatelessWidget {
       elevation: 2,
       shadowColor: Colors.black26,
       borderRadius: BorderRadius.circular(16),
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -41,49 +41,49 @@ class ProviderProfileCard extends StatelessWidget {
                     error: CircleAvatar(
                       radius: 32,
                       backgroundColor:
-                          HomeDashboardColors.primary.withValues(alpha: 0.12),
+                          HomeDashboardColors.of(context).primary.withValues(alpha: 0.12),
                       child: Text(
                         providerInitials(provider.name),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
-                          color: HomeDashboardColors.primary,
+                          color: HomeDashboardColors.of(context).primary,
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         provider.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: HomeDashboardColors.textPrimary,
+                          color: HomeDashboardColors.of(context).textPrimary,
                         ),
                       ),
                       if (provider.specialty != null) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           provider.specialty!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: HomeDashboardColors.primary,
+                            color: HomeDashboardColors.of(context).primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                       if (provider.mdpczNumber != null) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           provider.mdpczNumber!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ],
@@ -93,27 +93,27 @@ class ProviderProfileCard extends StatelessWidget {
               ],
             ),
             if (provider.isVerified) ...[
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               _MdpczVerifiedBadge(label: l10n.profileMdpczVerified),
             ],
             if (provider.distanceKm != null) ...[
-              const SizedBox(height: 16),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
+              SizedBox(height: 16),
+              Divider(height: 1),
+              SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Symbols.near_me,
                     size: 18,
-                    color: HomeDashboardColors.textSecondary,
+                    color: HomeDashboardColors.of(context).textSecondary,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     l10n.homeDistanceKm(provider.distanceKm!),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ],
@@ -127,7 +127,7 @@ class ProviderProfileCard extends StatelessWidget {
 }
 
 class _MdpczVerifiedBadge extends StatelessWidget {
-  const _MdpczVerifiedBadge({required this.label});
+  _MdpczVerifiedBadge({required this.label});
 
   final String label;
 
@@ -136,26 +136,26 @@ class _MdpczVerifiedBadge extends StatelessWidget {
     return Semantics(
       label: label,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: HomeDashboardColors.secondary.withValues(alpha: 0.12),
+          color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Symbols.verified,
               size: 16,
-              color: HomeDashboardColors.secondary,
+              color: HomeDashboardColors.of(context).secondary,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.secondary,
+                color: HomeDashboardColors.of(context).secondary,
               ),
             ),
           ],
@@ -192,18 +192,18 @@ class ProviderActionButtons extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: provider.phone != null ? onCall : null,
               style: FilledButton.styleFrom(
-                backgroundColor: HomeDashboardColors.secondary,
+                backgroundColor: HomeDashboardColors.of(context).secondary,
                 minimumSize: const Size.fromHeight(AppConstants.minTapTarget),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              icon: const Icon(Symbols.call),
+              icon: Icon(Symbols.call),
               label: Text(callLabel),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Semantics(
             button: true,
@@ -211,7 +211,7 @@ class ProviderActionButtons extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: provider.mapsQuery != null ? onDirections : null,
               style: FilledButton.styleFrom(
-                backgroundColor: HomeDashboardColors.primary,
+                backgroundColor: HomeDashboardColors.of(context).primary,
                 minimumSize: const Size.fromHeight(AppConstants.minTapTarget),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

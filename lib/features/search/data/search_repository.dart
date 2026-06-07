@@ -1,9 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
+import 'package:smarthealth_shep/features/family/data/family_repository.dart';
+import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
+import 'package:smarthealth_shep/features/profile/utils/user_medical_aid_resolver.dart';
+import 'package:smarthealth_shep/core/directory/directory_search_service.dart';
 import 'package:smarthealth_shep/features/search/data/search_filter_engine.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/shared/data/provider_repository.dart';
@@ -18,6 +23,8 @@ final searchRepositoryProvider = Provider<SearchRepository>((ref) {
     providerRepository: ref.watch(providerRepositoryProvider),
     api: ApiService(dio),
     searchOrigin: ref.watch(searchOriginResolverProvider),
+    familyRepository: ref.watch(familyRepositoryProvider),
+    patientProfileLoader: () => ref.read(patientProfileProvider.future),
   );
 });
 
@@ -57,13 +64,42 @@ class SearchRepository {
     required ProviderRepository providerRepository,
     required ApiService api,
     required SearchOriginResolver searchOrigin,
+    required FamilyRepository familyRepository,
+    required Future<PatientProfile?> Function() patientProfileLoader,
+    DirectorySearchService? directorySearch,
   })  : _providerRepository = providerRepository,
         _client = api,
-        _searchOrigin = searchOrigin;
+        _searchOrigin = searchOrigin,
+        _familyRepository = familyRepository,
+        _patientProfileLoader = patientProfileLoader,
+        _directorySearch = directorySearch ?? DirectorySearchService();
 
   final ProviderRepository _providerRepository;
   final ApiService _client;
   final SearchOriginResolver _searchOrigin;
+  final FamilyRepository _familyRepository;
+  final Future<PatientProfile?> Function() _patientProfileLoader;
+  final DirectorySearchService _directorySearch;
+
+  Future<String?> getUserMedicalAidSchemeKey() async {
+    final members = await _familyRepository.loadMembers(syncRemote: false);
+    final patient = await _patientProfileLoader();
+    return resolveUserMedicalAidSchemeKey(members: members, patient: patient);
+  }
+
+  Set<String> _effectiveMedicalAidFilterKeys({
+    required Set<String> medicalAidSchemes,
+    required bool acceptsMyMedicalAid,
+    String? userMedicalAidSchemeKey,
+  }) {
+    final keys = Set<String>.from(medicalAidSchemes);
+    if (acceptsMyMedicalAid &&
+        userMedicalAidSchemeKey != null &&
+        userMedicalAidSchemeKey.isNotEmpty) {
+      keys.add(userMedicalAidSchemeKey);
+    }
+    return keys;
+  }
 
   ProviderSearchFilter _defaultGeoFilter(
     ProviderSearchFilter filter, {
@@ -194,10 +230,19 @@ class SearchRepository {
     Set<String> conditions = const {},
     Set<String> ageGroups = const {},
     Set<String> operational = const {},
+    Set<String> medicalAidSchemes = const {},
+    bool acceptsMyMedicalAid = false,
+    String? userMedicalAidSchemeKey,
     String? facilityType,
     bool refreshOrigin = false,
   }) async {
     final origin = await _searchOrigin.resolve(refreshGps: refreshOrigin);
+
+    final medicalAidKeys = _effectiveMedicalAidFilterKeys(
+      medicalAidSchemes: medicalAidSchemes,
+      acceptsMyMedicalAid: acceptsMyMedicalAid,
+      userMedicalAidSchemeKey: userMedicalAidSchemeKey,
+    );
 
     var filter = ProviderSearchFilter(
       query: query,
@@ -215,6 +260,8 @@ class SearchRepository {
           operational.contains('available_today') ? true : null,
       acceptsWalkIns: operational.contains('walk_ins') ? true : null,
       emergencyAvailable: operational.contains('emergency') ? true : null,
+      medicalAidSchemeKeys: medicalAidKeys,
+      userMedicalAidSchemeKey: userMedicalAidSchemeKey,
     );
 
     filter = _defaultGeoFilter(
@@ -230,6 +277,33 @@ class SearchRepository {
         facilities: discovery.facilities,
         isOffline: discovery.isOffline,
       );
+    }
+
+    if (query.trim().isNotEmpty) {
+      final local = await _directorySearch.searchLocal(query: query);
+      if (local.facilities.isNotEmpty || local.providers.isNotEmpty) {
+        final filteredProviders = SearchFilterEngine.apply(
+          providers: local.providers,
+          query: query,
+          specialties: specialties,
+          conditions: conditions,
+          ageGroups: ageGroups,
+          operational: operational,
+        );
+        final filteredFacilities = SearchFilterEngine.applyFacilities(
+          facilities: local.facilities,
+          query: query,
+          facilityType: facilityType,
+          medicalAidSchemeKeys: medicalAidKeys,
+        );
+        if (filteredProviders.isNotEmpty || filteredFacilities.isNotEmpty) {
+          return SearchQueryResult(
+            providers: filteredProviders,
+            facilities: filteredFacilities,
+            isOffline: false,
+          );
+        }
+      }
     }
 
     try {
@@ -254,6 +328,7 @@ class SearchRepository {
         facilities: cached.facilities,
         query: query,
         facilityType: facilityType,
+        medicalAidSchemeKeys: medicalAidKeys,
       );
       return SearchQueryResult(
         providers: filteredProviders,

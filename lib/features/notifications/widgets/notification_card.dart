@@ -22,14 +22,14 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _styleFor(notification);
+    final style = _styleFor(context, notification);
     final ticket = notification.payload['ticketNumber'];
 
     return Semantics(
       button: onTap != null,
       label: notification.title,
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -37,12 +37,12 @@ class NotificationCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
               color: notification.isUnread
                   ? style.accent.withValues(alpha: 0.04)
-                  : HomeDashboardColors.surface,
+                  : HomeDashboardColors.of(context).surface,
             ),
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -50,9 +50,9 @@ class NotificationCard extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    margin: const EdgeInsets.only(top: 6, right: 8),
+                    margin: EdgeInsets.only(top: 6, right: 8),
                     decoration: BoxDecoration(
-                      color: HomeDashboardColors.primary,
+                      color: HomeDashboardColors.of(context).primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -84,15 +84,15 @@ class NotificationCard extends StatelessWidget {
                                 fontWeight: notification.isUnread
                                     ? FontWeight.w700
                                     : FontWeight.w600,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                               ),
                             ),
                           ),
                           Text(
                             NotificationTimestamp.format(notification.createdAt),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: HomeDashboardColors.textSecondary,
+                              color: HomeDashboardColors.of(context).textSecondary,
                             ),
                           ),
                         ],
@@ -106,21 +106,21 @@ class NotificationCard extends StatelessWidget {
                           color: style.accent,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         notification.body,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.35,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
                       if (ticket != null) ...[
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 3,
                           ),
@@ -131,28 +131,28 @@ class NotificationCard extends StatelessWidget {
                           ),
                           child: Text(
                             '#$ticket',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: HomeDashboardColors.primary,
+                              color: HomeDashboardColors.of(context).primary,
                             ),
                           ),
                         ),
                       ],
                       if (onAction != null) ...[
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
                         Align(
                           alignment: Alignment.centerLeft,
                           child: TextButton(
                             onPressed: onAction,
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              foregroundColor: HomeDashboardColors.primary,
+                              foregroundColor: HomeDashboardColors.of(context).primary,
                             ),
                             child: Text(
                               actionLabel,
@@ -175,7 +175,7 @@ class NotificationCard extends StatelessWidget {
     );
   }
 
-  _NotificationStyle _styleFor(AppNotification notification) {
+  _NotificationStyle _styleFor(BuildContext context, AppNotification notification) {
     if (notification.category == NotificationCategory.queueUpdate) {
       return switch (notification.queueEvent) {
         'youre_next' => _NotificationStyle(
@@ -203,7 +203,7 @@ class NotificationCard extends StatelessWidget {
       NotificationCategory.appointmentRescheduled =>
         _NotificationStyle(
           icon: Symbols.event,
-          accent: HomeDashboardColors.primary,
+          accent: HomeDashboardColors.of(context).primary,
         ),
       NotificationCategory.appointmentCancellation => _NotificationStyle(
           icon: Symbols.event_busy,
@@ -211,7 +211,7 @@ class NotificationCard extends StatelessWidget {
         ),
       NotificationCategory.emergencyAlert => _NotificationStyle(
           icon: Symbols.emergency,
-          accent: HomeDashboardColors.emergency,
+          accent: HomeDashboardColors.of(context).emergency,
         ),
       NotificationCategory.verificationUpdate => _NotificationStyle(
           icon: Symbols.verified,
@@ -223,7 +223,7 @@ class NotificationCard extends StatelessWidget {
         ),
       NotificationCategory.providerMessage => _NotificationStyle(
           icon: Symbols.medical_services,
-          accent: HomeDashboardColors.primary,
+          accent: HomeDashboardColors.of(context).primary,
         ),
       NotificationCategory.facilityAnnouncement => _NotificationStyle(
           icon: Symbols.campaign,
@@ -231,7 +231,7 @@ class NotificationCard extends StatelessWidget {
         ),
       NotificationCategory.general => _NotificationStyle(
           icon: Symbols.notifications,
-          accent: HomeDashboardColors.textSecondary,
+          accent: HomeDashboardColors.of(context).textSecondary,
         ),
       NotificationCategory.queueUpdate => _NotificationStyle(
           icon: Symbols.groups,

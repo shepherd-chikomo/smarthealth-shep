@@ -12,19 +12,28 @@ import 'package:table_calendar/table_calendar.dart';
 
 /// Step 1 — pick a date and available time slot.
 class BookingDateScreen extends StatelessWidget {
-  const BookingDateScreen({super.key});
+  BookingDateScreen({super.key});
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: HomeDashboardColors.surface,
-        foregroundColor: HomeDashboardColors.textPrimary,
-        title: const Text('Book Appointment'),
+        backgroundColor: colors.surface,
+        foregroundColor: colors.textPrimary,
+        title: Text(
+          'Book Appointment',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         elevation: 0,
       ),
       body: BlocBuilder<BookingBloc, BookingState>(
@@ -49,33 +58,33 @@ class BookingDateScreen extends StatelessWidget {
           final provider = state.provider!;
           final focusedDay = state.focusedDay ?? DateTime.now();
           final firstDay = DateTime.now();
-          final lastDay = firstDay.add(const Duration(days: 60));
+          final lastDay = firstDay.add(Duration(days: 60));
 
           return Column(
             children: [
               if (state.isOffline)
                 Container(
                   width: double.infinity,
-                  color: HomeDashboardColors.warning.withValues(alpha: 0.15),
+                  color: HomeDashboardColors.of(context).warning.withValues(alpha: 0.15),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: const Text(
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
                     'You are offline — showing cached availability',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
                 ),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   children: [
                     ProviderMiniCard(provider: provider),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Material(
-                      color: HomeDashboardColors.surface,
+                      color: HomeDashboardColors.of(context).surface,
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
@@ -100,48 +109,51 @@ class BookingDateScreen extends StatelessWidget {
                           },
                           onPageChanged: (focused) {},
                           calendarStyle: CalendarStyle(
+                            defaultTextStyle: TextStyle(
+                              color: colors.textPrimary,
+                            ),
                             todayDecoration: BoxDecoration(
-                              color: HomeDashboardColors.primary
-                                  .withValues(alpha: 0.2),
+                              color: colors.primary.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            todayTextStyle: const TextStyle(
+                            todayTextStyle: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: HomeDashboardColors.primary,
+                              color: colors.primary,
                             ),
-                            selectedDecoration: const BoxDecoration(
-                              color: HomeDashboardColors.primary,
+                            selectedDecoration: BoxDecoration(
+                              color: colors.primary,
                               shape: BoxShape.circle,
                             ),
-                            selectedTextStyle: const TextStyle(
-                              color: Colors.white,
+                            selectedTextStyle: TextStyle(
+                              color: scheme.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
                             disabledTextStyle: TextStyle(
-                              color: HomeDashboardColors.textSecondary
-                                  .withValues(alpha: 0.4),
+                              color: colors.textSecondary.withValues(alpha: 0.4),
                             ),
-                            weekendTextStyle: const TextStyle(
-                              color: HomeDashboardColors.textSecondary,
+                            weekendTextStyle: TextStyle(
+                              color: colors.textSecondary,
                             ),
                           ),
-                          headerStyle: const HeaderStyle(
+                          headerStyle: HeaderStyle(
                             formatButtonVisible: false,
                             titleCentered: true,
                             titleTextStyle: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
                             ),
                           ),
-                          daysOfWeekStyle: const DaysOfWeekStyle(
+                          daysOfWeekStyle: DaysOfWeekStyle(
                             weekdayStyle: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                              color: colors.textSecondary,
                             ),
                             weekendStyle: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: HomeDashboardColors.textSecondary,
+                              color: colors.textSecondary,
                             ),
                           ),
                         ),
@@ -152,6 +164,7 @@ class BookingDateScreen extends StatelessWidget {
                       'Available times',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
+                            color: colors.textPrimary,
                           ),
                     ),
                     const SizedBox(height: 12),

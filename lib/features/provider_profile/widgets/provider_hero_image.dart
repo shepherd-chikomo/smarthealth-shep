@@ -28,7 +28,7 @@ class ProviderHeroImage extends StatelessWidget {
         memCacheWidth: 800,
         placeholder: Container(
           height: height,
-          color: HomeDashboardColors.skeleton,
+          color: HomeDashboardColors.of(context).skeleton,
           child: const Center(child: CircularProgressIndicator()),
         ),
         error: _MapHero(provider: provider),
@@ -39,7 +39,7 @@ class ProviderHeroImage extends StatelessWidget {
 }
 
 class _MapHero extends StatelessWidget {
-  const _MapHero({required this.provider});
+  _MapHero({required this.provider});
 
   final ProviderModel provider;
 
@@ -48,12 +48,12 @@ class _MapHero extends StatelessWidget {
     if (provider.latitude == null || provider.longitude == null) {
       return Container(
         height: ProviderHeroImage.height,
-        color: HomeDashboardColors.primary.withValues(alpha: 0.15),
-        child: const Center(
+        color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.15),
+        child: Center(
           child: Icon(
             Icons.local_hospital,
             size: 64,
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
           ),
         ),
       );
@@ -81,10 +81,10 @@ class _MapHero extends StatelessWidget {
                 point: point,
                 width: 40,
                 height: 40,
-                child: const Icon(
+                child: Icon(
                   Icons.location_on,
                   size: 40,
-                  color: HomeDashboardColors.primary,
+                  color: HomeDashboardColors.of(context).primary,
                 ),
               ),
             ],

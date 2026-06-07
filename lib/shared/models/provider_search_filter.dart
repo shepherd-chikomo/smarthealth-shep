@@ -23,6 +23,8 @@ class ProviderSearchFilter extends Equatable {
     this.province,
     this.facilityId,
     this.facilityType,
+    this.medicalAidSchemeKeys = const {},
+    this.userMedicalAidSchemeKey,
   });
 
   final String query;
@@ -45,6 +47,8 @@ class ProviderSearchFilter extends Equatable {
   final String? province;
   final String? facilityId;
   final String? facilityType;
+  final Set<String> medicalAidSchemeKeys;
+  final String? userMedicalAidSchemeKey;
 
   bool get isEmpty =>
       query.trim().isEmpty &&
@@ -66,7 +70,9 @@ class ProviderSearchFilter extends Equatable {
       city == null &&
       province == null &&
       facilityId == null &&
-      facilityType == null;
+      facilityType == null &&
+      medicalAidSchemeKeys.isEmpty &&
+      userMedicalAidSchemeKey == null;
 
   ProviderSearchFilter copyWith({
     String? query,
@@ -89,6 +95,8 @@ class ProviderSearchFilter extends Equatable {
     String? province,
     String? facilityId,
     String? facilityType,
+    Set<String>? medicalAidSchemeKeys,
+    String? userMedicalAidSchemeKey,
   }) {
     return ProviderSearchFilter(
       query: query ?? this.query,
@@ -111,6 +119,9 @@ class ProviderSearchFilter extends Equatable {
       province: province ?? this.province,
       facilityId: facilityId ?? this.facilityId,
       facilityType: facilityType ?? this.facilityType,
+      medicalAidSchemeKeys: medicalAidSchemeKeys ?? this.medicalAidSchemeKeys,
+      userMedicalAidSchemeKey:
+          userMedicalAidSchemeKey ?? this.userMedicalAidSchemeKey,
     );
   }
 
@@ -136,5 +147,7 @@ class ProviderSearchFilter extends Equatable {
         province,
         facilityId,
         facilityType,
+        medicalAidSchemeKeys,
+        userMedicalAidSchemeKey,
       ];
 }

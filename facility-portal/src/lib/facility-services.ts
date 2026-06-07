@@ -26,5 +26,4 @@ export type ProfileSettings = {
   emergency: Record<string, boolean | undefined>;
   smarthealthFeatures: Record<string, boolean | undefined>;
   booking: Record<string, unknown>;
-  waitTime: { mode: 'manual' | 'auto'; minutes?: number };
 };

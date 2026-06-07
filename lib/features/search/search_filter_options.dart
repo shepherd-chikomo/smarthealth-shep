@@ -6,7 +6,7 @@ class SearchFilterOption {
   final String label;
 }
 
-enum SearchFilterGroup { specialty, condition, ageGroup, operational }
+enum SearchFilterGroup { specialty, condition, ageGroup, operational, medicalAid }
 
 /// Static filter catalog for the search screen.
 abstract final class SearchFilterOptions {
@@ -23,6 +23,7 @@ abstract final class SearchFilterOptions {
   ];
 
   static const conditions = [
+    SearchFilterOption(id: 'diabetes_type_2', label: 'Diabetes Type 2'),
     SearchFilterOption(id: 'diabetes', label: 'Diabetes'),
     SearchFilterOption(id: 'hypertension', label: 'Hypertension'),
     SearchFilterOption(id: 'malaria', label: 'Malaria'),

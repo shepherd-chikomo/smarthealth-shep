@@ -1,17 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:smarthealth_shep/core/theme/app_colors.dart';
 
-/// Dashboard-specific palette (mirrors product spec).
-abstract final class HomeDashboardColors {
-  static const Color primary = Color(0xFF0072BC);
-  static const Color primaryDark = Color(0xFF005A96);
-  static const Color secondary = Color(0xFF00897B);
-  static const Color emergency = Color(0xFFE30613);
-  static const Color background = Color(0xFFF0F1F3);
+/// Dashboard palette resolved from the active [Theme] (light or dark).
+@immutable
+class HomeDashboardColors {
+  const HomeDashboardColors._({
+    required this.primary,
+    required this.primaryDark,
+    required this.headerBlue,
+    required this.headerBlueDark,
+    required this.secondary,
+    required this.emergency,
+    required this.background,
+    required this.surface,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.emergencySoft,
+    required this.skeleton,
+    required this.warning,
+  });
+
+  final Color primary;
+  final Color primaryDark;
+  final Color headerBlue;
+  final Color headerBlueDark;
+  final Color secondary;
+  final Color emergency;
+  final Color background;
+  final Color surface;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color emergencySoft;
+  final Color skeleton;
+  final Color warning;
+
   static const double textureOpacityBody = 0.1;
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color emergencySoft = Color(0xFFFCE6E6);
-  static const Color skeleton = Color(0xFFE0E0E0);
-  static const Color warning = Color(0xFFE0A030);
+
+  static HomeDashboardColors of(BuildContext context) {
+    final tokens = context.appColors;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return HomeDashboardColors._(
+      primary: scheme.primary,
+      primaryDark: isDark ? const Color(0xFF4A8FD9) : const Color(0xFF005A96),
+      headerBlue: isDark ? const Color(0xFF0D8FD4) : const Color(0xFF0078C1),
+      headerBlueDark: isDark ? const Color(0xFF0069A8) : const Color(0xFF00548E),
+      secondary: scheme.secondary,
+      emergency: tokens.emergency,
+      background: tokens.background,
+      surface: tokens.card,
+      textPrimary: tokens.foreground,
+      textSecondary: tokens.mutedForeground,
+      emergencySoft: tokens.emergencySoft,
+      skeleton: tokens.muted,
+      warning: tokens.warning,
+    );
+  }
 }

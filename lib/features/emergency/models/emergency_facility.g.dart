@@ -16,6 +16,11 @@ _EmergencyFacility _$EmergencyFacilityFromJson(Map<String, dynamic> json) =>
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
       is24Hours: json['is24Hours'] as bool? ?? true,
+      source: $enumDecodeNullable(
+        _$EmergencyFacilitySourceEnumMap,
+        json['source'],
+      ),
+      referralLabel: json['referralLabel'] as String?,
     );
 
 Map<String, dynamic> _$EmergencyFacilityToJson(_EmergencyFacility instance) =>
@@ -28,4 +33,12 @@ Map<String, dynamic> _$EmergencyFacilityToJson(_EmergencyFacility instance) =>
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'is24Hours': instance.is24Hours,
+      'source': _$EmergencyFacilitySourceEnumMap[instance.source],
+      'referralLabel': instance.referralLabel,
     };
+
+const _$EmergencyFacilitySourceEnumMap = {
+  EmergencyFacilitySource.emergencyDirectory: 'emergency_directory',
+  EmergencyFacilitySource.governmentHospital: 'government_hospital',
+  EmergencyFacilitySource.profileEmergency: 'profile_emergency',
+};

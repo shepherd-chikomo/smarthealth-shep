@@ -7,7 +7,7 @@ import 'package:smarthealth_shep/features/notifications/providers/notification_p
 
 /// Home header bell with unread badge.
 class NotificationBellButton extends ConsumerWidget {
-  const NotificationBellButton({super.key, this.headerStyle = false});
+  NotificationBellButton({super.key, this.headerStyle = false});
 
   final bool headerStyle;
 
@@ -17,9 +17,9 @@ class NotificationBellButton extends ConsumerWidget {
     final unread = unreadAsync.maybeWhen(data: (c) => c, orElse: () => 0);
 
     final iconColor =
-        headerStyle ? Colors.white : HomeDashboardColors.textPrimary;
+        headerStyle ? Colors.white : HomeDashboardColors.of(context).textPrimary;
     final backgroundColor =
-        headerStyle ? Colors.white.withValues(alpha: 0.18) : HomeDashboardColors.surface;
+        headerStyle ? Colors.white.withValues(alpha: 0.18) : HomeDashboardColors.of(context).surface;
     final borderColor = headerStyle
         ? Colors.white.withValues(alpha: 0.35)
         : const Color(0xFFE5E8EE);
@@ -55,8 +55,8 @@ class NotificationBellButton extends ConsumerWidget {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: const BoxDecoration(
-                        color: HomeDashboardColors.emergency,
+                      decoration: BoxDecoration(
+                        color: HomeDashboardColors.of(context).emergency,
                         shape: BoxShape.circle,
                       ),
                     ),

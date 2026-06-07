@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/core/auth/auth_interceptor.dart';
 import 'package:smarthealth_shep/core/auth/secure_storage.dart';
+import 'package:smarthealth_shep/core/security/secure_data_wipe.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -101,6 +102,7 @@ class AuthRepository {
       }
     }
     await _storage.clearTokens();
+    await SecureDataWipe().onSignOut();
   }
 
   Future<bool> hasSession() => _storage.hasSession();

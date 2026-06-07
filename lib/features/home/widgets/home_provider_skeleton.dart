@@ -50,19 +50,19 @@ class _HomeProviderSkeletonState extends State<HomeProviderSkeleton>
 }
 
 class _SkeletonCard extends StatelessWidget {
-  const _SkeletonCard({required this.opacity});
+  _SkeletonCard({required this.opacity});
 
   final double opacity;
 
   @override
   Widget build(BuildContext context) {
     Color block(double alpha) =>
-        HomeDashboardColors.skeleton.withValues(alpha: alpha * opacity);
+        HomeDashboardColors.of(context).skeleton.withValues(alpha: alpha * opacity);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE5E8EE)),
       ),

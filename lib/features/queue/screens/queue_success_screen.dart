@@ -31,49 +31,49 @@ class QueueSuccessScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Spacer(),
-                  const BookingSuccessCheckmark(),
-                  const SizedBox(height: 24),
-                  const Text(
+                  Spacer(),
+                  BookingSuccessCheckmark(),
+                  SizedBox(height: 24),
+                  Text(
                     'You\'re in the Queue!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     session.facilityName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   QueueCard.fromSession(session),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Row(
                     children: [
                       Icon(
                         Symbols.notifications_active,
                         size: 18,
-                        color: HomeDashboardColors.textSecondary
+                        color: HomeDashboardColors.of(context).textSecondary
                             .withValues(alpha: 0.8),
                       ),
-                      const SizedBox(width: 8),
-                      const Expanded(
+                      SizedBox(width: 8),
+                      Expanded(
                         child: Text(
                           'We\'ll notify you when you\'re next',
                           style: TextStyle(
                             fontSize: 13,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ),
@@ -87,7 +87,7 @@ class QueueSuccessScreen extends StatelessWidget {
                       context.push('/queue/${session.id}');
                     },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -97,8 +97,8 @@ class QueueSuccessScreen extends StatelessWidget {
                         context.go('/home');
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: HomeDashboardColors.primary,
-                        side: const BorderSide(color: HomeDashboardColors.primary),
+                        foregroundColor: HomeDashboardColors.of(context).primary,
+                        side: BorderSide(color: HomeDashboardColors.of(context).primary),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

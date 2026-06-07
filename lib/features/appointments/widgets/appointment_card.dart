@@ -30,7 +30,7 @@ class AppointmentCard extends StatelessWidget {
       label:
           '${appointment.providerName}, ${appointment.status.name}, $dateLabel',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -52,8 +52,8 @@ class AppointmentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   memCacheWidth: 128,
                   memCacheHeight: 128,
-                  placeholder: _imageFallback(),
-                  error: _imageFallback(),
+                  placeholder: _imageFallback(context),
+                  error: _imageFallback(context),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -65,31 +65,31 @@ class AppointmentCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               appointment.providerName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                               ),
                             ),
                           ),
                           StatusChip.appointment(appointment.status),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         appointment.facilityName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Text(
                         dateLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: HomeDashboardColors.primary,
+                          color: HomeDashboardColors.of(context).primary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -126,17 +126,18 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  Widget _imageFallback() {
+  Widget _imageFallback(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
     return Container(
       width: 64,
       height: 64,
       decoration: BoxDecoration(
-        color: HomeDashboardColors.background,
+        color: colors.background,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.person_outline,
-        color: HomeDashboardColors.primary,
+        color: colors.primary,
         size: 28,
       ),
     );
@@ -159,8 +160,8 @@ class _MetaChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = tone == _ChipTone.queue
-        ? HomeDashboardColors.secondary
-        : HomeDashboardColors.textSecondary;
+        ? HomeDashboardColors.of(context).secondary
+        : HomeDashboardColors.of(context).textSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

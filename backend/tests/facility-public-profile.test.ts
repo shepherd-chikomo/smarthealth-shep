@@ -90,7 +90,6 @@ describe('getPublicProfile', () => {
                 emergency: { department: true, is24Hour: true },
                 smarthealthFeatures: { onlineBooking: true },
                 booking: { enabled: true, showSlots: true },
-                waitTime: { mode: 'manual', minutes: 15 },
               },
             },
             is_open_now: true,
@@ -117,7 +116,6 @@ describe('getPublicProfile', () => {
     expect(result.logoUrl).toContain('fac-1/logo/test.png');
     expect(result.services).toHaveLength(1);
     expect(result.medicalAids[0]?.name).toBe('Cimas');
-    expect(result.facilityInfo.waitTimeMinutes).toBe(15);
     expect(result.booking.enabled).toBe(true);
     expect(result.smarthealthFeatures.verified).toBe(true);
     expect((result as { settings?: unknown }).settings).toBeUndefined();

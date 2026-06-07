@@ -21,7 +21,8 @@ class AppointmentsBloc extends Bloc<AppointmentsEvent, AppointmentsState> {
   ) async {
     emit(state.copyWith(status: AppointmentsStatus.loading, clearError: true));
     try {
-      final appointments = await _repository.loadAppointments();
+      final appointments =
+          await _repository.loadAppointments(syncRemote: true);
       emit(
         state.copyWith(
           status: AppointmentsStatus.ready,
@@ -43,7 +44,8 @@ class AppointmentsBloc extends Bloc<AppointmentsEvent, AppointmentsState> {
     Emitter<AppointmentsState> emit,
   ) async {
     try {
-      final appointments = await _repository.loadAppointments();
+      final appointments =
+          await _repository.loadAppointments(syncRemote: true);
       emit(
         state.copyWith(
           status: AppointmentsStatus.ready,

@@ -55,6 +55,48 @@ class AppLocalizationsFr extends AppLocalizations {
   String get homeGoodEvening => 'Good evening';
 
   @override
+  String get homeProfileComplete => 'Profile Complete';
+
+  @override
+  String get homeProfileCompleteHint => 'Complete your health profile';
+
+  @override
+  String get homeMedicalProfile => 'Medical Profile';
+
+  @override
+  String get homeBloodType => 'Blood Type';
+
+  @override
+  String get homeAge => 'Age';
+
+  @override
+  String get homeGender => 'Gender';
+
+  @override
+  String get homeNoKnownAllergies => 'No Known Allergies';
+
+  @override
+  String homeAllergyAlert(String allergen) {
+    return '$allergen Allergy';
+  }
+
+  @override
+  String get homeViewMedicalProfile => 'Tap to view full profile →';
+
+  @override
+  String get profileCompletionTitle => 'Profile Completion';
+
+  @override
+  String get profileCompletionSubtitle =>
+      'Complete your medical profile to help providers deliver safer care.';
+
+  @override
+  String get profileCompletionCta => 'Complete profile';
+
+  @override
+  String get profileCompletionViewProfile => 'View medical profile';
+
+  @override
   String get homeNearbyProviders => 'Nearby providers';
 
   @override

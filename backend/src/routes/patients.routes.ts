@@ -5,6 +5,8 @@ import { getRequestContext } from '../lib/request-context.js';
 import {
   consentRecordSchema,
   consentTypeSchema,
+  conditionSubmissionSchema,
+  createConditionSubmissionSchema,
   createFamilyMemberSchema,
   familyMemberSchema,
   grantConsentSchema,
@@ -14,6 +16,7 @@ import {
 } from '../schemas/common.js';
 import * as patientsService from '../services/patients.service.js';
 import * as consentService from '../services/consent.service.js';
+import * as profileConditions from '../services/profile-conditions.service.js';
 
 export const patientsRoutes: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', requireAuth);
@@ -126,6 +129,32 @@ export const patientsRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       await patientsService.deleteFamilyMember(request.user!.id, request.params.id);
       return { message: 'Family member deleted' };
+    },
+  );
+
+  app.post(
+    '/patients/condition-submissions',
+    {
+      schema: {
+        tags: ['Patients'],
+        summary: 'Submit a user-proposed medical condition for admin review',
+        security: [{ bearerAuth: [] }],
+        body: createConditionSubmissionSchema,
+        response: {
+          201: z.object({
+            submission: conditionSubmissionSchema.nullable(),
+            skipped: z.boolean(),
+            reason: z.enum(['already_in_catalog', 'already_pending']).nullable(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await profileConditions.createConditionSubmission(
+        request.user!.id,
+        request.body,
+      );
+      return reply.status(201).send(result);
     },
   );
 

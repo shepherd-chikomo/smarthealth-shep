@@ -19,6 +19,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<FiltersApplied>(_onFiltersApplied);
     on<SearchReloadRequested>(_onReload);
     on<SortChanged>(_onSortChanged);
+    on<AcceptsMyMedicalAidToggled>(_onAcceptsMyMedicalAidToggled);
     on<RecentSearchesLoaded>(_onRecentSearchesLoaded);
     on<RecentSearchRemoved>(_onRecentSearchRemoved);
     on<SearchDebounced>(_onDebouncedSearch);
@@ -59,12 +60,26 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     emit(state.copyWith(sortBy: event.sort, navigateToResults: false));
   }
 
+  Future<void> _onAcceptsMyMedicalAidToggled(
+    AcceptsMyMedicalAidToggled event,
+    Emitter<SearchState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        acceptsMyMedicalAid: event.enabled,
+        navigateToResults: false,
+      ),
+    );
+    await _runSearch(emit);
+  }
+
   Future<void> _onReload(
     SearchReloadRequested event,
     Emitter<SearchState> emit,
   ) async {
     emit(state.copyWith(status: SearchStatus.loading, clearError: true));
     try {
+      final userScheme = await _repository.getUserMedicalAidSchemeKey();
       final result = await _repository.loadDiscovery();
       emit(
         state.copyWith(
@@ -77,6 +92,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           conditionFilterOptions: result.conditionFilters,
           ageGroupFilterOptions: result.ageGroupFilters,
           isOffline: result.isOffline,
+          userMedicalAidSchemeKey: userScheme,
+          acceptsMyMedicalAid: userScheme != null,
         ),
       );
       if (state.hasActiveCriteria) {
@@ -118,12 +135,14 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     final conditions = Set<String>.from(state.conditions);
     final ageGroups = Set<String>.from(state.ageGroups);
     final operational = Set<String>.from(state.operational);
+    final medicalAidSchemes = Set<String>.from(state.medicalAidSchemes);
 
     final target = switch (event.group) {
       SearchFilterGroup.specialty => specialties,
       SearchFilterGroup.condition => conditions,
       SearchFilterGroup.ageGroup => ageGroups,
       SearchFilterGroup.operational => operational,
+      SearchFilterGroup.medicalAid => medicalAidSchemes,
     };
 
     if (target.contains(event.filterId)) {
@@ -138,6 +157,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         conditions: conditions,
         ageGroups: ageGroups,
         operational: operational,
+        medicalAidSchemes: medicalAidSchemes,
         navigateToResults: false,
       ),
     );
@@ -183,6 +203,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         conditions: state.conditions,
         ageGroups: state.ageGroups,
         operational: state.operational,
+        medicalAidSchemes: state.medicalAidSchemes,
+        acceptsMyMedicalAid: state.acceptsMyMedicalAid,
+        userMedicalAidSchemeKey: state.userMedicalAidSchemeKey,
       );
       emit(
         state.copyWith(

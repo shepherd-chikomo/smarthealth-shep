@@ -5,8 +5,8 @@ import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 
-Color emergencyKindColor(EmergencyServiceKind kind) {
-  return HomeDashboardColors.emergency;
+Color emergencyKindColor(BuildContext context, EmergencyServiceKind kind) {
+  return HomeDashboardColors.of(context).emergency;
 }
 
 String emergencyIconAsset(EmergencyServiceKind kind) {
@@ -19,7 +19,7 @@ String emergencyIconAsset(EmergencyServiceKind kind) {
 }
 
 class EmergencyWarningBanner extends StatelessWidget {
-  const EmergencyWarningBanner({super.key, required this.message});
+  EmergencyWarningBanner({super.key, required this.message});
 
   final String message;
 
@@ -29,24 +29,24 @@ class EmergencyWarningBanner extends StatelessWidget {
       liveRegion: true,
       child: Container(
         width: double.infinity,
-        color: HomeDashboardColors.emergencySoft,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: HomeDashboardColors.of(context).emergencySoft,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
-              color: HomeDashboardColors.emergency,
+              color: HomeDashboardColors.of(context).emergency,
               size: 20,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: HomeDashboardColors.emergency,
+                  color: HomeDashboardColors.of(context).emergency,
                   height: 1.35,
                 ),
               ),
@@ -76,7 +76,7 @@ class EmergencyServiceGridCard extends StatelessWidget {
       button: true,
       label: '${service.name}, $distanceLabel',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -99,28 +99,75 @@ class EmergencyServiceGridCard extends StatelessWidget {
                     height: 52,
                   ),
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   service.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: HomeDashboardColors.textPrimary,
+                    color: HomeDashboardColors.of(context).textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   distanceLabel,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: HomeDashboardColors.textSecondary,
+                    color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class EmergencyLocationPrompt extends StatelessWidget {
+  const EmergencyLocationPrompt({
+    super.key,
+    required this.message,
+    required this.actionLabel,
+    required this.onRequestLocation,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback onRequestLocation;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E8EE)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.location_on_outlined,
+            color: HomeDashboardColors.of(context).primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: HomeDashboardColors.of(context).textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRequestLocation,
+            child: Text(actionLabel),
+          ),
+        ],
       ),
     );
   }
@@ -136,10 +183,12 @@ class EmergencyFacilityCard extends StatelessWidget {
     required this.directionsLabel,
     required this.onCall,
     required this.onDirections,
+    this.sourceBadge,
   });
 
   final String name;
   final String type;
+  final String? sourceBadge;
   final String distanceLabel;
   final String callLabel;
   final String directionsLabel;
@@ -149,7 +198,7 @@ class EmergencyFacilityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -165,26 +214,48 @@ class EmergencyFacilityCard extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: HomeDashboardColors.textPrimary,
+                          color: HomeDashboardColors.of(context).textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         type,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      if (sourceBadge != null) ...[
+                        SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: HomeDashboardColors.of(context)
+                                .emergencySoft,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            sourceBadge!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: HomeDashboardColors.of(context).emergency,
+                            ),
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 4),
                       Text(
                         distanceLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
                     ],
@@ -196,7 +267,7 @@ class EmergencyFacilityCard extends StatelessWidget {
                   child: FilledButton(
                     onPressed: onCall,
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.emergency,
+                      backgroundColor: HomeDashboardColors.of(context).emergency,
                       minimumSize: const Size(72, 40),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
@@ -250,7 +321,7 @@ class EmergencyCallNowButton extends StatelessWidget {
         child: FilledButton(
           onPressed: onPressed,
           style: FilledButton.styleFrom(
-            backgroundColor: HomeDashboardColors.emergency,
+            backgroundColor: HomeDashboardColors.of(context).emergency,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),

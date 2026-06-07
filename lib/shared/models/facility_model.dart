@@ -26,6 +26,8 @@ abstract class FacilityModel with _$FacilityModel {
     double? distanceKm,
     @Default(false) bool isVerified,
     String? logoPath,
+    @Default([]) List<String> acceptedMedicalAidSchemeKeys,
+    @Default(false) bool acceptsYourMedicalAid,
   }) = _FacilityModel;
 
   factory FacilityModel.fromJson(Map<String, dynamic> json) =>

@@ -104,19 +104,19 @@ class SearchSuggestionsPanel extends StatelessWidget {
               _EmergencyShortcutTile(
                 label: l10n.searchEmergencyNearMe,
                 icon: Symbols.emergency,
-                color: HomeDashboardColors.emergency,
+                color: HomeDashboardColors.of(context).emergency,
                 onTap: () => onOperationalSelected('emergency'),
               ),
               _EmergencyShortcutTile(
                 label: l10n.searchOpenNowShortcut,
                 icon: Symbols.schedule,
-                color: HomeDashboardColors.primary,
+                color: HomeDashboardColors.of(context).primary,
                 onTap: () => onOperationalSelected('open_now'),
               ),
               _EmergencyShortcutTile(
                 label: l10n.searchEmergencyHub,
                 icon: Symbols.local_hospital,
-                color: HomeDashboardColors.secondary,
+                color: HomeDashboardColors.of(context).secondary,
                 onTap: () => context.go('/emergency'),
               ),
             ],
@@ -139,16 +139,16 @@ class _SuggestionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: HomeDashboardColors.textPrimary,
+              color: HomeDashboardColors.of(context).textPrimary,
             ),
           ),
           const SizedBox(height: 10),
@@ -176,28 +176,28 @@ class _SuggestionChip extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: HomeDashboardColors.primary),
-                const SizedBox(width: 6),
+                Icon(icon, size: 16, color: HomeDashboardColors.of(context).primary),
+                SizedBox(width: 6),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: HomeDashboardColors.textPrimary,
+                    color: HomeDashboardColors.of(context).textPrimary,
                   ),
                 ),
               ],
@@ -226,32 +226,32 @@ class _RecentSearchChip extends StatelessWidget {
       button: true,
       label: 'Recent search: $label',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+            padding: EdgeInsets.only(left: 12, top: 8, bottom: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Symbols.history,
                   size: 16,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: HomeDashboardColors.textPrimary,
+                    color: HomeDashboardColors.of(context).textPrimary,
                   ),
                 ),
                 Semantics(
@@ -260,11 +260,11 @@ class _RecentSearchChip extends StatelessWidget {
                   child: IconButton(
                     visualDensity: VisualDensity.compact,
                     iconSize: 16,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    constraints: BoxConstraints(),
+                    icon: Icon(
                       Symbols.close,
-                      color: HomeDashboardColors.textSecondary,
+                      color: HomeDashboardColors.of(context).textSecondary,
                     ),
                     onPressed: onRemove,
                   ),
@@ -296,42 +296,42 @@ class _NearbyFacilityTile extends StatelessWidget {
       button: true,
       label: name,
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            margin: EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Symbols.location_on,
                   size: 20,
-                  color: HomeDashboardColors.primary,
+                  color: HomeDashboardColors.of(context).primary,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ),
                 Text(
                   l10n.homeDistanceKm(distanceKm),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: HomeDashboardColors.textSecondary,
+                    color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
               ],
@@ -362,7 +362,7 @@ class _EmergencyShortcutTile extends StatelessWidget {
       button: true,
       label: label,
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -386,21 +386,21 @@ class _EmergencyShortcutTile extends StatelessWidget {
                   ),
                   child: Icon(icon, size: 18, color: color),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Symbols.chevron_right,
                   size: 20,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ],
             ),

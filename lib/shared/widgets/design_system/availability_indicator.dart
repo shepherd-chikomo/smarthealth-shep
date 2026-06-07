@@ -39,14 +39,14 @@ class AvailabilityIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final segments = _buildSegments();
-    if (segments.isEmpty) return const SizedBox.shrink();
+    final segments = _buildSegments(context);
+    if (segments.isEmpty) return SizedBox.shrink();
 
     final style = textStyle ??
-        const TextStyle(
+        TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: HomeDashboardColors.textSecondary,
+          color: HomeDashboardColors.of(context).textSecondary,
           height: 1.3,
         );
 
@@ -60,7 +60,7 @@ class AvailabilityIndicator extends StatelessWidget {
     );
   }
 
-  List<_Segment> _buildSegments() {
+  List<_Segment> _buildSegments(BuildContext context) {
     final segments = <_Segment>[];
 
     if (isClosingSoon == true) {
@@ -81,7 +81,7 @@ class AvailabilityIndicator extends StatelessWidget {
       segments.add(
         _Segment(
           'Closed',
-          color: HomeDashboardColors.textSecondary,
+          color: HomeDashboardColors.of(context).textSecondary,
         ),
       );
     }
@@ -109,7 +109,7 @@ class AvailabilityIndicator extends StatelessWidget {
       segments.add(
         _Segment(
           'Next Slot $formatted',
-          color: HomeDashboardColors.textSecondary,
+          color: HomeDashboardColors.of(context).textSecondary,
         ),
       );
     }

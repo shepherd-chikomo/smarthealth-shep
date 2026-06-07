@@ -58,7 +58,7 @@ class _AppointmentCountdownState extends State<AppointmentCountdown> {
         style: TextStyle(
           fontSize: widget.compact ? 12 : 14,
           fontWeight: FontWeight.w600,
-          color: HomeDashboardColors.secondary,
+          color: HomeDashboardColors.of(context).secondary,
         ),
       );
     }
@@ -73,15 +73,15 @@ class _AppointmentCountdownState extends State<AppointmentCountdown> {
         Icon(
           Symbols.timer,
           size: widget.compact ? 14 : 16,
-          color: HomeDashboardColors.primary,
+          color: HomeDashboardColors.of(context).primary,
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: widget.compact ? 12 : 14,
             fontWeight: FontWeight.w700,
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
           ),
         ),
       ],
@@ -109,7 +109,7 @@ class AppointmentReminderCard extends StatelessWidget {
       button: onTap != null,
       label: 'Reminder for ${appointment.providerName}',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -117,51 +117,51 @@ class AppointmentReminderCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(14),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: HomeDashboardColors.primary.withValues(alpha: 0.12),
+                    color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Symbols.notifications_active,
-                    color: HomeDashboardColors.primary,
+                    color: HomeDashboardColors.of(context).primary,
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         appointment.reminderStateLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: HomeDashboardColors.primary,
+                          color: HomeDashboardColors.of(context).primary,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         appointment.providerName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: HomeDashboardColors.textPrimary,
+                          color: HomeDashboardColors.of(context).textPrimary,
                         ),
                       ),
                       Text(
                         scheduledLabel,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
                     ],
@@ -182,7 +182,7 @@ class AppointmentReminderCard extends StatelessWidget {
 
 /// Compact home-screen banner for the next upcoming appointment.
 class UpcomingAppointmentBanner extends StatelessWidget {
-  const UpcomingAppointmentBanner({
+  UpcomingAppointmentBanner({
     super.key,
     required this.appointment,
     required this.onTap,
@@ -197,52 +197,52 @@ class UpcomingAppointmentBanner extends StatelessWidget {
       button: true,
       label: 'Upcoming appointment with ${appointment.providerName}',
       child: Material(
-        color: HomeDashboardColors.primary.withValues(alpha: 0.08),
+        color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: HomeDashboardColors.primary.withValues(alpha: 0.25),
+                color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.25),
               ),
             ),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Symbols.event_upcoming,
-                  color: HomeDashboardColors.primary,
+                  color: HomeDashboardColors.of(context).primary,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Upcoming appointment',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: HomeDashboardColors.primary,
+                          color: HomeDashboardColors.of(context).primary,
                         ),
                       ),
                       Text(
                         appointment.providerName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: HomeDashboardColors.textPrimary,
+                          color: HomeDashboardColors.of(context).textPrimary,
                         ),
                       ),
                       Text(
                         appointment.facilityName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
                     ],

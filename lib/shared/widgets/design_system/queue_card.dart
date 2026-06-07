@@ -52,14 +52,14 @@ class QueueCard extends StatelessWidget {
           'Queue ${session.ticketNumber}, ${session.patientsAhead} patients ahead, '
           '${session.estimatedWaitMinutes} minute wait, ${session.status.label}',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         elevation: 0,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: Duration(milliseconds: 300),
             curve: Curves.easeOut,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -70,7 +70,7 @@ class QueueCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  HomeDashboardColors.surface,
+                  HomeDashboardColors.of(context).surface,
                   DesignSystemColors.primary.withValues(alpha: 0.04),
                 ],
               ),
@@ -100,17 +100,17 @@ class QueueCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: ticketSize,
                               fontWeight: FontWeight.w700,
-                              color: HomeDashboardColors.primary,
+                              color: HomeDashboardColors.of(context).primary,
                               letterSpacing: 0.3,
                             ),
                           ),
                           if (!compact) ...[
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               session.facilityName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: HomeDashboardColors.textSecondary,
+                                color: HomeDashboardColors.of(context).textSecondary,
                               ),
                             ),
                           ],
@@ -149,27 +149,27 @@ class QueueCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: compact ? 13 : 15,
                             fontWeight: FontWeight.w600,
-                            color: HomeDashboardColors.textPrimary,
+                            color: HomeDashboardColors.of(context).textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           session.estimatedWaitMinutes > 0
                               ? 'Estimated wait: ${session.estimatedWaitMinutes} mins'
                               : 'Ready now',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                         ),
                       ] else if (session.status ==
                           QueuePatientStatus.inConsultation) ...[
-                        const Text(
+                        Text(
                           'You are being seen now',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: HomeDashboardColors.textPrimary,
+                            color: HomeDashboardColors.of(context).textPrimary,
                           ),
                         ),
                       ],
@@ -177,7 +177,7 @@ class QueueCard extends StatelessWidget {
                   ),
                 ),
                 if (showLiveIndicator) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   _LiveRefreshIndicator(isRefreshing: isRefreshing),
                 ],
                 if (onLeaveQueue != null &&
@@ -190,9 +190,9 @@ class QueueCard extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: onLeaveQueue,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: HomeDashboardColors.emergency,
+                        foregroundColor: HomeDashboardColors.of(context).emergency,
                         side: BorderSide(
-                          color: HomeDashboardColors.emergency
+                          color: HomeDashboardColors.of(context).emergency
                               .withValues(alpha: 0.5),
                         ),
                         shape: RoundedRectangleBorder(
@@ -255,7 +255,7 @@ class _StatusChip extends StatelessWidget {
 }
 
 class _LiveRefreshIndicator extends StatelessWidget {
-  const _LiveRefreshIndicator({required this.isRefreshing});
+  _LiveRefreshIndicator({required this.isRefreshing});
 
   final bool isRefreshing;
 
@@ -265,20 +265,20 @@ class _LiveRefreshIndicator extends StatelessWidget {
       children: [
         AnimatedRotation(
           turns: isRefreshing ? 1 : 0,
-          duration: const Duration(milliseconds: 800),
+          duration: Duration(milliseconds: 800),
           child: Icon(
             Symbols.sync,
             size: 14,
-            color: HomeDashboardColors.primary.withValues(alpha: 0.7),
+            color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.7),
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6),
         Text(
           isRefreshing ? 'Updating…' : 'Live',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: HomeDashboardColors.textSecondary.withValues(alpha: 0.9),
+            color: HomeDashboardColors.of(context).textSecondary.withValues(alpha: 0.9),
           ),
         ),
         const SizedBox(width: 6),

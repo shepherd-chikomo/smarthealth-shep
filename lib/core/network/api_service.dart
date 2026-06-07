@@ -3,6 +3,7 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/shared/models/facility_model.dart';
+import 'package:smarthealth_shep/shared/models/medical_aid_scheme.dart';
 import 'package:smarthealth_shep/shared/models/facility_public_profile.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart';
@@ -131,9 +132,64 @@ class ApiService {
     return _parseCatalogFilterItems(response.data?['conditions']);
   }
 
+  Future<({List<({String id, String label})> common, List<({String id, String label})> other})>
+      fetchProfileConditions() async {
+    final response = await _get<Map<String, dynamic>>(
+      '/catalog/profile-conditions',
+      bypassCache: true,
+    );
+    final data = response.data;
+    return (
+      common: _parseCatalogFilterItems(data?['common']),
+      other: _parseCatalogFilterItems(data?['other']),
+    );
+  }
+
+  Future<List<({String id, String label})>> suggestProfileConditions(
+    String query, {
+    int limit = 8,
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const [];
+    final response = await _get<Map<String, dynamic>>(
+      '/catalog/profile-conditions/suggest',
+      queryParameters: {'q': trimmed, 'limit': limit},
+      bypassCache: true,
+    );
+    return _parseCatalogFilterItems(response.data?['suggestions']);
+  }
+
+  Future<void> submitConditionProposal(
+    String label, {
+    String? familyMemberId,
+  }) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/patients/condition-submissions',
+      data: {
+        'label': label,
+        if (familyMemberId != null && familyMemberId.isNotEmpty)
+          'familyMemberId': familyMemberId,
+      },
+    );
+  }
+
   Future<List<({String id, String label})>> fetchCatalogAgeGroups() async {
     final response = await _get<Map<String, dynamic>>('/catalog/age-groups');
     return _parseCatalogFilterItems(response.data?['ageGroups']);
+  }
+
+  Future<List<MedicalAidScheme>> fetchMedicalAidCatalog() async {
+    final response = await _get<Map<String, dynamic>>(
+      '/catalog/medical-aids',
+      bypassCache: true,
+    );
+    final list = response.data?['schemes'] as List<dynamic>? ?? [];
+    final schemes = list
+        .whereType<Map<String, dynamic>>()
+        .map(MedicalAidScheme.fromJson)
+        .where((s) => s.schemeKey.isNotEmpty && s.name.isNotEmpty)
+        .toList();
+    return schemes.isNotEmpty ? schemes : defaultMedicalAidSchemes;
   }
 
   Future<List<FacilityModel>> searchFacilities(
@@ -152,6 +208,10 @@ class ApiService {
         if (filter.hasQueue == true) 'hasQueue': true,
         if (filter.city != null) 'city': filter.city,
         if (filter.province != null) 'province': filter.province,
+        if (filter.medicalAidSchemeKeys.isNotEmpty)
+          'medicalAidSchemeKeys': filter.medicalAidSchemeKeys.join(','),
+        if (filter.userMedicalAidSchemeKey != null)
+          'userMedicalAidSchemeKey': filter.userMedicalAidSchemeKey,
         'page': 1,
         'limit': 50,
       },

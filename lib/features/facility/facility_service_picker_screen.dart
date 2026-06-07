@@ -102,35 +102,35 @@ class _FacilityServicePickerScreenState extends State<FacilityServicePickerScree
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(_profile?.facility.name ?? 'Book appointment'),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text(_error!))
               : _profile == null
-                  ? const Center(child: Text('Facility not found'))
+                  ? Center(child: Text('Facility not found'))
                   : ListView(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       children: [
-                        const Text(
+                        Text(
                           'Select a service',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           'Your appointment will be linked to the service you choose.',
-                          style: TextStyle(color: HomeDashboardColors.textSecondary),
+                          style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ..._profile!.services.map(
                           (service) => Card(
-                            margin: const EdgeInsets.only(bottom: 10),
+                            margin: EdgeInsets.only(bottom: 10),
                             child: ListTile(
-                              leading: const Icon(Symbols.health_and_safety, color: HomeDashboardColors.primary),
+                              leading: Icon(Symbols.health_and_safety, color: HomeDashboardColors.of(context).primary),
                               title: Text(service.name),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _onServiceSelected(service),

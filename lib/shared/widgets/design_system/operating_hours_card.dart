@@ -22,19 +22,19 @@ class OperatingHoursCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (hours.isEmpty) return const SizedBox.shrink();
+    if (hours.isEmpty) return SizedBox.shrink();
 
     final todayName = DateFormat('EEEE').format(DateTime.now());
 
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         padding: padding,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE5E8EE)),
+          border: Border.all(color: Color(0xFFE5E8EE)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,13 +42,13 @@ class OperatingHoursCard extends StatelessWidget {
             if (title != null) ...[
               Text(
                 title!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: HomeDashboardColors.textPrimary,
+                  color: HomeDashboardColors.of(context).textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
             ],
             ...hours.asMap().entries.map((entry) {
               final index = entry.key;
@@ -61,11 +61,11 @@ class OperatingHoursCard extends StatelessWidget {
                   if (index > 0)
                     Divider(
                       height: 1,
-                      color: HomeDashboardColors.textSecondary
+                      color: HomeDashboardColors.of(context).textSecondary
                           .withValues(alpha: 0.15),
                     ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       children: [
                         Expanded(
@@ -77,8 +77,8 @@ class OperatingHoursCard extends StatelessWidget {
                               fontWeight:
                                   isToday ? FontWeight.w700 : FontWeight.w600,
                               color: isToday
-                                  ? HomeDashboardColors.primary
-                                  : HomeDashboardColors.textPrimary,
+                                  ? HomeDashboardColors.of(context).primary
+                                  : HomeDashboardColors.of(context).textPrimary,
                             ),
                           ),
                         ),
@@ -90,8 +90,8 @@ class OperatingHoursCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               color: row.isClosed
-                                  ? HomeDashboardColors.emergency
-                                  : HomeDashboardColors.textSecondary,
+                                  ? HomeDashboardColors.of(context).emergency
+                                  : HomeDashboardColors.of(context).textSecondary,
                               fontWeight: row.isClosed || isToday
                                   ? FontWeight.w600
                                   : FontWeight.normal,

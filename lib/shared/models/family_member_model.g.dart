@@ -20,6 +20,10 @@ _FamilyMemberModel _$FamilyMemberModelFromJson(Map<String, dynamic> json) =>
           const [],
       allergies: json['allergies'] as String?,
       isPrimaryAccountHolder: json['isPrimaryAccountHolder'] as bool? ?? false,
+      metadata: _metadataFromJson(json['metadata']),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
     );
 
 Map<String, dynamic> _$FamilyMemberModelToJson(_FamilyMemberModel instance) =>
@@ -32,6 +36,8 @@ Map<String, dynamic> _$FamilyMemberModelToJson(_FamilyMemberModel instance) =>
       'medicalConditions': instance.medicalConditions,
       'allergies': instance.allergies,
       'isPrimaryAccountHolder': instance.isPrimaryAccountHolder,
+      'metadata': _metadataToJson(instance.metadata),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
     };
 
 const _$FamilyGenderEnumMap = {

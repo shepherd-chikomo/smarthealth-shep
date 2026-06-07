@@ -1,13 +1,12 @@
 import 'dart:developer' as developer;
 
+import 'package:dio/dio.dart';
 import 'package:smarthealth_shep/core/assets.dart';
-import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/appointments/data/local/appointment_dao.dart';
-import 'package:smarthealth_shep/features/appointments/data/mock_appointments.dart';
 import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
 import 'package:smarthealth_shep/features/booking/models/booking_confirmation.dart';
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
-import 'package:smarthealth_shep/shared/data/mock_data.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_service.dart';
 import 'package:smarthealth_shep/shared/models/operational_status.dart';
@@ -21,19 +20,58 @@ class AppointmentsRepository {
     AppointmentDao? appointmentDao,
     ProviderDao? providerDao,
     SyncService? syncService,
+    Dio? dio,
   })  : _dao = appointmentDao ?? AppointmentDao(),
         _providerDao = providerDao ?? ProviderDao(),
         _syncService =
-            syncService ?? SyncService.instance ?? SyncService.forBackground();
+            syncService ?? SyncService.instance ?? SyncService.forBackground(),
+        _dio = dio ?? createApiDio();
 
   final AppointmentDao _dao;
   final ProviderDao _providerDao;
   final SyncService _syncService;
+  final Dio _dio;
 
-  Future<List<AppointmentModel>> loadAppointments() async {
-    if (AppConfig.seedMockDataOnEmpty && await _dao.isEmpty()) {
-      await _dao.saveAll(MockAppointments.seed());
+  Future<void> syncFromRemote() async {
+    try {
+      final now = DateTime.now().toUtc();
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/appointments',
+        queryParameters: {
+          'from': now.toIso8601String(),
+          'page': 1,
+          'limit': 100,
+        },
+      );
+      final raw = response.data?['appointments'] as List<dynamic>? ?? const [];
+      for (final item in raw) {
+        if (item is! Map<String, dynamic>) continue;
+        final appointment = AppointmentModel.fromApiJson(item);
+        if (!appointment.isTerminal) {
+          await _dao.upsertFromApi(appointment);
+        }
+      }
+      await _dao.purgeSeedRows();
+      await _dao.deleteTerminal();
+      developer.log(
+        'Synced ${raw.length} appointments from API',
+        name: _logName,
+      );
+    } catch (error, stackTrace) {
+      developer.log(
+        'Appointment sync failed — using local cache',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
+  }
+
+  Future<List<AppointmentModel>> loadAppointments({bool syncRemote = false}) async {
+    if (syncRemote) {
+      await syncFromRemote();
+    }
+    await _dao.purgeSeedRows();
     final appointments = await _dao.getAll();
     appointments.sort((a, b) => b.scheduledAt.compareTo(a.scheduledAt));
     return appointments;
@@ -47,9 +85,9 @@ class AppointmentsRepository {
     final upcoming = appointments
         .where(
           (a) =>
-              a.scheduledAt.isAfter(now) &&
-              (a.status == AppointmentOperationalStatus.confirmed ||
-                  a.status == AppointmentOperationalStatus.pending ||
+              !a.isTerminal &&
+              (a.isActive ||
+                  a.scheduledAt.isAfter(now) ||
                   a.status == AppointmentOperationalStatus.rescheduled),
         )
         .toList()
@@ -190,14 +228,7 @@ class AppointmentsRepository {
   }
 
   Future<ProviderModel?> _resolveProvider(String providerId) async {
-    final local = await _providerDao.getById(providerId);
-    if (local != null) return local;
-    if (AppConfig.allowMockFallbacks) {
-      for (final provider in MockData.providers) {
-        if (provider.id == providerId) return provider;
-      }
-    }
-    return null;
+    return _providerDao.getById(providerId);
   }
 
   DateTime _combineDateTime(DateTime date, String time) {

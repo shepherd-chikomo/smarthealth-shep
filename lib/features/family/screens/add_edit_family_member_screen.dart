@@ -5,8 +5,12 @@ import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_bloc.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_event.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
-import 'package:smarthealth_shep/features/search/search_filter_options.dart';
-import 'package:smarthealth_shep/features/search/widgets/search_filter_chip.dart';
+import 'package:smarthealth_shep/core/network/api_service.dart';
+import 'package:smarthealth_shep/core/network/dio_factory.dart';
+import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
+import 'package:smarthealth_shep/features/profile/utils/condition_submission_helper.dart';
+import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
+import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 
 /// Add or edit a family member (full-screen form).
@@ -31,6 +35,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
   FamilyGender _gender = FamilyGender.other;
   DateTime? _dateOfBirth;
   final Set<String> _conditions = {};
+  Map<String, String> _customConditionLabels = {};
 
   @override
   void initState() {
@@ -45,6 +50,9 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
           member.relationshipEnum ?? FamilyRelationship.other;
       _gender = member.gender ?? FamilyGender.other;
       _conditions.addAll(member.medicalConditions);
+      _customConditionLabels = Map<String, String>.from(
+        member.metadata?.customConditionLabels ?? const {},
+      );
       if (member.dateOfBirth != null) {
         _dateOfBirth = DateTime.tryParse(member.dateOfBirth!);
       }
@@ -75,7 +83,25 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     }
   }
 
-  void _save() {
+  Future<void> _pickConditions() async {
+    final result = await ConditionSelectionSheet.show(
+      context,
+      selectedIds: _conditions,
+      customLabels: _customConditionLabels,
+    );
+    if (result == null) return;
+    setState(() {
+      _conditions
+        ..clear()
+        ..addAll(result.selectedIds);
+      _customConditionLabels = Map<String, String>.from(result.customLabels);
+      _customConditionLabels.removeWhere(
+        (slug, _) => !_conditions.contains(slug),
+      );
+    });
+  }
+
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_dateOfBirth == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,6 +114,13 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     final isPrimary = _relationship == FamilyRelationship.self ||
         (widget.member?.isPrimaryAccountHolder ?? false);
 
+    final existingMetadata = widget.member?.metadata;
+    final metadata = _customConditionLabels.isNotEmpty
+        ? (existingMetadata ?? const EmergencyMedicalMetadata()).copyWith(
+            customConditionLabels: _customConditionLabels,
+          )
+        : existingMetadata;
+
     final member = FamilyMemberModel(
       id: widget.member?.id ?? '',
       name: _nameController.text.trim(),
@@ -99,6 +132,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
           ? null
           : _allergiesController.text.trim(),
       isPrimaryAccountHolder: isPrimary,
+      metadata: metadata,
     );
 
     final bloc = context.read<FamilyBloc>();
@@ -107,16 +141,26 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     } else {
       bloc.add(AddMember(member));
     }
+
+    if (_customConditionLabels.isNotEmpty) {
+      await submitCustomConditionProposals(
+        api: ApiService(createApiDio()),
+        customLabels: _customConditionLabels,
+        familyMemberId: member.id.isNotEmpty ? member.id : null,
+      );
+    }
+
+    if (!mounted) return;
     Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: HomeDashboardColors.surface,
-        foregroundColor: HomeDashboardColors.textPrimary,
+        backgroundColor: HomeDashboardColors.of(context).surface,
+        foregroundColor: HomeDashboardColors.of(context).textPrimary,
         title: Text(widget.isEditing ? 'Edit Family Member' : 'Add Family Member'),
       ),
       body: Form(
@@ -151,7 +195,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                 if (value != null) setState(() => _relationship = value);
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             InkWell(
               onTap: _pickDateOfBirth,
               borderRadius: BorderRadius.circular(12),
@@ -163,8 +207,8 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                       : 'Select date',
                   style: TextStyle(
                     color: _dateOfBirth != null
-                        ? HomeDashboardColors.textPrimary
-                        : HomeDashboardColors.textSecondary,
+                        ? HomeDashboardColors.of(context).textPrimary
+                        : HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
               ),
@@ -184,25 +228,25 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                 onSelected: () => setState(() => _gender = gender),
               );
             }),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Age group',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: Chip(
                 label: Text(
                   _ageGroup?.label ?? 'Set date of birth',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
-                backgroundColor: HomeDashboardColors.secondary
+                backgroundColor: HomeDashboardColors.of(context).secondary
                     .withValues(alpha: 0.12),
                 side: BorderSide(
-                  color: HomeDashboardColors.secondary.withValues(alpha: 0.4),
+                  color: HomeDashboardColors.of(context).secondary.withValues(alpha: 0.4),
                 ),
               ),
             ),
@@ -214,24 +258,27 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                   ),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: SearchFilterOptions.conditions.map((option) {
-                return SearchFilterChip(
-                  label: option.label,
-                  selected: _conditions.contains(option.id),
-                  onTap: () {
-                    setState(() {
-                      if (_conditions.contains(option.id)) {
-                        _conditions.remove(option.id);
-                      } else {
-                        _conditions.add(option.id);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
+            OutlinedButton(
+              onPressed: _pickConditions,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(AppConstants.minTapTarget),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _conditions.isEmpty
+                      ? 'Select conditions'
+                      : ConditionLabels.joinLabels(
+                          _conditions,
+                          customLabels: _customConditionLabels,
+                        ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -247,20 +294,20 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
                       minimumSize:
-                          const Size.fromHeight(AppConstants.minTapTarget),
+                          Size.fromHeight(AppConstants.minTapTarget),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Cancel'),
+                    child: Text('Cancel'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: _save,
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.secondary,
+                      backgroundColor: HomeDashboardColors.of(context).secondary,
                       foregroundColor: Colors.white,
                       minimumSize:
                           const Size.fromHeight(AppConstants.minTapTarget),
@@ -268,7 +315,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Save'),
+                    child: Text('Save'),
                   ),
                 ),
               ],
@@ -283,7 +330,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: HomeDashboardColors.surface,
+      fillColor: HomeDashboardColors.of(context).surface,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFFE5E8EE)),
@@ -297,7 +344,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
 }
 
 class _GenderTile extends StatelessWidget {
-  const _GenderTile({
+  _GenderTile({
     required this.gender,
     required this.selected,
     required this.onSelected,
@@ -311,21 +358,21 @@ class _GenderTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? HomeDashboardColors.primary.withValues(alpha: 0.08)
-          : HomeDashboardColors.surface,
+          ? HomeDashboardColors.of(context).primary.withValues(alpha: 0.08)
+          : HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onSelected,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? HomeDashboardColors.primary
-                  : const Color(0xFFE5E8EE),
+                  ? HomeDashboardColors.of(context).primary
+                  : Color(0xFFE5E8EE),
             ),
           ),
           child: Row(
@@ -333,8 +380,8 @@ class _GenderTile extends StatelessWidget {
               Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_off,
                 color: selected
-                    ? HomeDashboardColors.primary
-                    : HomeDashboardColors.textSecondary,
+                    ? HomeDashboardColors.of(context).primary
+                    : HomeDashboardColors.of(context).textSecondary,
               ),
               const SizedBox(width: 12),
               Text(

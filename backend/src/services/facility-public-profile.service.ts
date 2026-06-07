@@ -82,7 +82,6 @@ function buildFacilityInfo(profile: FacilityProfileSettings) {
     profile.emergency.is24Hour;
 
   return {
-    waitTimeMinutes: profile.waitTime.mode === 'manual' ? profile.waitTime.minutes ?? null : null,
     emergencyAvailable: emergencyAvailable ? true : null,
     wheelchairAccessible: profile.accessibility.wheelchair ? true : null,
     parkingAvailable: profile.accessibility.parking ? true : null,

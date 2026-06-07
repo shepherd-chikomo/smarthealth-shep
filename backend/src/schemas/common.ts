@@ -113,6 +113,91 @@ export const updatePatientProfileSchema = z.object({
   timezone: z.string().optional(),
 });
 
+export const medicationEntrySchema = z.object({
+  name: z.string().min(1).max(200),
+  frequency: z.string().max(40).optional(),
+});
+
+export const emergencyContactSchema = z.object({
+  name: z.string().max(120).optional(),
+  relationship: z.string().max(60).optional(),
+  phone: z.string().max(30).optional(),
+});
+
+export const medicalAidInfoSchema = z.object({
+  schemeKey: z.string().max(60).optional(),
+  provider: z.string().max(120).optional(),
+  memberNumber: z.string().max(60).optional(),
+});
+
+export const primaryProviderSchema = z.object({
+  facilityId: z.string().uuid().optional(),
+  providerId: z.string().uuid().optional(),
+  facilityName: z.string().max(200).optional(),
+  doctorName: z.string().max(120).optional(),
+  phone: z.string().max(30).optional(),
+});
+
+export const emergencyMedicalMetadataSchema = z.object({
+  bloodGroup: z.string().max(10).optional(),
+  medications: z.array(medicationEntrySchema).default([]),
+  emergencyContact: emergencyContactSchema.optional(),
+  medicalAid: medicalAidInfoSchema.optional(),
+  primaryProvider: primaryProviderSchema.optional(),
+  customConditionLabels: z.record(z.string(), z.string()).optional(),
+});
+
+export const profileConditionPublicSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+});
+
+export const profileConditionsGroupedSchema = z.object({
+  common: z.array(profileConditionPublicSchema),
+  other: z.array(profileConditionPublicSchema),
+});
+
+export const profileConditionAdminSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string(),
+  label: z.string(),
+  isCommon: z.boolean(),
+  sortOrder: z.number().int(),
+  isActive: z.boolean(),
+});
+
+export const createProfileConditionSchema = z.object({
+  label: z.string().min(1).max(120),
+  isCommon: z.boolean().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateProfileConditionSchema = createProfileConditionSchema.partial();
+
+export const conditionSubmissionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  familyMemberId: z.string().uuid().nullable(),
+  proposedLabel: z.string(),
+  proposedSlug: z.string(),
+  status: z.enum(['pending', 'approved', 'rejected']),
+  reviewedBy: z.string().uuid().nullable(),
+  reviewedAt: z.string().nullable(),
+  resultingConditionId: z.string().uuid().nullable(),
+  createdAt: z.string(),
+  userEmail: z.string().nullable().optional(),
+});
+
+export const createConditionSubmissionSchema = z.object({
+  label: z.string().min(1).max(120),
+  familyMemberId: z.string().uuid().optional(),
+});
+
+export const approveConditionSubmissionSchema = z.object({
+  isCommon: z.boolean().optional(),
+});
+
 export const familyMemberSchema = z.object({
   id: z.string().uuid(),
   firstName: z.string(),
@@ -123,6 +208,7 @@ export const familyMemberSchema = z.object({
   medicalConditions: z.array(z.string()),
   allergies: z.string().nullable(),
   isPrimaryAccountHolder: z.boolean(),
+  metadata: emergencyMedicalMetadataSchema.default({ medications: [] }),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -136,18 +222,21 @@ export const createFamilyMemberSchema = z.object({
     'child',
     'parent',
     'sibling',
-    'grandparent',
-    'grandchild',
-    'guardian',
     'other',
   ]),
   dateOfBirth: z.string().date().optional(),
   gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
   medicalConditions: z.array(z.string()).optional(),
   allergies: z.string().optional(),
+  metadata: emergencyMedicalMetadataSchema.optional(),
+  isPrimaryAccountHolder: z.boolean().optional(),
 });
 
-export const updateFamilyMemberSchema = createFamilyMemberSchema.partial();
+export const updateFamilyMemberSchema = createFamilyMemberSchema
+  .partial()
+  .extend({
+    metadata: emergencyMedicalMetadataSchema.partial().optional(),
+  });
 
 export const providerSchema = z.object({
   id: z.string().uuid(),
@@ -308,6 +397,18 @@ export const paginationMetaSchema = z.object({
   hasPrev: z.boolean(),
 });
 
+export const emergencyHubFacilitySchema = emergencyServiceSchema.extend({
+  source: z.enum(['emergency_directory', 'government_hospital', 'profile_emergency']),
+  referralLabel: z.string().nullable(),
+});
+
+export const emergencyHubSchema = z.object({
+  services: z.array(emergencyServiceSchema),
+  facilities: z.array(emergencyHubFacilitySchema),
+  locationRequired: z.boolean(),
+  pagination: paginationMetaSchema,
+});
+
 export const geoQuerySchema = z.object({
   lat: z.coerce.number().min(-90).max(90),
   lon: z.coerce.number().min(-180).max(180),
@@ -336,6 +437,8 @@ export const healthcareSearchQuerySchema = z.object({
   city: z.string().optional(),
   province: z.string().optional(),
   facilityId: z.string().uuid().optional(),
+  medicalAidSchemeKeys: z.string().optional(),
+  userMedicalAidSchemeKey: z.string().optional(),
 });
 
 export const appointmentFilterSchema = z.object({

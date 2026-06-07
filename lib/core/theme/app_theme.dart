@@ -120,6 +120,22 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: tokens.border, thickness: 1),
+      chipTheme: ChipThemeData(
+        backgroundColor: tokens.card,
+        selectedColor: primary,
+        disabledColor: tokens.muted,
+        labelStyle: AppTextStyles.sm(color: tokens.foreground),
+        secondaryLabelStyle: AppTextStyles.sm(color: primaryFg),
+        side: BorderSide(color: tokens.border),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: tokens.foreground,
+        contentTextStyle: AppTextStyles.sm(color: tokens.background),
+        actionTextColor: colorScheme.primary,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: tokens.card,
         indicatorColor: tokens.primarySoft,

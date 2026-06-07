@@ -33,7 +33,7 @@ class FacilityCard extends StatelessWidget {
       button: onTap != null,
       label: '${facility.name}, $subtitle',
       child: Material(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(16),
         elevation: 0,
         child: InkWell(
@@ -52,7 +52,7 @@ class FacilityCard extends StatelessWidget {
                   logoPath: facility.logoPath,
                   facilityType: facility.facilityType,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,57 +63,78 @@ class FacilityCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               facility.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (facility.isVerified) ...[
-                            const SizedBox(width: 6),
-                            const VerificationBadge(),
+                            SizedBox(width: 6),
+                            VerificationBadge(),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: HomeDashboardColors.textSecondary,
+                          color: HomeDashboardColors.of(context).textSecondary,
                         ),
                       ),
                       if (location.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           location,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: HomeDashboardColors.textSecondary,
+                            color: HomeDashboardColors.of(context).textSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      if (distance != null) ...[
-                        const SizedBox(height: 6),
+                      if (facility.acceptsYourMedicalAid) ...[
+                        SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
+                              Symbols.shield,
+                              size: 14,
+                              color: const Color(0xFF1B8F4E),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Accepts your medical aid',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1B8F4E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (distance != null) ...[
+                        SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
                               Symbols.near_me,
                               size: 14,
-                              color: HomeDashboardColors.primary,
+                              color: HomeDashboardColors.of(context).primary,
                             ),
-                            const SizedBox(width: 4),
+                            SizedBox(width: 4),
                             Text(
                               distance,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: HomeDashboardColors.primary,
+                                color: HomeDashboardColors.of(context).primary,
                               ),
                             ),
                           ],
@@ -173,19 +194,19 @@ class _Thumbnail extends StatelessWidget {
                 source: logoPath,
                 width: 56,
                 height: 56,
-                placeholder: _iconPlaceholder(icon),
-                error: _iconPlaceholder(icon),
+                placeholder: _iconPlaceholder(context, icon),
+                error: _iconPlaceholder(context, icon),
               )
-            : _iconPlaceholder(icon),
+            : _iconPlaceholder(context, icon),
       ),
     );
   }
 
-  Widget _iconPlaceholder(IconData icon) {
+  Widget _iconPlaceholder(BuildContext context, IconData icon) {
     return ColoredBox(
-      color: HomeDashboardColors.primary.withValues(alpha: 0.08),
+      color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
       child: Center(
-        child: Icon(icon, color: HomeDashboardColors.primary, size: 28),
+        child: Icon(icon, color: HomeDashboardColors.of(context).primary, size: 28),
       ),
     );
   }

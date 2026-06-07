@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_bloc.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_event.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_state.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_hub_repository.dart';
+import 'package:smarthealth_shep/features/emergency/models/emergency_facility.dart';
 import 'package:smarthealth_shep/features/emergency/widgets/emergency_hub_widgets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
@@ -12,13 +15,17 @@ import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class EmergencyScreen extends StatelessWidget {
+class EmergencyScreen extends ConsumerWidget {
   const EmergencyScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider(
-      create: (_) => EmergencyHubBloc(repository: EmergencyHubRepository()),
+      create: (_) => EmergencyHubBloc(
+        repository: EmergencyHubRepository(
+          searchOrigin: ref.read(searchOriginResolverProvider),
+        ),
+      ),
       child: const _EmergencyHubView(),
     );
   }
@@ -30,6 +37,15 @@ class _EmergencyHubView extends StatelessWidget {
   Future<void> _call(String phone) async {
     final uri = Uri(scheme: 'tel', path: phone);
     if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
+  String? _sourceBadge(EmergencyFacility facility) {
+    return switch (facility.source) {
+      EmergencyFacilitySource.governmentHospital => 'Government hospital',
+      EmergencyFacilitySource.profileEmergency => 'Emergency dept',
+      EmergencyFacilitySource.emergencyDirectory => 'ER directory',
+      null => null,
+    };
   }
 
   Future<void> _directions({
@@ -54,10 +70,10 @@ class _EmergencyHubView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return AppShellScaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.navEmergency),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: BlocBuilder<EmergencyHubBloc, EmergencyHubState>(
         builder: (context, state) {
@@ -73,13 +89,13 @@ class _EmergencyHubView extends StatelessWidget {
                 label: l10n.homeRetry,
                 onPressed: () => context
                     .read<EmergencyHubBloc>()
-                    .add(const RefreshEmergencyHub()),
+                    .add(RefreshEmergencyHub()),
               ),
             );
           }
 
           return RefreshIndicator(
-            color: HomeDashboardColors.primary,
+            color: HomeDashboardColors.of(context).primary,
             onRefresh: () async {
               context.read<EmergencyHubBloc>().add(const RefreshEmergencyHub());
               await context.read<EmergencyHubBloc>().stream.firstWhere(
@@ -88,24 +104,49 @@ class _EmergencyHubView extends StatelessWidget {
                   );
             },
             child: ListView(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: EdgeInsets.only(bottom: 24),
               children: [
                 EmergencyWarningBanner(message: l10n.emergencyWarningBanner),
-                if (state.isOffline)
+                if (data.locationRequired)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: EmergencyLocationPrompt(
+                      message:
+                          'Turn on location to see nearest emergency services and hospitals.',
+                      actionLabel: l10n.homeRetry,
+                      onRequestLocation: () => context
+                          .read<EmergencyHubBloc>()
+                          .add(const RefreshEmergencyHub()),
+                    ),
+                  ),
+                if (state.isOffline)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Text(
                       l10n.emergencyOfflineReady,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: GridView.builder(
+                if (data.services.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text(
+                      'Nearest emergency services',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: HomeDashboardColors.of(context).textPrimary,
+                      ),
+                    ),
+                  ),
+                if (data.services.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate:
@@ -130,15 +171,15 @@ class _EmergencyHubView extends StatelessWidget {
                       );
                     },
                   ),
-                ),
+                  ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
                   child: Text(
-                    l10n.emergencyNearbyFacilities,
-                    style: const TextStyle(
+                    'Hospitals & emergency facilities',
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: HomeDashboardColors.textPrimary,
+                      color: HomeDashboardColors.of(context).textPrimary,
                     ),
                   ),
                 ),
@@ -148,6 +189,7 @@ class _EmergencyHubView extends StatelessWidget {
                     child: EmergencyFacilityCard(
                       name: facility.name,
                       type: facility.type,
+                      sourceBadge: _sourceBadge(facility),
                       distanceLabel:
                           l10n.homeDistanceKm(facility.distanceKm),
                       callLabel: l10n.emergencyCall,

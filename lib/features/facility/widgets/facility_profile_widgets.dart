@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/location/location_service.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
@@ -8,6 +10,8 @@ import 'package:smarthealth_shep/shared/utils/maps_launcher.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/operating_hours_card.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/verification_badge.dart';
 import 'package:smarthealth_shep/shared/widgets/smart_image.dart';
+
+const _whatsappGreen = Color(0xFF25D366);
 
 class FacilityProfileHeader extends StatelessWidget {
   const FacilityProfileHeader({super.key, required this.profile});
@@ -40,14 +44,18 @@ class FacilityProfileHeader extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: SmartImage(
             source: profile.logoUrl,
-            width: 72,
-            height: 72,
+            width: 88,
+            height: 88,
             borderRadius: BorderRadius.circular(16),
             placeholder: Container(
-              width: 72,
-              height: 72,
-              color: HomeDashboardColors.primary.withValues(alpha: 0.08),
-              child: const Icon(Symbols.local_hospital, color: HomeDashboardColors.primary),
+              width: 88,
+              height: 88,
+              color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
+              child: Icon(
+                Symbols.local_hospital,
+                size: 36,
+                color: HomeDashboardColors.of(context).primary,
+              ),
             ),
           ),
         ),
@@ -58,25 +66,25 @@ class FacilityProfileHeader extends StatelessWidget {
             children: [
               Text(
                 facility.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: HomeDashboardColors.textPrimary,
+                  color: HomeDashboardColors.of(context).textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: HomeDashboardColors.primary.withValues(alpha: 0.1),
+                  color: HomeDashboardColors.of(context).primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   _typeLabel(type),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: HomeDashboardColors.primary,
+                    color: HomeDashboardColors.of(context).primary,
                   ),
                 ),
               ),
@@ -84,10 +92,10 @@ class FacilityProfileHeader extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   facility.description!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
-                    color: HomeDashboardColors.textSecondary,
+                    color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
               ],
@@ -125,24 +133,41 @@ class FacilityPrimaryActions extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onBook,
               style: FilledButton.styleFrom(
-                backgroundColor: HomeDashboardColors.primary,
+                backgroundColor: HomeDashboardColors.of(context).primary,
                 minimumSize: const Size.fromHeight(AppConstants.minTapTarget),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              icon: const Icon(Symbols.calendar_month, size: 20),
+              icon: const Icon(Symbols.calendar_month, size: 28),
               label: const Text('Book'),
             ),
           ),
         if (profile.booking.enabled) const SizedBox(width: 8),
         if (profile.facility.phone != null)
-          _ActionIconButton(icon: Symbols.call, onPressed: onCall),
+          _ActionIconButton(
+            icon: Symbols.call,
+            semanticLabel: 'Call',
+            onPressed: onCall,
+          ),
         if (profile.facility.whatsappPhone != null) ...[
           const SizedBox(width: 8),
-          _ActionIconButton(icon: Symbols.chat, onPressed: onWhatsApp),
+          _ActionIconButton(
+            semanticLabel: 'WhatsApp',
+            onPressed: onWhatsApp,
+            child: SvgPicture.asset(
+              AppAssets.whatsapp,
+              width: 28,
+              height: 28,
+              colorFilter: const ColorFilter.mode(_whatsappGreen, BlendMode.srcIn),
+            ),
+          ),
         ],
         if (profile.facility.mapsQuery != null) ...[
           const SizedBox(width: 8),
-          _ActionIconButton(icon: Symbols.directions, onPressed: onDirections),
+          _ActionIconButton(
+            icon: Symbols.directions,
+            semanticLabel: 'Directions',
+            onPressed: onDirections,
+          ),
         ],
       ],
     );
@@ -150,22 +175,39 @@ class FacilityPrimaryActions extends StatelessWidget {
 }
 
 class _ActionIconButton extends StatelessWidget {
-  const _ActionIconButton({required this.icon, this.onPressed});
+  _ActionIconButton({
+    this.icon,
+    this.child,
+    this.semanticLabel,
+    this.onPressed,
+  }) : assert(icon != null || child != null);
 
-  final IconData icon;
+  final IconData? icon;
+  final Widget? child;
+  final String? semanticLabel;
   final VoidCallback? onPressed;
+
+  static const double _buttonSize = 52;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(AppConstants.minTapTarget, AppConstants.minTapTarget),
-        padding: EdgeInsets.zero,
-        side: const BorderSide(color: HomeDashboardColors.primary),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final colors = HomeDashboardColors.of(context);
+    final content = child ??
+        Icon(icon, color: colors.primary, size: 28);
+
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(_buttonSize, _buttonSize),
+          padding: EdgeInsets.zero,
+          side: BorderSide(color: colors.primary),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: content,
       ),
-      child: Icon(icon, color: HomeDashboardColors.primary, size: 22),
     );
   }
 }
@@ -175,70 +217,62 @@ class FacilityCompactContactCard extends StatelessWidget {
     super.key,
     required this.profile,
     this.onAddressTap,
-    this.onPhoneTap,
     this.onWebsiteTap,
   });
 
   final FacilityPublicProfile profile;
   final VoidCallback? onAddressTap;
-  final VoidCallback? onPhoneTap;
   final VoidCallback? onWebsiteTap;
 
   @override
   Widget build(BuildContext context) {
     final facility = profile.facility;
+    final colors = HomeDashboardColors.of(context);
     final address = [
       facility.addressLine1,
       facility.city,
       facility.province,
     ].whereType<String>().where((s) => s.isNotEmpty).join(', ');
 
-    if (address.isEmpty && facility.phone == null && facility.website == null) {
-      return const SizedBox.shrink();
+    final rows = <Widget>[];
+    if (address.isNotEmpty) {
+      rows.add(
+        _ContactRow(
+          icon: Symbols.location_on,
+          value: address,
+          subtitle: facility.distanceKm != null
+              ? LocationService.formatDistance(facility.distanceKm!)
+              : null,
+          onTap: onAddressTap,
+        ),
+      );
+    }
+    if (facility.website != null && facility.website!.isNotEmpty) {
+      rows.add(
+        _ContactRow(
+          icon: Symbols.language,
+          value: facility.website!,
+          onTap: onWebsiteTap,
+          linkStyle: true,
+        ),
+      );
     }
 
+    if (rows.isEmpty) return const SizedBox.shrink();
+
     return Material(
-      color: HomeDashboardColors.surface,
+      color: colors.surface,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE5E8EE)),
+          border: Border.all(color: colors.textSecondary.withValues(alpha: 0.25)),
         ),
-        child: Row(
+        child: Column(
           children: [
-            if (address.isNotEmpty)
-              Expanded(
-                child: _ContactCell(
-                  icon: Symbols.location_on,
-                  label: address,
-                  sublabel: facility.distanceKm != null
-                      ? LocationService.formatDistance(facility.distanceKm!)
-                      : null,
-                  onTap: onAddressTap,
-                ),
-              ),
-            if (facility.phone != null) ...[
-              if (address.isNotEmpty) const VerticalDivider(width: 16),
-              Expanded(
-                child: _ContactCell(
-                  icon: Symbols.call,
-                  label: facility.phone!,
-                  onTap: onPhoneTap,
-                ),
-              ),
-            ],
-            if (facility.website != null && facility.website!.isNotEmpty) ...[
-              const VerticalDivider(width: 16),
-              Expanded(
-                child: _ContactCell(
-                  icon: Symbols.language,
-                  label: facility.website!,
-                  onTap: onWebsiteTap,
-                  linkStyle: true,
-                ),
-              ),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) Divider(height: 1, color: colors.textSecondary.withValues(alpha: 0.2)),
+              rows[i],
             ],
           ],
         ),
@@ -247,48 +281,58 @@ class FacilityCompactContactCard extends StatelessWidget {
   }
 }
 
-class _ContactCell extends StatelessWidget {
-  const _ContactCell({
+class _ContactRow extends StatelessWidget {
+  const _ContactRow({
     required this.icon,
-    required this.label,
-    this.sublabel,
+    required this.value,
+    this.subtitle,
     this.onTap,
     this.linkStyle = false,
   });
 
   final IconData icon;
-  final String label;
-  final String? sublabel;
+  final String value;
+  final String? subtitle;
   final VoidCallback? onTap;
   final bool linkStyle;
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 18, color: HomeDashboardColors.primary),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: linkStyle ? HomeDashboardColors.primary : HomeDashboardColors.textPrimary,
-                decoration: linkStyle ? TextDecoration.underline : null,
+            Icon(icon, size: 28, color: colors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.35,
+                      color: linkStyle ? colors.primary : colors.textPrimary,
+                      decoration: linkStyle ? TextDecoration.underline : null,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (sublabel != null)
-              Text(
-                sublabel!,
-                style: const TextStyle(fontSize: 11, color: HomeDashboardColors.textSecondary),
-              ),
           ],
         ),
       ),
@@ -333,9 +377,9 @@ class FacilityServicesGrid extends StatelessWidget {
       onAction: onViewAll,
       child: GridView.builder(
         shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: NeverScrollableScrollPhysics(),
         itemCount: visible.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
@@ -344,16 +388,16 @@ class FacilityServicesGrid extends StatelessWidget {
         itemBuilder: (context, index) {
           final service = visible[index];
           return Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: HomeDashboardColors.surface,
+              color: HomeDashboardColors.of(context).surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE5E8EE)),
+              border: Border.all(color: Color(0xFFE5E8EE)),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(_iconFor(service.iconKey), color: HomeDashboardColors.primary, size: 22),
+                Icon(_iconFor(service.iconKey), color: HomeDashboardColors.of(context).primary, size: 30),
                 const SizedBox(height: 6),
                 Text(
                   service.name,
@@ -473,9 +517,6 @@ class FacilityInfoStatusRow extends StatelessWidget {
     if (!info.hasAny) return const SizedBox.shrink();
 
     final cards = <Widget>[];
-    if (info.waitTimeMinutes != null) {
-      cards.add(_StatusCard(icon: Symbols.schedule, label: 'Wait', value: '${info.waitTimeMinutes} mins'));
-    }
     if (info.emergencyAvailable == true) {
       cards.add(_StatusCard(icon: Symbols.shield, label: 'Emergency', value: 'Available'));
     }
@@ -495,7 +536,7 @@ class FacilityInfoStatusRow extends StatelessWidget {
 }
 
 class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.icon, required this.label, required this.value});
+  _StatusCard({required this.icon, required this.label, required this.value});
 
   final IconData icon;
   final String label;
@@ -504,18 +545,18 @@ class _StatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: HomeDashboardColors.surface,
+        color: HomeDashboardColors.of(context).surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E8EE)),
+        border: Border.all(color: Color(0xFFE5E8EE)),
       ),
       child: Column(
         children: [
-          Icon(icon, size: 20, color: HomeDashboardColors.primary),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-          Text(label, style: const TextStyle(fontSize: 10, color: HomeDashboardColors.textSecondary)),
+          Icon(icon, size: 28, color: HomeDashboardColors.of(context).primary),
+          SizedBox(height: 6),
+          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(fontSize: 11, color: HomeDashboardColors.of(context).textSecondary)),
         ],
       ),
     );
@@ -546,12 +587,12 @@ class FacilityAppointmentSlotsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: days.map((day) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: EdgeInsets.only(bottom: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(day.label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                const SizedBox(height: 6),
+                Text(day.label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -560,8 +601,8 @@ class FacilityAppointmentSlotsSection extends StatelessWidget {
                         (slot) => OutlinedButton(
                           onPressed: onSlotTap == null ? null : () => onSlotTap!(slot),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: HomeDashboardColors.primary,
-                            side: const BorderSide(color: HomeDashboardColors.primary),
+                            foregroundColor: HomeDashboardColors.of(context).primary,
+                            side: BorderSide(color: HomeDashboardColors.of(context).primary),
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           ),
                           child: Text(slot.time),
@@ -610,21 +651,21 @@ class FacilitySpecialistsSection extends StatelessWidget {
                     source: s.photoUrl,
                     width: 48,
                     height: 48,
-                    placeholder: const CircleAvatar(child: Icon(Symbols.person)),
+                    placeholder: CircleAvatar(child: Icon(Symbols.person)),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(s.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(s.name, style: TextStyle(fontWeight: FontWeight.w600)),
                       if (s.specialty != null)
-                        Text(s.specialty!, style: const TextStyle(fontSize: 12, color: HomeDashboardColors.textSecondary)),
+                        Text(s.specialty!, style: TextStyle(fontSize: 12, color: HomeDashboardColors.of(context).textSecondary)),
                       if (s.nextAvailableAt != null)
                         Text(
                           'Next: ${DateTime.tryParse(s.nextAvailableAt!)?.toLocal().toString().substring(0, 16) ?? s.nextAvailableAt}',
-                          style: const TextStyle(fontSize: 11, color: HomeDashboardColors.primary),
+                          style: TextStyle(fontSize: 11, color: HomeDashboardColors.of(context).primary),
                         ),
                     ],
                   ),
@@ -662,8 +703,8 @@ class FacilityAccessibilitySection extends StatelessWidget {
         runSpacing: 8,
         children: items
             .map((label) => Chip(
-                  label: Text(label, style: const TextStyle(fontSize: 12)),
-                  backgroundColor: HomeDashboardColors.primary.withValues(alpha: 0.08),
+                  label: Text(label, style: TextStyle(fontSize: 12)),
+                  backgroundColor: HomeDashboardColors.of(context).primary.withValues(alpha: 0.08),
                 ))
             .toList(),
       ),
@@ -693,8 +734,8 @@ class FacilityVerificationSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (features.verified) const VerificationBadge(),
-          const SizedBox(height: 8),
+          if (features.verified) VerificationBadge(),
+          SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -703,7 +744,7 @@ class FacilityVerificationSection extends StatelessWidget {
                   (c) => Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Symbols.check_circle, size: 16, color: HomeDashboardColors.primary),
+                      Icon(Symbols.check_circle, size: 16, color: HomeDashboardColors.of(context).primary),
                       const SizedBox(width: 4),
                       Text(c, style: const TextStyle(fontSize: 12)),
                     ],

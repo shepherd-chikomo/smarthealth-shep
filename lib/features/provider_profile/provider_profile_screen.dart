@@ -38,7 +38,7 @@ class ProviderProfileScreen extends StatelessWidget {
 }
 
 class _ProviderProfileView extends StatelessWidget {
-  const _ProviderProfileView({required this.providerId});
+  _ProviderProfileView({required this.providerId});
 
   final String providerId;
 
@@ -47,7 +47,7 @@ class _ProviderProfileView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       body: BlocBuilder<ProviderProfileBloc, ProviderProfileState>(
         builder: (context, state) {
           return switch (state.status) {
@@ -119,13 +119,13 @@ class _LoadedProfileView extends StatelessWidget {
       slivers: [
         SliverAppBar(
           pinned: true,
-          backgroundColor: HomeDashboardColors.surface,
-          foregroundColor: HomeDashboardColors.textPrimary,
+          backgroundColor: HomeDashboardColors.of(context).surface,
+          foregroundColor: HomeDashboardColors.of(context).textPrimary,
           leading: Semantics(
             button: true,
             label: 'Back',
             child: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(Icons.arrow_back),
               onPressed: () => context.pop(),
             ),
           ),
@@ -138,14 +138,14 @@ class _LoadedProfileView extends StatelessWidget {
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              color: HomeDashboardColors.warning.withValues(alpha: 0.15),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: HomeDashboardColors.of(context).warning.withValues(alpha: 0.15),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 l10n.profileOfflineHint,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: HomeDashboardColors.textSecondary,
+                  color: HomeDashboardColors.of(context).textSecondary,
                 ),
               ),
             ),
@@ -197,7 +197,7 @@ class _LoadedProfileView extends StatelessWidget {
                 hours: provider.weeklyHours,
                 closedLabel: l10n.profileClosed,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Semantics(
                 button: true,
                 label: l10n.profileBookAppointment,
@@ -207,8 +207,8 @@ class _LoadedProfileView extends StatelessWidget {
                   },
                   style: FilledButton.styleFrom(
                     minimumSize:
-                        const Size.fromHeight(AppConstants.minTapTarget),
-                    backgroundColor: HomeDashboardColors.secondary,
+                        Size.fromHeight(AppConstants.minTapTarget),
+                    backgroundColor: HomeDashboardColors.of(context).secondary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -222,7 +222,7 @@ class _LoadedProfileView extends StatelessWidget {
               ),
               if (provider.hasQueue == true ||
                   provider.acceptsWalkIns == true) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Semantics(
                   button: true,
                   label: 'Join Queue',
@@ -232,9 +232,9 @@ class _LoadedProfileView extends StatelessWidget {
                     },
                     style: OutlinedButton.styleFrom(
                       minimumSize:
-                          const Size.fromHeight(AppConstants.minTapTarget),
-                      foregroundColor: HomeDashboardColors.primary,
-                      side: const BorderSide(color: HomeDashboardColors.primary),
+                          Size.fromHeight(AppConstants.minTapTarget),
+                      foregroundColor: HomeDashboardColors.of(context).primary,
+                      side: BorderSide(color: HomeDashboardColors.of(context).primary),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -275,10 +275,10 @@ class _AboutSectionState extends State<_AboutSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final style = const TextStyle(
+    final style = TextStyle(
       fontSize: 14,
       height: 1.5,
-      color: HomeDashboardColors.textSecondary,
+      color: HomeDashboardColors.of(context).textSecondary,
     );
 
     return _SectionCard(
@@ -321,31 +321,31 @@ class _ServicesSection extends StatelessWidget {
       child: services.isEmpty
           ? Text(
               emptyLabel,
-              style: const TextStyle(color: HomeDashboardColors.textSecondary),
+              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: services
                   .map(
                     (s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.only(bottom: 8),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             '•  ',
                             style: TextStyle(
                               fontSize: 16,
-                              color: HomeDashboardColors.primary,
+                              color: HomeDashboardColors.of(context).primary,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           Expanded(
                             child: Text(
                               s,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                               ),
                             ),
                           ),
@@ -360,7 +360,7 @@ class _ServicesSection extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
+  _SectionCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -368,19 +368,19 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: HomeDashboardColors.surface,
+      color: HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: HomeDashboardColors.textPrimary,
+                color: HomeDashboardColors.of(context).textPrimary,
               ),
             ),
             const SizedBox(height: 12),
@@ -403,35 +403,35 @@ class _NotFoundView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           children: [
             Align(
               alignment: Alignment.centerLeft,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(Icons.arrow_back),
                 onPressed: onBack,
               ),
             ),
-            const Spacer(),
-            const Icon(
+            Spacer(),
+            Icon(
               Icons.person_off_outlined,
               size: 56,
-              color: HomeDashboardColors.textSecondary,
+              color: HomeDashboardColors.of(context).textSecondary,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               l10n.profileNotFoundTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               l10n.profileNotFoundBody(providerId),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: HomeDashboardColors.textSecondary),
+              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
             ),
             const Spacer(),
             PrimaryButton(label: l10n.profileGoBack, onPressed: onBack),
@@ -458,35 +458,35 @@ class _ErrorView extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           children: [
             Align(
               alignment: Alignment.centerLeft,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(Icons.arrow_back),
                 onPressed: onBack,
               ),
             ),
-            const Spacer(),
-            const Icon(
+            Spacer(),
+            Icon(
               Icons.error_outline,
               size: 56,
-              color: HomeDashboardColors.emergency,
+              color: HomeDashboardColors.of(context).emergency,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               l10n.profileErrorTitle,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: HomeDashboardColors.textSecondary),
+              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
             ),
             const Spacer(),
             PrimaryButton(label: l10n.homeRetry, onPressed: onRetry),

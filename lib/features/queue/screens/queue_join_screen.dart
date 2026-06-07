@@ -51,72 +51,72 @@ class _QueueJoinScreenState extends State<QueueJoinScreen> {
         if (state.flowStatus == QueueFlowStatus.loading ||
             state.flowStatus == QueueFlowStatus.initial) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Join Queue')),
-            body: const Center(child: CircularProgressIndicator()),
+            appBar: AppBar(title: Text('Join Queue')),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         final provider = state.provider;
         if (provider == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Join Queue')),
-            body: const Center(child: Text('Provider not found')),
+            appBar: AppBar(title: Text('Join Queue')),
+            body: Center(child: Text('Provider not found')),
           );
         }
 
         return Scaffold(
-          backgroundColor: HomeDashboardColors.background,
+          backgroundColor: HomeDashboardColors.of(context).background,
           appBar: AppBar(
-            backgroundColor: HomeDashboardColors.surface,
-            foregroundColor: HomeDashboardColors.textPrimary,
-            title: const Text('Join Queue'),
+            backgroundColor: HomeDashboardColors.of(context).surface,
+            foregroundColor: HomeDashboardColors.of(context).textPrimary,
+            title: Text('Join Queue'),
             elevation: 0,
           ),
           body: Column(
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   children: [
                     Material(
-                      color: HomeDashboardColors.surface,
+                      color: HomeDashboardColors.of(context).surface,
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E8EE)),
+                          border: Border.all(color: Color(0xFFE5E8EE)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               provider.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: HomeDashboardColors.textPrimary,
+                                color: HomeDashboardColors.of(context).textPrimary,
                               ),
                             ),
                             if (provider.specialty != null) ...[
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 provider.specialty!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: HomeDashboardColors.primary,
+                                  color: HomeDashboardColors.of(context).primary,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                             if (provider.facilityName != null) ...[
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 provider.facilityName!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: HomeDashboardColors.textSecondary,
+                                  color: HomeDashboardColors.of(context).textSecondary,
                                 ),
                               ),
                             ],
@@ -151,7 +151,7 @@ class _QueueJoinScreenState extends State<QueueJoinScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     TextField(
                       controller: _complaintController,
                       maxLines: 3,
@@ -161,7 +161,7 @@ class _QueueJoinScreenState extends State<QueueJoinScreen> {
                       decoration: InputDecoration(
                         hintText: 'Brief symptoms or reason for walk-in',
                         filled: true,
-                        fillColor: HomeDashboardColors.surface,
+                        fillColor: HomeDashboardColors.of(context).surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
@@ -193,14 +193,14 @@ class _QueueJoinScreenState extends State<QueueJoinScreen> {
                               MaterialPageRoute<void>(
                                 builder: (_) => BlocProvider.value(
                                   value: context.read<QueueBloc>(),
-                                  child: const QueueConfirmScreen(),
+                                  child: QueueConfirmScreen(),
                                 ),
                               ),
                             );
                           }
                         : null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.primary,
+                      backgroundColor: HomeDashboardColors.of(context).primary,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
@@ -223,7 +223,7 @@ class _QueueJoinScreenState extends State<QueueJoinScreen> {
 }
 
 class _PatientTile extends StatelessWidget {
-  const _PatientTile({
+  _PatientTile({
     required this.patient,
     required this.selected,
     required this.onSelected,
@@ -237,21 +237,21 @@ class _PatientTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? HomeDashboardColors.primary.withValues(alpha: 0.08)
-          : HomeDashboardColors.surface,
+          ? HomeDashboardColors.of(context).primary.withValues(alpha: 0.08)
+          : HomeDashboardColors.of(context).surface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onSelected,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? HomeDashboardColors.primary
-                  : const Color(0xFFE5E8EE),
+                  ? HomeDashboardColors.of(context).primary
+                  : Color(0xFFE5E8EE),
             ),
           ),
           child: Row(
@@ -259,23 +259,23 @@ class _PatientTile extends StatelessWidget {
               Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_off,
                 color: selected
-                    ? HomeDashboardColors.primary
-                    : HomeDashboardColors.textSecondary,
+                    ? HomeDashboardColors.of(context).primary
+                    : HomeDashboardColors.of(context).textSecondary,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       patient.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
                       patient.relationship,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: HomeDashboardColors.textSecondary,
+                        color: HomeDashboardColors.of(context).textSecondary,
                       ),
                     ),
                   ],

@@ -15,20 +15,22 @@ class SearchMapMarker extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  Color get _fillColor {
+  bool get _hasQueueRing => provider.hasQueue == true;
+
+  Color _fillColor(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
     if (provider.emergencyAvailable == true) {
-      return HomeDashboardColors.emergency;
+      return colors.emergency;
     }
     if (provider.isOpenNow == true) {
-      return HomeDashboardColors.primary;
+      return colors.primary;
     }
-    return HomeDashboardColors.textSecondary.withValues(alpha: 0.55);
+    return colors.textSecondary.withValues(alpha: 0.55);
   }
-
-  bool get _hasQueueRing => provider.hasQueue == true;
 
   @override
   Widget build(BuildContext context) {
+    final fillColor = _fillColor(context);
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
@@ -44,7 +46,7 @@ class SearchMapMarker extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: HomeDashboardColors.secondary,
+                    color: HomeDashboardColors.of(context).secondary,
                     width: 3,
                   ),
                 ),
@@ -56,7 +58,7 @@ class SearchMapMarker extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: HomeDashboardColors.textPrimary,
+                    color: HomeDashboardColors.of(context).textPrimary,
                     width: 2,
                   ),
                 ),
@@ -64,7 +66,7 @@ class SearchMapMarker extends StatelessWidget {
             Icon(
               Icons.location_on,
               size: 36,
-              color: _fillColor,
+              color: fillColor,
             ),
           ],
         ),

@@ -66,12 +66,6 @@ export const facilityProfileSettingsSchema = z.object({
       cancellationPolicy: z.string().max(500).optional(),
     })
     .default({}),
-  waitTime: z
-    .object({
-      mode: z.enum(['manual', 'auto']).default('manual'),
-      minutes: z.number().int().min(0).max(480).optional(),
-    })
-    .default({ mode: 'manual' }),
 });
 
 export type FacilityProfileSettings = z.infer<typeof facilityProfileSettingsSchema>;
@@ -99,7 +93,6 @@ export function mergeProfileSettings(
     emergency: { ...current.emergency, ...patch.emergency },
     smarthealthFeatures: { ...current.smarthealthFeatures, ...patch.smarthealthFeatures },
     booking: { ...current.booking, ...patch.booking },
-    waitTime: { ...current.waitTime, ...patch.waitTime },
   });
 }
 

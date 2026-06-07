@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { PRESET_FACILITY_SERVICES, type FacilityServiceEntry, type ProfileSettings } from '@/lib/facility-services';
 
@@ -26,7 +26,6 @@ function emptySettings(): ProfileSettings {
     emergency: {},
     smarthealthFeatures: {},
     booking: { enabled: true, showSlots: true },
-    waitTime: { mode: 'manual' },
   };
 }
 
@@ -93,18 +92,36 @@ export function FacilityProfileTabs({
   });
 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const localLogoPreviewRef = useRef<string | null>(null);
+
+  const clearLocalLogoPreview = () => {
+    if (localLogoPreviewRef.current) {
+      URL.revokeObjectURL(localLogoPreviewRef.current);
+      localLogoPreviewRef.current = null;
+    }
+  };
+
+  const serverLogoUrl =
+    typeof profileData?.facility?.logoUrl === 'string' && profileData.facility.logoUrl.length > 0
+      ? profileData.facility.logoUrl
+      : null;
 
   useEffect(() => {
-    const url = profileData?.facility?.logoUrl;
-    setLogoPreviewUrl(typeof url === 'string' && url.length > 0 ? url : null);
-  }, [profileData?.facility?.logoUrl]);
+    if (localLogoPreviewRef.current) return;
+    setLogoPreviewUrl(serverLogoUrl);
+  }, [serverLogoUrl]);
 
   const uploadLogo = useMutation({
     mutationFn: (file: File) => api.uploadLogo(facilityId, file),
     onSuccess: (result) => {
+      clearLocalLogoPreview();
       const url = (result as { logoUrl?: string })?.logoUrl;
       if (url) setLogoPreviewUrl(url);
       qc.invalidateQueries({ queryKey: ['facility-profile', facilityId] });
+    },
+    onError: () => {
+      clearLocalLogoPreview();
+      setLogoPreviewUrl(serverLogoUrl);
     },
   });
 
@@ -230,11 +247,11 @@ export function FacilityProfileTabs({
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              clearLocalLogoPreview();
               const localPreview = URL.createObjectURL(file);
+              localLogoPreviewRef.current = localPreview;
               setLogoPreviewUrl(localPreview);
-              uploadLogo.mutate(file, {
-                onSettled: () => URL.revokeObjectURL(localPreview),
-              });
+              uploadLogo.mutate(file);
             }}
           />
           {uploadLogo.isPending && (
@@ -424,24 +441,6 @@ export function FacilityProfileTabs({
             />
             Show appointment slots on profile
           </label>
-          <div>
-            <label className="text-sm font-medium">Wait time (minutes)</label>
-            <input
-              type="number"
-              className="input mt-1 w-32"
-              min={0}
-              value={effective.waitTime.minutes ?? ''}
-              onChange={(e) =>
-                setSettings({
-                  ...effective,
-                  waitTime: {
-                    mode: 'manual',
-                    minutes: e.target.value ? Number(e.target.value) : undefined,
-                  },
-                })
-              }
-            />
-          </div>
           <button
             type="button"
             className="btn-primary"
@@ -449,7 +448,6 @@ export function FacilityProfileTabs({
             onClick={() =>
               saveSettings.mutate({
                 booking: effective.booking,
-                waitTime: effective.waitTime,
               })
             }
           >

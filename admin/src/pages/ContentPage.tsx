@@ -3,11 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { EmergencyServiceInput, EmergencyServiceRecord } from '../lib/api';
 import { ErrorState, LoadingState, PageHeader, PaginationBar, SearchBar } from '../components/ui';
+import { ConditionsPanel } from '../components/content/ConditionsPanel';
 import { EmergencyServiceModal } from '../components/content/EmergencyServiceModal';
 
 export function ContentPage() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'emergency' | 'notifications'>('emergency');
+  const [tab, setTab] = useState<'emergency' | 'notifications' | 'conditions'>('emergency');
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<EmergencyServiceRecord | null | undefined>(undefined);
@@ -67,17 +68,21 @@ export function ContentPage() {
     <div>
       <PageHeader
         title="Content Management"
-        description="Emergency services directory and platform notifications"
+        description="Emergency services, medical profile conditions, and platform notifications"
       />
       <div className="mb-4 flex gap-2">
-        {(['emergency', 'notifications'] as const).map((t) => (
+        {([
+          ['emergency', 'Emergency'],
+          ['notifications', 'Notifications'],
+          ['conditions', 'Conditions'],
+        ] as const).map(([t, label]) => (
           <button
             key={t}
             type="button"
             className={tab === t ? 'btn-primary' : 'btn-secondary'}
             onClick={() => { setTab(t); setPage(1); }}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {label}
           </button>
         ))}
       </div>
@@ -137,6 +142,8 @@ export function ContentPage() {
           )}
         </>
       )}
+
+      {tab === 'conditions' && <ConditionsPanel />}
 
       {tab === 'notifications' && (
         <>

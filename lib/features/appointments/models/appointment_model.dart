@@ -191,6 +191,24 @@ class AppointmentModel extends Equatable {
         'updatedAt': updatedAt?.toUtc().toIso8601String(),
       };
 
+  factory AppointmentModel.fromApiJson(Map<String, dynamic> json) {
+    return AppointmentModel(
+      id: json['id'] as String,
+      referenceNumber: json['referenceNumber'] as String,
+      providerId: json['providerId'] as String,
+      providerName: json['providerName'] as String? ?? 'Provider',
+      facilityName: json['facilityName'] as String? ?? 'Facility',
+      scheduledAt: _parseDate(json['scheduledAt']),
+      durationMinutes: json['durationMinutes'] as int? ?? 30,
+      patientName: json['patientName'] as String? ?? 'Patient',
+      patientId: json['patientId'] as String?,
+      status: _parseApiStatus(json['status'] as String?),
+      notes: json['notes'] as String?,
+      syncStatus: 'synced',
+      updatedAt: _parseOptionalDate(json['updatedAt']),
+    );
+  }
+
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
     return AppointmentModel(
       id: json['id'] as String? ?? json['referenceNumber'] as String,
@@ -233,6 +251,19 @@ class AppointmentModel extends Equatable {
       (value) => value.name == raw,
       orElse: () => AppointmentOperationalStatus.pending,
     );
+  }
+
+  static AppointmentOperationalStatus _parseApiStatus(String? raw) {
+    return switch (raw) {
+      'checked_in' => AppointmentOperationalStatus.checkedIn,
+      'in_progress' => AppointmentOperationalStatus.inQueue,
+      'no_show' => AppointmentOperationalStatus.noShow,
+      'confirmed' => AppointmentOperationalStatus.confirmed,
+      'completed' => AppointmentOperationalStatus.completed,
+      'cancelled' => AppointmentOperationalStatus.cancelled,
+      'rescheduled' => AppointmentOperationalStatus.rescheduled,
+      _ => AppointmentOperationalStatus.pending,
+    };
   }
 
   static AppointmentReminderState _parseReminder(String? raw) {

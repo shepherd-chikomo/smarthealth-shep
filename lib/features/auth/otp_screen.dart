@@ -82,17 +82,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify code')),
+      appBar: AppBar(title: Text('Verify code')),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'Enter the 6-digit code sent to ${widget.destination}',
-              style: TextStyle(color: HomeDashboardColors.textSecondary),
+              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Opacity(
               opacity: _loading ? 0.5 : 1,
               child: AbsorbPointer(
@@ -104,10 +104,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               ),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 _error!,
-                style: const TextStyle(color: HomeDashboardColors.emergency),
+                style: TextStyle(color: HomeDashboardColors.of(context).emergency),
               ),
             ],
             if (_loading) ...[

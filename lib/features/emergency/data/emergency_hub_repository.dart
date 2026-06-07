@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/location/location_exceptions.dart';
+import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
 import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/core/storage/hive_boxes.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_fallback_data.dart';
@@ -11,16 +13,21 @@ import 'package:smarthealth_shep/features/emergency/models/emergency_facility.da
 import 'package:smarthealth_shep/features/emergency/models/emergency_hub_data.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
 
-/// Emergency hub — cached list from GET /emergency/services (same data as admin CRUD).
+/// Emergency hub — cached list from GET /emergency/hub with GPS when available.
 class EmergencyHubRepository {
-  EmergencyHubRepository({Connectivity? connectivity, Dio? dio})
-      : _connectivity = connectivity ?? Connectivity(),
-        _dio = dio;
+  EmergencyHubRepository({
+    Connectivity? connectivity,
+    Dio? dio,
+    SearchOriginResolver? searchOrigin,
+  })  : _connectivity = connectivity ?? Connectivity(),
+        _dio = dio,
+        _searchOrigin = searchOrigin;
 
   final Connectivity _connectivity;
   final Dio? _dio;
+  final SearchOriginResolver? _searchOrigin;
 
-  static const _hubCacheKey = 'emergency_hub_data_v1';
+  static const _hubCacheKey = 'emergency_hub_data_v2';
 
   Box get _box => Hive.box(HiveBoxes.emergency);
 
@@ -48,6 +55,8 @@ class EmergencyHubRepository {
         await _writeCache(remote);
         return remote;
       } catch (_) {
+        final cached = _readCache();
+        if (cached != null) return cached;
         if (AppConfig.allowMockFallbacks) {
           final fallback = EmergencyFallbackData.hub();
           await _writeCache(fallback);
@@ -56,6 +65,9 @@ class EmergencyHubRepository {
         rethrow;
       }
     }
+
+    final cached = _readCache();
+    if (cached != null) return cached;
 
     if (AppConfig.allowMockFallbacks) {
       final fallback = EmergencyFallbackData.hub();
@@ -66,82 +78,109 @@ class EmergencyHubRepository {
   }
 
   Future<EmergencyHubData> _fetchFromApi() async {
-    final response = await _client.get<Map<String, dynamic>>(
-      '/emergency/services',
-      queryParameters: {'limit': 100, 'page': 1},
-    );
-    final list = response.data?['services'] as List<dynamic>? ?? [];
-    return _mapApiToHub(list);
-  }
+    double? lat;
+    double? lon;
 
-  EmergencyHubData _mapApiToHub(List<dynamic> list) {
-    final services = <EmergencyService>[];
-    final facilities = <EmergencyFacility>[];
-
-    for (final raw in list) {
-      final map = raw as Map<String, dynamic>;
-      final id = map['id'] as String;
-      final name = map['name'] as String;
-      final phone = map['phone'] as String;
-      final serviceType = map['serviceType'] as String? ?? 'other';
-      final city = map['city'] as String? ?? '';
-      final lat = (map['latitude'] as num?)?.toDouble();
-      final lng = (map['longitude'] as num?)?.toDouble();
-      final distance = (map['distanceKm'] as num?)?.toDouble() ?? 0;
-
-      if (serviceType == 'hospital_er') {
-        facilities.add(
-          EmergencyFacility(
-            id: id,
-            name: name,
-            type: 'Hospital Emergency',
-            distanceKm: distance,
-            phone: phone,
-            latitude: lat,
-            longitude: lng,
-          ),
-        );
-        continue;
-      }
-
-      final kind = _kindFromType(serviceType);
-      if (kind != null) {
-        services.add(
-          EmergencyService(
-            id: id,
-            name: name,
-            kind: kind,
-            phone: phone,
-            nearestDistanceKm: distance,
-            nearestProviderName: city.isNotEmpty ? city : name,
-            nearestLatitude: lat,
-            nearestLongitude: lng,
-          ),
-        );
-      } else {
-        facilities.add(
-          EmergencyFacility(
-            id: id,
-            name: name,
-            type: serviceType.replaceAll('_', ' '),
-            distanceKm: distance,
-            phone: phone,
-            latitude: lat,
-            longitude: lng,
-          ),
-        );
+    final origin = _searchOrigin;
+    if (origin != null) {
+      try {
+        final position = await origin.resolve(refreshGps: true);
+        lat = position.latitude;
+        lon = position.longitude;
+      } on LocationPermissionDeniedException {
+        final cached = origin.readCached();
+        if (cached != null) {
+          lat = cached.latitude;
+          lon = cached.longitude;
+        }
+      } catch (_) {
+        final cached = origin.readCached();
+        if (cached != null) {
+          lat = cached.latitude;
+          lon = cached.longitude;
+        }
       }
     }
 
-    if (services.isEmpty && facilities.isEmpty) {
-      if (AppConfig.allowMockFallbacks) {
-        return EmergencyFallbackData.hub();
-      }
+    final response = await _client.get<Map<String, dynamic>>(
+      '/emergency/hub',
+      queryParameters: {
+        if (lat != null) 'lat': lat,
+        if (lon != null) 'lon': lon,
+        'radiusKm': 50,
+        'limit': 100,
+        'page': 1,
+      },
+    );
+    final data = response.data ?? {};
+    final apiLocationRequired = data['locationRequired'] as bool? ?? true;
+
+    if (apiLocationRequired && lat == null) {
       return EmergencyHubData(
         services: const [],
         facilities: const [],
         cachedAt: DateTime.now(),
+        locationRequired: true,
       );
+    }
+
+    return _mapHubResponse(data, locationRequired: apiLocationRequired);
+  }
+
+  EmergencyHubData _mapHubResponse(
+    Map<String, dynamic> data, {
+    required bool locationRequired,
+  }) {
+    final serviceList = data['services'] as List<dynamic>? ?? [];
+    final facilityList = data['facilities'] as List<dynamic>? ?? [];
+
+    final services = <EmergencyService>[];
+    final facilities = <EmergencyFacility>[];
+
+    for (final raw in serviceList) {
+      final map = raw as Map<String, dynamic>;
+      final serviceType = map['serviceType'] as String? ?? 'other';
+      final kind = _kindFromType(serviceType);
+      if (kind == null) continue;
+
+      services.add(
+        EmergencyService(
+          id: map['id'] as String,
+          name: map['name'] as String,
+          kind: kind,
+          phone: map['phone'] as String? ?? '',
+          nearestDistanceKm: (map['distanceKm'] as num?)?.toDouble() ?? 0,
+          nearestProviderName: map['city'] as String?,
+          nearestLatitude: (map['latitude'] as num?)?.toDouble(),
+          nearestLongitude: (map['longitude'] as num?)?.toDouble(),
+        ),
+      );
+    }
+
+    for (final raw in facilityList) {
+      final map = raw as Map<String, dynamic>;
+      facilities.add(
+        EmergencyFacility(
+          id: map['id'] as String,
+          name: map['name'] as String,
+          type: _facilityTypeLabel(
+            serviceType: map['serviceType'] as String? ?? 'hospital_er',
+            source: map['source'] as String?,
+            referralLabel: map['referralLabel'] as String?,
+          ),
+          distanceKm: (map['distanceKm'] as num?)?.toDouble() ?? 0,
+          phone: map['phone'] as String? ?? '',
+          latitude: (map['latitude'] as num?)?.toDouble(),
+          longitude: (map['longitude'] as num?)?.toDouble(),
+          is24Hours: map['is24Hours'] as bool? ?? false,
+          source: _parseSource(map['source'] as String?),
+          referralLabel: map['referralLabel'] as String?,
+        ),
+      );
+    }
+
+    if (services.isEmpty && facilities.isEmpty && AppConfig.allowMockFallbacks) {
+      return EmergencyFallbackData.hub();
     }
 
     return EmergencyHubData(
@@ -152,7 +191,34 @@ class EmergencyHubRepository {
               ? EmergencyFallbackData.hub().services
               : const []),
       facilities: facilities,
+      locationRequired: locationRequired,
     );
+  }
+
+  String _facilityTypeLabel({
+    required String serviceType,
+    String? source,
+    String? referralLabel,
+  }) {
+    return switch (source) {
+      'government_hospital' => referralLabel?.isNotEmpty == true
+          ? referralLabel!
+          : 'Government hospital',
+      'profile_emergency' => 'Emergency department',
+      'emergency_directory' => 'ER directory',
+      _ => serviceType == 'hospital_er'
+          ? 'Hospital Emergency'
+          : serviceType.replaceAll('_', ' '),
+    };
+  }
+
+  EmergencyFacilitySource? _parseSource(String? raw) {
+    return switch (raw) {
+      'emergency_directory' => EmergencyFacilitySource.emergencyDirectory,
+      'government_hospital' => EmergencyFacilitySource.governmentHospital,
+      'profile_emergency' => EmergencyFacilitySource.profileEmergency,
+      _ => null,
+    };
   }
 
   EmergencyServiceKind? _kindFromType(String type) {

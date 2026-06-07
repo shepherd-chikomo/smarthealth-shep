@@ -3,6 +3,15 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'emergency_facility.freezed.dart';
 part 'emergency_facility.g.dart';
 
+enum EmergencyFacilitySource {
+  @JsonValue('emergency_directory')
+  emergencyDirectory,
+  @JsonValue('government_hospital')
+  governmentHospital,
+  @JsonValue('profile_emergency')
+  profileEmergency,
+}
+
 @freezed
 abstract class EmergencyFacility with _$EmergencyFacility {
   const factory EmergencyFacility({
@@ -14,6 +23,8 @@ abstract class EmergencyFacility with _$EmergencyFacility {
     double? latitude,
     double? longitude,
     @Default(true) bool is24Hours,
+    EmergencyFacilitySource? source,
+    String? referralLabel,
   }) = _EmergencyFacility;
 
   factory EmergencyFacility.fromJson(Map<String, dynamic> json) =>

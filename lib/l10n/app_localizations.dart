@@ -196,6 +196,84 @@ abstract class AppLocalizations {
   /// **'Good evening'**
   String get homeGoodEvening;
 
+  /// No description provided for @homeProfileComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Complete'**
+  String get homeProfileComplete;
+
+  /// No description provided for @homeProfileCompleteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your health profile'**
+  String get homeProfileCompleteHint;
+
+  /// No description provided for @homeMedicalProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Medical Profile'**
+  String get homeMedicalProfile;
+
+  /// No description provided for @homeBloodType.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood Type'**
+  String get homeBloodType;
+
+  /// No description provided for @homeAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Age'**
+  String get homeAge;
+
+  /// No description provided for @homeGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get homeGender;
+
+  /// No description provided for @homeNoKnownAllergies.
+  ///
+  /// In en, this message translates to:
+  /// **'No Known Allergies'**
+  String get homeNoKnownAllergies;
+
+  /// No description provided for @homeAllergyAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'{allergen} Allergy'**
+  String homeAllergyAlert(String allergen);
+
+  /// No description provided for @homeViewMedicalProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view full profile →'**
+  String get homeViewMedicalProfile;
+
+  /// No description provided for @profileCompletionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Completion'**
+  String get profileCompletionTitle;
+
+  /// No description provided for @profileCompletionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your medical profile to help providers deliver safer care.'**
+  String get profileCompletionSubtitle;
+
+  /// No description provided for @profileCompletionCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete profile'**
+  String get profileCompletionCta;
+
+  /// No description provided for @profileCompletionViewProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'View medical profile'**
+  String get profileCompletionViewProfile;
+
   /// No description provided for @homeNearbyProviders.
   ///
   /// In en, this message translates to:

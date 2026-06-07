@@ -106,13 +106,11 @@ class FacilityEmergencyInfo {
 
 class FacilityInfoRow {
   const FacilityInfoRow({
-    this.waitTimeMinutes,
     this.emergencyAvailable,
     this.wheelchairAccessible,
     this.parkingAvailable,
   });
 
-  final int? waitTimeMinutes;
   final bool? emergencyAvailable;
   final bool? wheelchairAccessible;
   final bool? parkingAvailable;
@@ -120,7 +118,6 @@ class FacilityInfoRow {
   factory FacilityInfoRow.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const FacilityInfoRow();
     return FacilityInfoRow(
-      waitTimeMinutes: (json['waitTimeMinutes'] as num?)?.toInt(),
       emergencyAvailable: json['emergencyAvailable'] as bool?,
       wheelchairAccessible: json['wheelchairAccessible'] as bool?,
       parkingAvailable: json['parkingAvailable'] as bool?,
@@ -128,7 +125,6 @@ class FacilityInfoRow {
   }
 
   bool get hasAny =>
-      waitTimeMinutes != null ||
       emergencyAvailable == true ||
       wheelchairAccessible == true ||
       parkingAvailable == true;
@@ -349,7 +345,6 @@ class FacilityPublicProfile {
           'is24Hour': emergency.is24Hour,
         },
         'facilityInfo': {
-          'waitTimeMinutes': facilityInfo.waitTimeMinutes,
           'emergencyAvailable': facilityInfo.emergencyAvailable,
           'wheelchairAccessible': facilityInfo.wheelchairAccessible,
           'parkingAvailable': facilityInfo.parkingAvailable,

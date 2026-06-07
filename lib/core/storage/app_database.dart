@@ -16,7 +16,7 @@ class AppDatabase {
     final dbPath = await getDatabasesPath();
     _db = await openDatabase(
       p.join(dbPath, 'smarthealth.db'),
-      version: 4,
+      version: 6,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -39,6 +39,12 @@ class AppDatabase {
     if (version >= 4) {
       await _createSyncQueueTable(db);
     }
+    if (version >= 5) {
+      await _upgradeFamilyMembersMetadata(db);
+    }
+    if (version >= 6) {
+      await _createPrivacyFirstTables(db);
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -50,6 +56,12 @@ class AppDatabase {
     }
     if (oldVersion < 4) {
       await _createSyncQueueTable(db);
+    }
+    if (oldVersion < 5) {
+      await _upgradeFamilyMembersMetadata(db);
+    }
+    if (oldVersion < 6) {
+      await _createPrivacyFirstTables(db);
     }
   }
 
@@ -159,6 +171,73 @@ class AppDatabase {
         'ALTER TABLE family_members ADD COLUMN is_primary INTEGER NOT NULL DEFAULT 0',
       );
     }
+  }
+
+  Future<void> _upgradeFamilyMembersMetadata(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(family_members)');
+    if (columns.isEmpty) return;
+    final names = columns.map((c) => c['name'] as String).toSet();
+    if (!names.contains('metadata')) {
+      await db.execute(
+        "ALTER TABLE family_members ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'",
+      );
+    }
+    if (!names.contains('updated_at')) {
+      await db.execute('ALTER TABLE family_members ADD COLUMN updated_at TEXT');
+    }
+  }
+
+  Future<void> _createPrivacyFirstTables(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS health_vault (
+        subject_id TEXT PRIMARY KEY NOT NULL,
+        encrypted_payload TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS cloud_account (
+        id TEXT PRIMARY KEY NOT NULL,
+        payload_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS directory_index (
+        id TEXT PRIMARY KEY NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        name_lower TEXT NOT NULL,
+        search_blob_lower TEXT NOT NULL,
+        facility_type TEXT,
+        latitude REAL,
+        longitude REAL,
+        payload_json TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_directory_entity_type
+      ON directory_index(entity_type, facility_type)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_directory_name
+      ON directory_index(name_lower)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id TEXT PRIMARY KEY NOT NULL,
+        action TEXT NOT NULL,
+        subject_id TEXT,
+        details_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createSyncQueueTable(Database db) async {

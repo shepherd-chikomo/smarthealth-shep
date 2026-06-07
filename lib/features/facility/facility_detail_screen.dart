@@ -8,6 +8,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/data/facility_repository.dart';
 import 'package:smarthealth_shep/shared/models/facility_public_profile.dart';
+import 'package:smarthealth_shep/shared/utils/facility_share.dart';
 import 'package:smarthealth_shep/shared/utils/maps_launcher.dart';
 import 'package:smarthealth_shep/shared/widgets/app_bottom_navigation_bar.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
@@ -33,11 +34,12 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
   final _profileRepository = FacilityPublicProfileRepository();
   final _facilityRepository = FacilityRepository.defaults();
   final _geocoder = const ForwardGeocoder();
+  final _shareBoundaryKey = GlobalKey();
 
   FacilityPublicProfile? _profile;
-  List<FacilitySpecialistSummary> _specialists = const [];
   List<FacilityAvailabilityDay> _availability = const [];
   bool _loading = true;
+  bool _sharing = false;
   bool _isOffline = false;
   bool _isStale = false;
   String? _error;
@@ -87,17 +89,11 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
     final profile = _profile;
     if (profile == null) return;
 
-    final specialistsFuture = _profileRepository.fetchSpecialists(widget.facilityId);
-    final availabilityFuture = profile.booking.enabled && profile.booking.showSlots
-        ? _profileRepository.fetchAvailability(widget.facilityId)
-        : Future.value(<FacilityAvailabilityDay>[]);
+    if (!profile.booking.enabled || !profile.booking.showSlots) return;
 
-    final results = await Future.wait([specialistsFuture, availabilityFuture]);
+    final availability = await _profileRepository.fetchAvailability(widget.facilityId);
     if (!mounted) return;
-    setState(() {
-      _specialists = results[0] as List<FacilitySpecialistSummary>;
-      _availability = results[1] as List<FacilityAvailabilityDay>;
-    });
+    setState(() => _availability = availability);
   }
 
   Future<void> _openMaps(FacilityPublicProfile profile) async {
@@ -136,6 +132,29 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
     _launchUri(Uri.parse('https://wa.me/$digits'));
   }
 
+  String _normalizeWebsiteUrl(String website) {
+    final trimmed = website.trim();
+    if (trimmed.isEmpty) return trimmed;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return 'https://$trimmed';
+  }
+
+  Future<void> _shareProfile(FacilityPublicProfile profile) async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await shareFacilityProfileScreenshot(
+        boundaryKey: _shareBoundaryKey,
+        profile: profile,
+      );
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
   void _showAllServices(List<FacilityServiceItem> services) {
     showModalBottomSheet<void>(
       context: context,
@@ -143,7 +162,7 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: services
-              .map((s) => ListTile(title: Text(s.name), leading: const Icon(Symbols.health_and_safety)))
+              .map((s) => ListTile(title: Text(s.name), leading: Icon(Symbols.health_and_safety)))
               .toList(),
         ),
       ),
@@ -157,18 +176,25 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
     final profile = _profile;
 
     return AppShellScaffold(
-      backgroundColor: HomeDashboardColors.background,
+      backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(profile?.facility.name ?? 'Facility'),
-        backgroundColor: HomeDashboardColors.background,
+        backgroundColor: HomeDashboardColors.of(context).background,
         actions: [
-          IconButton(icon: const Icon(Symbols.favorite_border), onPressed: () {}),
-          IconButton(
-            icon: const Icon(Symbols.ios_share),
-            onPressed: profile == null
-                ? null
-                : () => _launchUri(Uri.parse('https://myhealth.smarthealth.co.zw/facility/${profile.facility.id}')),
-          ),
+          if (_sharing)
+            const Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Symbols.ios_share),
+              onPressed: profile == null ? null : () => _shareProfile(profile),
+            ),
         ],
       ),
       bottomNavigationBar: AppBottomNavigationBar(
@@ -188,9 +214,11 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
   Widget _buildBody(FacilityPublicProfile profile, AppLocalizations l10n) {
     final facility = profile.facility;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
+    return RepaintBoundary(
+      key: _shareBoundaryKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
         if (_isOffline || _isStale)
           Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -224,11 +252,8 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
         FacilityCompactContactCard(
           profile: profile,
           onAddressTap: facility.mapsQuery != null ? () => _openMaps(profile) : null,
-          onPhoneTap: facility.phone != null
-              ? () => _launchUri(Uri.parse('tel:${facility.phone}'))
-              : null,
           onWebsiteTap: facility.website != null
-              ? () => _launchUri(Uri.parse(facility.website!))
+              ? () => _launchUri(Uri.parse(_normalizeWebsiteUrl(facility.website!)))
               : null,
         ),
         const SizedBox(height: 20),
@@ -277,15 +302,9 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
               : null,
         ),
         if (_availability.isNotEmpty) const SizedBox(height: 20),
-        FacilitySpecialistsSection(
-          specialists: _specialists,
-          onBook: (s) => context.push('/booking/${s.id}'),
-        ),
-        if (_specialists.isNotEmpty) const SizedBox(height: 20),
-        FacilityAccessibilitySection(accessibility: profile.accessibility),
-        if (profile.accessibility.hasAny) const SizedBox(height: 20),
         FacilityVerificationSection(features: profile.smarthealthFeatures),
-      ],
+        ],
+      ),
     );
   }
 }
