@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 import 'package:smarthealth_shep/core/auth/auth_repository.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
@@ -25,22 +27,45 @@ class OtpScreen extends ConsumerStatefulWidget {
   ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends ConsumerState<OtpScreen> {
-  late final List<TextEditingController> _controllers;
+class _OtpScreenState extends ConsumerState<OtpScreen> with CodeAutoFill {
+  final _otpController = TextEditingController();
+  final _focusNode = FocusNode();
   bool _loading = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(6, (_) => TextEditingController());
+    _listenForSmsAutofill();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusNode.requestFocus();
+    });
+  }
+
+  Future<void> _listenForSmsAutofill() async {
+    if (widget.channel != OtpChannel.phone) return;
+    try {
+      await SmsAutoFill().listenForCode();
+    } catch (_) {
+      // SMS listener is best-effort; keyboard autofill still works.
+    }
+  }
+
+  @override
+  void codeUpdated() {
+    final smsCode = code;
+    if (smsCode == null || smsCode.length != 6 || _loading) return;
+    _otpController.text = smsCode;
+    _verify(smsCode);
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
+    cancel();
+    SmsAutoFill().unregisterListener();
+    _otpController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -60,6 +85,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             phone: widget.phone,
           );
       await ref.read(authControllerProvider.notifier).completeSignIn(session);
+      TextInput.finishAutofillContext(shouldSave: false);
       if (!mounted) return;
       context.go('/home');
     } on DioException catch (e) {
@@ -81,33 +107,51 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+    final autofillHint = widget.channel == OtpChannel.phone
+        ? 'Your SMS code should appear above the keyboard for autofill.'
+        : 'Your email code should appear above the keyboard for autofill.';
+
     return Scaffold(
-      appBar: AppBar(title: Text('Verify code')),
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: const Text('Verify code'),
+        backgroundColor: colors.background,
+      ),
       body: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
               'Enter the 6-digit code sent to ${widget.destination}',
-              style: TextStyle(color: HomeDashboardColors.of(context).textSecondary),
+              style: TextStyle(color: colors.textSecondary),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Text(
+              autofillHint,
+              style: TextStyle(
+                fontSize: 13,
+                color: colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
             Opacity(
               opacity: _loading ? 0.5 : 1,
               child: AbsorbPointer(
                 absorbing: _loading,
                 child: OtpInput(
-                  controllers: _controllers,
+                  controller: _otpController,
+                  focusNode: _focusNode,
                   onCompleted: _verify,
                 ),
               ),
             ),
             if (_error != null) ...[
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
                 _error!,
-                style: TextStyle(color: HomeDashboardColors.of(context).emergency),
+                style: TextStyle(color: colors.emergency),
               ),
             ],
             if (_loading) ...[

@@ -54,8 +54,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final l10n = AppLocalizations.of(context);
     final copy = _copyFor(l10n);
 
+    final colors = HomeDashboardColors.of(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -63,6 +65,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _finish,
+                style: TextButton.styleFrom(
+                  foregroundColor: colors.primary,
+                ),
                 child: Text(l10n.onboardingSkip),
               ),
             ),
@@ -92,7 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: HomeDashboardColors.of(context).textPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                         SizedBox(height: 12),
@@ -102,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: TextStyle(
                             fontSize: 15,
                             height: 1.45,
-                            color: HomeDashboardColors.of(context).textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -123,8 +128,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 8,
                   decoration: BoxDecoration(
                     color: _index == index
-                        ? HomeDashboardColors.of(context).primary
-                        : HomeDashboardColors.of(context).primary.withValues(alpha: 0.25),
+                        ? colors.primary
+                        : colors.primary.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -147,7 +152,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     );
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: HomeDashboardColors.of(context).primary,
+                    backgroundColor: colors.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     minimumSize: const Size.fromHeight(48),
                   ),
                   child: Text(

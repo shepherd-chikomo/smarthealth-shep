@@ -244,6 +244,8 @@ class SearchRepository {
       userMedicalAidSchemeKey: userMedicalAidSchemeKey,
     );
 
+    final hasTextQuery = query.trim().isNotEmpty;
+
     var filter = ProviderSearchFilter(
       query: query,
       specialties: specialties,
@@ -252,7 +254,7 @@ class SearchRepository {
       facilityType: facilityType,
       latitude: origin.latitude,
       longitude: origin.longitude,
-      radiusKm: AppConfig.defaultSearchRadiusKm,
+      radiusKm: hasTextQuery ? null : AppConfig.defaultSearchRadiusKm,
       isVerified: operational.contains('verified_only') ? true : null,
       openNow: operational.contains('open_now') ? true : null,
       queueUnder30: operational.contains('queue_under_30') ? true : null,

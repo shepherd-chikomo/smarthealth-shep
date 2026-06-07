@@ -306,11 +306,16 @@ function DoctorServicesEditor({
   });
 
   return (
-    <div className="mt-4 rounded-lg border bg-slate-50 p-4">
-      <h4 className="font-medium">Services offered by this provider</h4>
+    <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
+      <h4 className="font-medium text-[var(--text)]">
+        Services offered by this provider
+      </h4>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {services.map((service) => (
-          <label key={service.id} className="flex items-center gap-2 text-sm">
+          <label
+            key={service.id}
+            className="flex items-center gap-2 text-sm text-[var(--text)]"
+          >
             <input
               type="checkbox"
               checked={selected.includes(service.id)}

@@ -10,21 +10,22 @@ import 'package:mockito/src/dummies.dart' as _i10;
 import 'package:smarthealth_shep/core/network/api_service.dart' as _i2;
 import 'package:smarthealth_shep/features/home/data/home_repository.dart'
     as _i5;
-import 'package:smarthealth_shep/shared/data/category_repository.dart' as _i15;
+import 'package:smarthealth_shep/shared/data/category_repository.dart' as _i16;
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart' as _i6;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart' as _i4;
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_storage.dart'
     as _i3;
-import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i14;
-import 'package:smarthealth_shep/shared/models/category_model.dart' as _i16;
-import 'package:smarthealth_shep/shared/models/facility_model.dart' as _i12;
+import 'package:smarthealth_shep/shared/data/sync/sync_service.dart' as _i15;
+import 'package:smarthealth_shep/shared/models/category_model.dart' as _i17;
+import 'package:smarthealth_shep/shared/models/facility_model.dart' as _i13;
 import 'package:smarthealth_shep/shared/models/facility_public_profile.dart'
-    as _i13;
+    as _i14;
+import 'package:smarthealth_shep/shared/models/medical_aid_scheme.dart' as _i12;
 import 'package:smarthealth_shep/shared/models/provider_model.dart' as _i8;
 import 'package:smarthealth_shep/shared/models/provider_search_filter.dart'
     as _i9;
 import 'package:smarthealth_shep/shared/models/service_category_model.dart'
-    as _i17;
+    as _i18;
 import 'package:smarthealth_shep/shared/models/specialty_model.dart' as _i11;
 
 // ignore_for_file: type=lint
@@ -276,19 +277,29 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
           as _i7.Future<List<({String id, String label})>>);
 
   @override
-  _i7.Future<List<_i12.FacilityModel>> searchFacilities(
+  _i7.Future<List<_i12.MedicalAidScheme>> fetchMedicalAidCatalog() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchMedicalAidCatalog, []),
+            returnValue: _i7.Future<List<_i12.MedicalAidScheme>>.value(
+              <_i12.MedicalAidScheme>[],
+            ),
+          )
+          as _i7.Future<List<_i12.MedicalAidScheme>>);
+
+  @override
+  _i7.Future<List<_i13.FacilityModel>> searchFacilities(
     _i9.ProviderSearchFilter? filter,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#searchFacilities, [filter]),
-            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
-              <_i12.FacilityModel>[],
+            returnValue: _i7.Future<List<_i13.FacilityModel>>.value(
+              <_i13.FacilityModel>[],
             ),
           )
-          as _i7.Future<List<_i12.FacilityModel>>);
+          as _i7.Future<List<_i13.FacilityModel>>);
 
   @override
-  _i7.Future<List<_i12.FacilityModel>> fetchNearbyFacilities({
+  _i7.Future<List<_i13.FacilityModel>> fetchNearbyFacilities({
     required double? lat,
     required double? lon,
     required double? radiusKm,
@@ -305,14 +316,14 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               #page: page,
               #facilityType: facilityType,
             }),
-            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
-              <_i12.FacilityModel>[],
+            returnValue: _i7.Future<List<_i13.FacilityModel>>.value(
+              <_i13.FacilityModel>[],
             ),
           )
-          as _i7.Future<List<_i12.FacilityModel>>);
+          as _i7.Future<List<_i13.FacilityModel>>);
 
   @override
-  _i7.Future<List<_i12.FacilityModel>> fetchFacilitiesByCity({
+  _i7.Future<List<_i13.FacilityModel>> fetchFacilitiesByCity({
     required String? city,
     String? facilityType,
     int? limit = 50,
@@ -325,22 +336,22 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               #limit: limit,
               #page: page,
             }),
-            returnValue: _i7.Future<List<_i12.FacilityModel>>.value(
-              <_i12.FacilityModel>[],
+            returnValue: _i7.Future<List<_i13.FacilityModel>>.value(
+              <_i13.FacilityModel>[],
             ),
           )
-          as _i7.Future<List<_i12.FacilityModel>>);
+          as _i7.Future<List<_i13.FacilityModel>>);
 
   @override
-  _i7.Future<_i12.FacilityModel?> getFacilityById(String? id) =>
+  _i7.Future<_i13.FacilityModel?> getFacilityById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getFacilityById, [id]),
-            returnValue: _i7.Future<_i12.FacilityModel?>.value(),
+            returnValue: _i7.Future<_i13.FacilityModel?>.value(),
           )
-          as _i7.Future<_i12.FacilityModel?>);
+          as _i7.Future<_i13.FacilityModel?>);
 
   @override
-  _i7.Future<_i13.FacilityPublicProfile?> fetchFacilityPublicProfile(
+  _i7.Future<_i14.FacilityPublicProfile?> fetchFacilityPublicProfile(
     String? id, {
     double? distanceKm,
   }) =>
@@ -350,12 +361,12 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               [id],
               {#distanceKm: distanceKm},
             ),
-            returnValue: _i7.Future<_i13.FacilityPublicProfile?>.value(),
+            returnValue: _i7.Future<_i14.FacilityPublicProfile?>.value(),
           )
-          as _i7.Future<_i13.FacilityPublicProfile?>);
+          as _i7.Future<_i14.FacilityPublicProfile?>);
 
   @override
-  _i7.Future<List<_i13.FacilitySpecialistSummary>> fetchFacilitySpecialists(
+  _i7.Future<List<_i14.FacilitySpecialistSummary>> fetchFacilitySpecialists(
     String? facilityId, {
     int? limit = 5,
     String? serviceId,
@@ -366,14 +377,14 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               [facilityId],
               {#limit: limit, #serviceId: serviceId},
             ),
-            returnValue: _i7.Future<List<_i13.FacilitySpecialistSummary>>.value(
-              <_i13.FacilitySpecialistSummary>[],
+            returnValue: _i7.Future<List<_i14.FacilitySpecialistSummary>>.value(
+              <_i14.FacilitySpecialistSummary>[],
             ),
           )
-          as _i7.Future<List<_i13.FacilitySpecialistSummary>>);
+          as _i7.Future<List<_i14.FacilitySpecialistSummary>>);
 
   @override
-  _i7.Future<List<_i13.FacilityAvailabilityDay>> fetchFacilityAvailability(
+  _i7.Future<List<_i14.FacilityAvailabilityDay>> fetchFacilityAvailability(
     String? facilityId, {
     String? serviceId,
     int? days = 2,
@@ -384,11 +395,11 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
               [facilityId],
               {#serviceId: serviceId, #days: days},
             ),
-            returnValue: _i7.Future<List<_i13.FacilityAvailabilityDay>>.value(
-              <_i13.FacilityAvailabilityDay>[],
+            returnValue: _i7.Future<List<_i14.FacilityAvailabilityDay>>.value(
+              <_i14.FacilityAvailabilityDay>[],
             ),
           )
-          as _i7.Future<List<_i13.FacilityAvailabilityDay>>);
+          as _i7.Future<List<_i14.FacilityAvailabilityDay>>);
 
   @override
   _i7.Future<_i2.ProviderSyncPayload> syncProviders({DateTime? since}) =>
@@ -407,7 +418,7 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
 /// A class which mocks [SyncService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSyncService extends _i1.Mock implements _i14.SyncService {
+class MockSyncService extends _i1.Mock implements _i15.SyncService {
   MockSyncService() {
     _i1.throwOnMissingStub(this);
   }
@@ -497,7 +508,7 @@ class MockSyncService extends _i1.Mock implements _i14.SyncService {
 
   @override
   _i7.Future<_i4.SyncRunResult> syncNow({
-    _i14.SyncTrigger? trigger = _i14.SyncTrigger.manual,
+    _i15.SyncTrigger? trigger = _i15.SyncTrigger.manual,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#syncNow, [], {#trigger: trigger}),
@@ -631,32 +642,32 @@ class MockHomeRepository extends _i1.Mock implements _i5.HomeRepository {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockCategoryRepository extends _i1.Mock
-    implements _i15.CategoryRepository {
+    implements _i16.CategoryRepository {
   MockCategoryRepository() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i7.Future<List<_i16.CategoryModel>> getCategories() =>
+  _i7.Future<List<_i17.CategoryModel>> getCategories() =>
       (super.noSuchMethod(
             Invocation.method(#getCategories, []),
-            returnValue: _i7.Future<List<_i16.CategoryModel>>.value(
-              <_i16.CategoryModel>[],
+            returnValue: _i7.Future<List<_i17.CategoryModel>>.value(
+              <_i17.CategoryModel>[],
             ),
           )
-          as _i7.Future<List<_i16.CategoryModel>>);
+          as _i7.Future<List<_i17.CategoryModel>>);
 
   @override
-  _i7.Future<List<_i17.ServiceCategoryModel>> getHomeServiceCategories({
+  _i7.Future<List<_i18.ServiceCategoryModel>> getHomeServiceCategories({
     String? nearMeLabel = 'Near Me',
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getHomeServiceCategories, [], {
               #nearMeLabel: nearMeLabel,
             }),
-            returnValue: _i7.Future<List<_i17.ServiceCategoryModel>>.value(
-              <_i17.ServiceCategoryModel>[],
+            returnValue: _i7.Future<List<_i18.ServiceCategoryModel>>.value(
+              <_i18.ServiceCategoryModel>[],
             ),
           )
-          as _i7.Future<List<_i17.ServiceCategoryModel>>);
+          as _i7.Future<List<_i18.ServiceCategoryModel>>);
 }

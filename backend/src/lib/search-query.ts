@@ -12,6 +12,7 @@ export interface TextMatchParams {
   providerSpecialtyCol?: string;
   facilityNameCol?: string;
   facilityCityCol?: string;
+  facilityAddressCol?: string;
 }
 
 /**
@@ -26,8 +27,9 @@ export function buildTextMatchCondition(opts: TextMatchParams): string {
   const ps = opts.providerSpecialtyCol ?? 'p.specialty';
   const fn = opts.facilityNameCol ?? 'f.name';
   const fc = opts.facilityCityCol ?? 'f.city';
+  const fa = opts.facilityAddressCol ?? 'f.address_line1';
 
-  return `public.search_text_matches($${opts.queryParamIdx}, ${pv}, ${fv}, ${pn}, ${ps}, ${fn}, ${fc})`;
+  return `public.search_text_matches($${opts.queryParamIdx}, ${pv}, ${fv}, ${pn}, ${ps}, ${fn}, ${fc}, ${fa})`;
 }
 
 export function normalizeSearchQuery(q?: string): string | undefined {

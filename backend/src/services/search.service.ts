@@ -181,7 +181,7 @@ export async function searchProvidersRanked(options: ProviderSearchOptions) {
     params.push(options.facilityId);
   }
 
-  const hasGeo = options.lat != null && options.lon != null;
+  const hasGeo = options.lat != null && options.lon != null && !q;
   let distanceExpr = 'NULL::double precision';
 
   if (hasGeo) {
@@ -197,7 +197,9 @@ export async function searchProvidersRanked(options: ProviderSearchOptions) {
 
     if (options.radiusKm) {
       conditions.push(`
-        ST_DWithin(
+        f.latitude IS NOT NULL
+        AND f.longitude IS NOT NULL
+        AND ST_DWithin(
           ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
           ST_SetSRID(ST_MakePoint($${lonParamIdx}, $${latParamIdx}), 4326)::geography,
           $${idx++} * 1000
@@ -308,6 +310,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
         facilityVectorCol: 'f.search_vector',
         facilityNameCol: 'f.name',
         facilityCityCol: 'f.city',
+        facilityAddressCol: 'f.address_line1',
       }),
     );
     params.push(q);
@@ -345,7 +348,7 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     params.push(options.medicalAidSchemeKeys);
   }
 
-  const hasGeo = options.lat != null && options.lon != null;
+  const hasGeo = options.lat != null && options.lon != null && !q;
   let distanceExpr = 'NULL::double precision';
   if (hasGeo) {
     lonParamIdx = idx;
@@ -359,7 +362,9 @@ export async function searchFacilitiesRanked(options: FacilitySearchOptions) {
     idx += 2;
     if (options.radiusKm) {
       conditions.push(`
-        ST_DWithin(
+        f.latitude IS NOT NULL
+        AND f.longitude IS NOT NULL
+        AND ST_DWithin(
           ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
           ST_SetSRID(ST_MakePoint($${lonParamIdx}, $${latParamIdx}), 4326)::geography,
           $${idx++} * 1000
