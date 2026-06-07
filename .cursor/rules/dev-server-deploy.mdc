@@ -26,7 +26,7 @@ ssh smarthealth-dev 'cd /opt/smarthealth && git pull origin main'
 ssh smarthealth-dev 'cd /opt/smarthealth && docker compose --profile migrate run --rm smarthealth-migrate'
 ssh smarthealth-dev 'cd /opt/smarthealth && docker compose build smarthealth-api smarthealth-facility-portal'
 ssh smarthealth-dev 'cd /opt/smarthealth && docker compose up -d smarthealth-api smarthealth-facility-portal'
-ssh smarthealth-dev 'cd /opt/smarthealth && docker compose restart nginx'
+ssh smarthealth-dev 'cd /opt/smarthealth && sh docker/scripts/renew-ssl.sh'
 ssh smarthealth-dev 'cd /opt/smarthealth && sh docker/scripts/healthcheck.sh'
 ```
 
@@ -38,6 +38,7 @@ From Windows-hosted terminals, prefix with `wsl` if not already in a WSL shell.
 - Facility portal → rebuild `smarthealth-facility-portal`
 - SQL migrations under `supabase/migrations/` → run `smarthealth-migrate` before `up -d`
 - Nginx timeout/routing (`docker/nginx/`) → `docker compose restart nginx` (no rebuild)
+- After `git pull` on dev → always run `sh docker/scripts/renew-ssl.sh` so nginx serves Let's Encrypt certs (not self-signed `localhost` certs from the repo)
 
 **Import/geocode CLI on dev:**
 

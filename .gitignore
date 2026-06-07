@@ -51,3 +51,6 @@ app.*.map.json
 
 # Backups
 backups/
+
+# TLS keys — never commit; dev uses Let's Encrypt via docker/scripts/renew-ssl.sh
+docker/nginx/ssl/*.pem
