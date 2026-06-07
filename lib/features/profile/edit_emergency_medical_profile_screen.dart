@@ -19,6 +19,7 @@ import 'package:smarthealth_shep/features/profile/models/selected_primary_provid
 import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
 import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
 import 'package:smarthealth_shep/features/medications/services/prescription_scan_service.dart';
+import 'package:smarthealth_shep/features/medications/utils/prescription_label_parser.dart';
 import 'package:smarthealth_shep/features/medications/widgets/prescription_review_sheet.dart';
 import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
 import 'package:smarthealth_shep/features/profile/widgets/emergency_contacts_editor.dart';
