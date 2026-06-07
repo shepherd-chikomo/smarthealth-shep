@@ -3,7 +3,7 @@ import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/features/family/data/family_repository.dart';
 import 'package:smarthealth_shep/core/health_vault/health_vault_provider.dart';
-import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
+import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/features/profile/utils/profile_completion_calculator.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
@@ -78,8 +78,12 @@ final homeMedicalSummaryProvider =
   await ref.watch(healthVaultBootstrapProvider.future);
   final patient = await ref.watch(patientProfileProvider.future);
   final members = await ref.watch(familyMembersProvider.future);
-  final member =
-      findPrimaryMember(members) ?? buildPrimaryMemberFromProfile(patient);
+  final selectedId = ref.watch(selectedProfileMemberIdProvider);
+  final member = resolveSelectedProfileMember(
+    members: members,
+    patient: patient,
+    selectedMemberId: selectedId,
+  );
   final completion = calculateProfileCompletion(
     member: member,
     patient: patient,

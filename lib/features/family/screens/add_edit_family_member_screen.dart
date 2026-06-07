@@ -4,11 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_bloc.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_event.dart';
+import 'package:smarthealth_shep/features/family/bloc/family_state.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
 import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_submission_helper.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
@@ -111,7 +113,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     }
 
     final dob = DateFormat('yyyy-MM-dd').format(_dateOfBirth!);
-    final isPrimary = _relationship == FamilyRelationship.self ||
+    final isPrimary = widget.isEditing &&
         (widget.member?.isPrimaryAccountHolder ?? false);
 
     final existingMetadata = widget.member?.metadata;
@@ -142,11 +144,41 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
       bloc.add(AddMember(member));
     }
 
-    if (_customConditionLabels.isNotEmpty) {
+    final result = await bloc.stream.firstWhere(
+      (state) =>
+          state.status == FamilyStatus.loaded ||
+          state.status == FamilyStatus.error,
+    );
+
+    if (!mounted) return;
+    if (result.status == FamilyStatus.error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? 'Failed to save family member'),
+        ),
+      );
+      return;
+    }
+
+    final savedMember = widget.isEditing
+        ? result.members.firstWhere(
+            (m) => m.id == widget.member!.id,
+            orElse: () => member,
+          )
+        : result.members.firstWhere(
+            (m) =>
+                m.name == member.name &&
+                m.dateOfBirth == member.dateOfBirth &&
+                !m.isPrimaryAccountHolder,
+            orElse: () => member,
+          );
+
+    if (_customConditionLabels.isNotEmpty &&
+        !hasConditionsNone(_conditions)) {
       await submitCustomConditionProposals(
         api: ApiService(createApiDio()),
         customLabels: _customConditionLabels,
-        familyMemberId: member.id.isNotEmpty ? member.id : null,
+        familyMemberId: savedMember.id.isNotEmpty ? savedMember.id : null,
       );
     }
 
@@ -181,9 +213,12 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<FamilyRelationship>(
-              initialValue: _relationship,
+              value: _relationship,
               decoration: _fieldDecoration('Relationship'),
-              items: FamilyRelationship.values
+              items: (widget.isEditing
+                      ? FamilyRelationship.values
+                      : FamilyRelationship.values
+                          .where((r) => r != FamilyRelationship.self))
                   .map(
                     (r) => DropdownMenuItem(
                       value: r,

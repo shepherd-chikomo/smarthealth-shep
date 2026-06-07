@@ -12,6 +12,8 @@ import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_submission_helper.dart';
 import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
+import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/features/profile/models/selected_primary_provider.dart';
 import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
 import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
@@ -61,6 +63,8 @@ class _EditEmergencyMedicalProfileScreenState
   late TextEditingController _ecPhoneController;
   late TextEditingController _aidMemberController;
   String? _selectedMedicalAidSchemeKey;
+  bool _allergiesMarkedNone = false;
+  bool _primaryProviderMarkedNone = false;
   late TextEditingController _providerPhoneController;
   SelectedPrimaryProvider? _selectedPrimaryProvider;
 
@@ -120,7 +124,10 @@ class _EditEmergencyMedicalProfileScreenState
     _initialized = true;
     _existingMemberId = member.id.isEmpty ? null : member.id;
     _nameController.text = member.name;
-    _allergiesController.text = member.allergies ?? '';
+    _allergiesMarkedNone = isAllergiesNone(member.allergies);
+    _allergiesController.text = _allergiesMarkedNone
+        ? ''
+        : (member.allergies ?? '');
     _gender = member.gender;
     _dateOfBirth = member.dateOfBirth;
     _conditions.addAll(member.medicalConditions);
@@ -134,9 +141,15 @@ class _EditEmergencyMedicalProfileScreenState
         metadata.emergencyContact.relationship ?? '';
     _ecPhoneController.text = metadata.emergencyContact.phone ?? '';
     _selectedMedicalAidSchemeKey = _resolveMedicalAidSchemeKey(metadata.medicalAid);
+    if (isMedicalAidNone(metadata.medicalAid.schemeKey)) {
+      _selectedMedicalAidSchemeKey = profileMedicalAidNoneKey;
+    }
     _aidMemberController.text = metadata.medicalAid.memberNumber ?? '';
-    _selectedPrimaryProvider =
-        SelectedPrimaryProvider.fromInfo(metadata.primaryProvider);
+    _primaryProviderMarkedNone =
+        isPrimaryProviderNone(metadata.primaryProvider);
+    _selectedPrimaryProvider = _primaryProviderMarkedNone
+        ? SelectedPrimaryProvider.none()
+        : SelectedPrimaryProvider.fromInfo(metadata.primaryProvider);
     _providerPhoneController.text = metadata.primaryProvider.phone ?? '';
 
     for (final med in metadata.medications) {
@@ -228,7 +241,27 @@ class _EditEmergencyMedicalProfileScreenState
 
     final schemes =
         ref.read(medicalAidCatalogProvider).value ?? defaultMedicalAidSchemes;
-    final selectedScheme = _selectedMedicalAidScheme(schemes);
+    final selectedScheme = _selectedMedicalAidSchemeKey == profileMedicalAidNoneKey
+        ? null
+        : _selectedMedicalAidScheme(schemes);
+    final medicalAid = _selectedMedicalAidSchemeKey == profileMedicalAidNoneKey
+        ? const MedicalAidInfo(
+            schemeKey: profileMedicalAidNoneKey,
+            provider: profileNoneDisplayLabel,
+          )
+        : MedicalAidInfo(
+            schemeKey: selectedScheme?.schemeKey,
+            provider: selectedScheme?.name,
+            memberNumber: _aidMemberController.text.trim().isEmpty
+                ? null
+                : _aidMemberController.text.trim(),
+          );
+    final primaryProvider = _primaryProviderMarkedNone
+        ? const PrimaryProviderInfo(
+            facilityName: profilePrimaryProviderNoneSentinel,
+          )
+        : (_selectedPrimaryProvider ?? const SelectedPrimaryProvider())
+            .toInfo(phoneOverride: _providerPhoneController.text);
 
     final metadata = EmergencyMedicalMetadata(
       bloodGroup: _bloodGroup,
@@ -248,15 +281,8 @@ class _EditEmergencyMedicalProfileScreenState
         relationship: _optionalText(_ecRelationshipController.text),
         phone: _optionalText(_ecPhoneController.text),
       ),
-      medicalAid: MedicalAidInfo(
-        schemeKey: selectedScheme?.schemeKey,
-        provider: selectedScheme?.name,
-        memberNumber: _aidMemberController.text.trim().isEmpty
-            ? null
-            : _aidMemberController.text.trim(),
-      ),
-      primaryProvider: (_selectedPrimaryProvider ?? const SelectedPrimaryProvider())
-          .toInfo(phoneOverride: _providerPhoneController.text),
+      medicalAid: medicalAid,
+      primaryProvider: primaryProvider,
       customConditionLabels: _customConditionLabels,
     );
 
@@ -270,9 +296,11 @@ class _EditEmergencyMedicalProfileScreenState
       dateOfBirth: _dateOfBirth ?? base.dateOfBirth,
       gender: _gender ?? base.gender,
       medicalConditions: _conditions.toList(),
-      allergies: _allergiesController.text.trim().isEmpty
-          ? null
-          : _allergiesController.text.trim(),
+      allergies: _allergiesMarkedNone
+          ? profileAllergiesNoneSentinel
+          : (_allergiesController.text.trim().isEmpty
+              ? null
+              : _allergiesController.text.trim()),
       isPrimaryAccountHolder: true,
       metadata: metadata,
     );
@@ -319,6 +347,8 @@ class _EditEmergencyMedicalProfileScreenState
     final patient = ref.watch(patientProfileProvider).value;
     final membersAsync = ref.watch(familyMembersProvider);
 
+    final selectedMemberId = ref.watch(selectedProfileMemberIdProvider);
+
     return membersAsync.when(
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -327,8 +357,11 @@ class _EditEmergencyMedicalProfileScreenState
         body: Center(child: Text(error.toString())),
       ),
       data: (members) {
-        final member =
-            findPrimaryMember(members) ?? buildPrimaryMemberFromProfile(patient);
+        final member = resolveSelectedProfileMember(
+          members: members,
+          patient: patient,
+          selectedMemberId: selectedMemberId,
+        );
 
         if (!_initialized) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -371,6 +404,8 @@ class _EditEmergencyMedicalProfileScreenState
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               children: [
+                const ProfileMemberSwitcher(),
+                const SizedBox(height: 12),
                 _sectionTitle(context, 'Identity'),
                 KeyedSubtree(
                   key: _sectionKeys[ProfileEditFocus.name],
@@ -442,10 +477,27 @@ class _EditEmergencyMedicalProfileScreenState
                 _sectionTitle(context, 'Allergies'),
                 KeyedSubtree(
                   key: _sectionKeys[ProfileEditFocus.allergies],
-                  child: TextFormField(
-                  controller: _allergiesController,
-                  decoration: _decoration(context, 'Severe allergy'),
-                  maxLines: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _allergiesController,
+                        decoration: _decoration(context, 'Severe allergy'),
+                        maxLines: 2,
+                        enabled: !_allergiesMarkedNone,
+                      ),
+                      const SizedBox(height: 8),
+                      FilterChip(
+                        label: const Text('No known allergies'),
+                        selected: _allergiesMarkedNone,
+                        onSelected: (selected) {
+                          setState(() {
+                            _allergiesMarkedNone = selected;
+                            if (selected) _allergiesController.clear();
+                          });
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -463,10 +515,12 @@ class _EditEmergencyMedicalProfileScreenState
                     child: Text(
                       _conditions.isEmpty
                           ? 'Select conditions'
-                          : ConditionLabels.joinLabels(
-                              _conditions,
-                              customLabels: _customConditionLabels,
-                            ),
+                          : hasConditionsNone(_conditions)
+                              ? profileNoneDisplayLabel
+                              : ConditionLabels.joinLabels(
+                                  _conditions,
+                                  customLabels: _customConditionLabels,
+                                ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -544,10 +598,23 @@ class _EditEmergencyMedicalProfileScreenState
                   selectedSchemeKey: _selectedMedicalAidSchemeKey,
                   decoration: _decoration(context, 'Medical aid provider'),
                   onChanged: (scheme) {
-                    setState(
-                      () => _selectedMedicalAidSchemeKey = scheme?.schemeKey,
-                    );
+                    setState(() {
+                      if (scheme == null &&
+                          _selectedMedicalAidSchemeKey != profileMedicalAidNoneKey) {
+                        _selectedMedicalAidSchemeKey = null;
+                        return;
+                      }
+                      _selectedMedicalAidSchemeKey = scheme?.schemeKey;
+                    });
                   },
+                  onNoneSelected: () {
+                    setState(() {
+                      _selectedMedicalAidSchemeKey = profileMedicalAidNoneKey;
+                      _aidMemberController.clear();
+                    });
+                  },
+                  noneSelected:
+                      _selectedMedicalAidSchemeKey == profileMedicalAidNoneKey,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -561,10 +628,21 @@ class _EditEmergencyMedicalProfileScreenState
                   key: _sectionKeys[ProfileEditFocus.primaryProvider],
                   child: PrimaryProviderField(
                   selection: _selectedPrimaryProvider,
+                  noneSelected: _primaryProviderMarkedNone,
                   phoneController: _providerPhoneController,
                   phoneDecoration: _decoration(context, 'Phone'),
                   onChanged: (value) {
-                    setState(() => _selectedPrimaryProvider = value);
+                    setState(() {
+                      _primaryProviderMarkedNone = false;
+                      _selectedPrimaryProvider = value;
+                    });
+                  },
+                  onNoneSelected: () {
+                    setState(() {
+                      _primaryProviderMarkedNone = true;
+                      _selectedPrimaryProvider = SelectedPrimaryProvider.none();
+                      _providerPhoneController.clear();
+                    });
                   },
                   ),
                 ),

@@ -116,15 +116,38 @@ class EmergencyHubRepository {
     final apiLocationRequired = data['locationRequired'] as bool? ?? true;
 
     if (apiLocationRequired && lat == null) {
+      // Fall back to national directory when GPS unavailable.
       return EmergencyHubData(
+        cachedAt: DateTime.now(),
         services: const [],
         facilities: const [],
-        cachedAt: DateTime.now(),
         locationRequired: true,
       );
     }
 
-    return _mapHubResponse(data, locationRequired: apiLocationRequired);
+    // When grid services are empty but facilities exist, surface ER facilities as services.
+    var mapped = _mapHubResponse(data, locationRequired: apiLocationRequired);
+    if (mapped.services.isEmpty && mapped.facilities.isNotEmpty) {
+      mapped = mapped.copyWith(
+        services: mapped.facilities
+            .where((f) => f.phone.isNotEmpty)
+            .take(4)
+            .map(
+              (f) => EmergencyService(
+                id: f.id,
+                name: f.name,
+                kind: EmergencyServiceKind.rescueTeam,
+                phone: f.phone,
+                nearestDistanceKm: f.distanceKm,
+                nearestProviderName: f.type,
+                nearestLatitude: f.latitude,
+                nearestLongitude: f.longitude,
+              ),
+            )
+            .toList(),
+      );
+    }
+    return mapped;
   }
 
   EmergencyHubData _mapHubResponse(

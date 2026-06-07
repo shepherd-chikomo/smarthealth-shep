@@ -11,6 +11,7 @@ const TABS = [
   'Logo',
   'Services',
   'Medical Aid',
+  'Staff',
   'Accessibility',
   'Booking',
   'Features',
@@ -345,6 +346,22 @@ export function FacilityProfileTabs({
           >
             Save medical aid
           </button>
+        </div>
+      )}
+
+      {tab === 'Staff' && (
+        <div className="card max-w-2xl space-y-4">
+          <p className="text-sm text-[var(--muted)]">
+            Manage facility team members and linked doctors from your profile.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/facility/staff" className="btn-primary text-sm">
+              Team members
+            </Link>
+            <Link href="/facility/staff/doctors" className="btn-secondary text-sm">
+              Doctors
+            </Link>
+          </div>
         </div>
       )}
 

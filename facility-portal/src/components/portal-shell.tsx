@@ -15,7 +15,6 @@ import { createClient } from '@/lib/supabase/client';
 const NAV = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/facility', label: 'Facility Profile', icon: Building2 },
-  { href: '/doctors', label: 'Doctors', icon: Stethoscope },
   { href: '/hours', label: 'Operating Hours', icon: Clock },
   { href: '/availability', label: 'Availability', icon: Calendar },
   { href: '/slots', label: 'Appointment Slots', icon: Calendar },
@@ -23,7 +22,6 @@ const NAV = [
   { href: '/appointments', label: 'Appointments', icon: Calendar },
   { href: '/queue', label: 'Queue / Walk-ins', icon: Users },
   { href: '/emergency', label: 'Emergency', icon: AlertTriangle },
-  { href: '/staff', label: 'Staff', icon: UserCog },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/provider-analytics', label: 'My Performance', icon: Stethoscope },
   { href: '/reports', label: 'Reports', icon: FileText },

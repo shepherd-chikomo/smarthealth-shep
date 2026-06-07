@@ -1,6 +1,7 @@
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/facility_model.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 
 /// User selection for the emergency profile primary provider section.
 class SelectedPrimaryProvider {
@@ -19,10 +20,14 @@ class SelectedPrimaryProvider {
   final String? phone;
 
   bool get hasSelection =>
+      isNone ||
       (facilityName?.isNotEmpty ?? false) ||
       (doctorName?.isNotEmpty ?? false);
 
+  bool get isNone => isPrimaryProviderSelectionNone(facilityName);
+
   String get summaryLabel {
+    if (isNone) return profileNoneDisplayLabel;
     final doctor = doctorName?.trim();
     final facility = facilityName?.trim();
     if (doctor != null &&
@@ -36,7 +41,16 @@ class SelectedPrimaryProvider {
     return 'Select facility or doctor';
   }
 
+  factory SelectedPrimaryProvider.none() {
+    return const SelectedPrimaryProvider(
+      facilityName: profilePrimaryProviderNoneSentinel,
+    );
+  }
+
   factory SelectedPrimaryProvider.fromInfo(PrimaryProviderInfo info) {
+    if (isPrimaryProviderNone(info)) {
+      return SelectedPrimaryProvider.none();
+    }
     return SelectedPrimaryProvider(
       facilityId: info.facilityId,
       providerId: info.providerId,

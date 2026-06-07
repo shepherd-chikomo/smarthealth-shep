@@ -6,6 +6,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
 import 'package:smarthealth_shep/features/profile/profile_edit_focus.dart';
 import 'package:smarthealth_shep/features/profile/utils/profile_completion_calculator.dart';
+import 'package:smarthealth_shep/features/profile/widgets/profile_completion_ring.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 
@@ -29,9 +30,6 @@ class ProfileCompletionScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text(e.toString())),
         data: (summary) {
           final completion = summary.completion;
-          final bandColor = completionBandColor(completion.band, context);
-          final isComplete =
-              completion.band == ProfileCompletionBand.complete;
 
           return ListView(
             padding: const EdgeInsets.all(24),
@@ -40,46 +38,11 @@ class ProfileCompletionScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
-                      width: 112,
-                      height: 112,
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(end: completion.percentage / 100),
-                        duration: const Duration(milliseconds: 900),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, _) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              CircularProgressIndicator(
-                                value: value,
-                                strokeWidth: 8,
-                                backgroundColor:
-                                    colors.primary.withValues(alpha: 0.1),
-                                color: bandColor,
-                              ),
-                              if (isComplete)
-                                Icon(
-                                  Symbols.check_circle,
-                                  color: bandColor,
-                                  size: 32,
-                                )
-                              else
-                                Text(
-                                  '${completion.percentage}%',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                    color: bandColor,
-                                    height: 1,
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
+                    ProfileCompletionRing(
+                      percentage: completion.percentage,
+                      band: completion.band,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Text(
                       l10n.homeProfileComplete,
                       style: TextStyle(

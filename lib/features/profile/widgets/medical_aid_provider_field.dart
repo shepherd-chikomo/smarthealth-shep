@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/shared/models/medical_aid_scheme.dart';
 
 /// Dropdown for selecting a medical aid scheme from the platform catalog.
@@ -11,11 +12,15 @@ class MedicalAidProviderField extends ConsumerWidget {
     required this.selectedSchemeKey,
     required this.onChanged,
     this.decoration,
+    this.noneSelected = false,
+    this.onNoneSelected,
   });
 
   final String? selectedSchemeKey;
   final ValueChanged<MedicalAidScheme?> onChanged;
   final InputDecoration? decoration;
+  final bool noneSelected;
+  final VoidCallback? onNoneSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,9 +50,11 @@ class MedicalAidProviderField extends ConsumerWidget {
   Widget _buildDropdown(BuildContext context, List<MedicalAidScheme> schemes) {
     final colors = HomeDashboardColors.of(context);
     final keys = schemes.map((s) => s.schemeKey).toSet();
-    final value = selectedSchemeKey != null && keys.contains(selectedSchemeKey)
-        ? selectedSchemeKey
-        : null;
+    final value = noneSelected
+        ? profileMedicalAidNoneKey
+        : (selectedSchemeKey != null && keys.contains(selectedSchemeKey)
+            ? selectedSchemeKey
+            : null);
 
     return DropdownButtonFormField<String>(
       value: value,
@@ -63,6 +70,10 @@ class MedicalAidProviderField extends ConsumerWidget {
           value: null,
           child: Text('Select medical aid'),
         ),
+        DropdownMenuItem<String>(
+          value: profileMedicalAidNoneKey,
+          child: Text(profileNoneDisplayLabel),
+        ),
         ...schemes.map(
           (scheme) => DropdownMenuItem<String>(
             value: scheme.schemeKey,
@@ -73,6 +84,10 @@ class MedicalAidProviderField extends ConsumerWidget {
       onChanged: (key) {
         if (key == null) {
           onChanged(null);
+          return;
+        }
+        if (key == profileMedicalAidNoneKey) {
+          onNoneSelected?.call();
           return;
         }
         final scheme = schemes.firstWhere((s) => s.schemeKey == key);

@@ -1,0 +1,408 @@
+{
+  "project": "smarthealth-shep",
+  "environment": "https://dev.smarthealth.co.zw",
+  "revision": 2,
+  "generatedAt": "2026-06-07",
+  "lastReviewedAt": "2026-06-07",
+  "commitRange": "c35e897..d60b7d0",
+  "summary": {
+    "passed": 8,
+    "needs_enhancement": 9,
+    "pending": 7,
+    "total": 24
+  },
+  "items": [
+    {
+      "id": "mobile-home-header-redesign",
+      "platform": "mobile",
+      "area": "Home",
+      "feature": "Home header redesign (completion ring, medical card, layout)",
+      "steps": [
+        "Open Home on dev API build",
+        "Confirm top row: completion widget (left), logo (center), bell (right)",
+        "Confirm greeting + location left, floating medical profile card ~45% width right",
+        "Confirm search bar below header; texture is subtle (~4% opacity)",
+        "Tap completion ring → opens /profile/completion",
+        "Tap medical card → opens /profile"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-profile-completion-screen",
+      "platform": "mobile",
+      "area": "Profile",
+      "feature": "Profile completion checklist with deep links to edit sections",
+      "steps": [
+        "Open Profile Completion from home ring or /profile/completion",
+        "Confirm percentage ring shows without label overlap",
+        "Tap a missing item (e.g. Blood group, Allergies)",
+        "Verify edit form opens and scrolls to that section",
+        "Complete a field, return — confirm completion % updates"
+      ],
+      "status": "needs_enhancement",
+      "notes": "2 label overlap is still there\n2.5 add none as an acceptable option for allergies, Medical conditions, Medical Aid and Primary provider",
+      "addedDate": "2026-06-06",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-emergency-profile-view-edit",
+      "platform": "mobile",
+      "area": "Profile",
+      "feature": "Emergency medical profile view and edit",
+      "steps": [
+        "Open Profile → view emergency medical summary",
+        "Open Edit profile — blood group, allergies, conditions, emergency contact",
+        "Fill medical aid, medications, primary provider sections",
+        "Save and confirm data persists after app restart",
+        "Switch family member — confirm correct member profile loads"
+      ],
+      "status": "needs_enhancement",
+      "notes": "Exception on adding a family member, move profile switch to the main profile page",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-conditions-catalog-picker",
+      "platform": "mobile",
+      "area": "Profile",
+      "feature": "Conditions catalog picker (common, show more, Other, submit)",
+      "steps": [
+        "Edit profile → Conditions → open picker sheet",
+        "Select common conditions — confirm chips appear on profile",
+        "Tap Show more — confirm extended list loads",
+        "Choose Other — enter custom condition and submit",
+        "Confirm custom label shows on profile immediately",
+        "Verify submission appears in admin Conditions → Pending"
+      ],
+      "status": "needs_enhancement",
+      "notes": "3 unable to enter custom condition an to submit it, the keyboard does not appear",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-family-member-picker",
+      "platform": "mobile",
+      "area": "Profile",
+      "feature": "Unified family member picker on profile flows",
+      "steps": [
+        "Open profile with multiple family members",
+        "Switch member via picker — confirm header/summary updates",
+        "Edit one member's conditions — confirm other members unchanged"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0"
+    },
+    {
+      "id": "mobile-health-vault-privacy",
+      "platform": "mobile",
+      "area": "Health Vault",
+      "feature": "Health vault and privacy controls",
+      "steps": [
+        "Navigate to Health Vault / privacy settings",
+        "Toggle privacy options — confirm UI state matches selection",
+        "Return to profile — confirm restricted data respects privacy setting"
+      ],
+      "status": "needs_enhancement",
+      "notes": "- allow export to local device,\n- include a security pin to lock the backup\n- on reinstallation app should search local health repository for backup, and if found in can be imported if correct pin is provided.",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-backup-restore",
+      "platform": "mobile",
+      "area": "Settings",
+      "feature": "Backup and restore",
+      "steps": [
+        "Open backup — create backup file",
+        "Clear or modify local data",
+        "Restore from backup — confirm profile data returns"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0"
+    },
+    {
+      "id": "mobile-emergency-hub",
+      "platform": "mobile",
+      "area": "Emergency",
+      "feature": "Emergency hub (contacts, quick actions)",
+      "steps": [
+        "Open Emergency hub from home or nav",
+        "Confirm emergency numbers / quick actions display",
+        "Tap call/action links — confirm correct handler (dialer/maps)"
+      ],
+      "status": "needs_enhancement",
+      "notes": "no service providers are visible for my location",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-medical-aid-search",
+      "platform": "mobile",
+      "area": "Profile",
+      "feature": "Medical aid catalog search with chips",
+      "steps": [
+        "Edit profile → Medical aid section",
+        "Search for a scheme — confirm results load from API",
+        "Select scheme — confirm chip/label saved on profile"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-bookings-sync",
+      "platform": "mobile",
+      "area": "Appointments",
+      "feature": "Upcoming appointments banner and API sync",
+      "steps": [
+        "Home screen — confirm upcoming appointment banner when bookings exist",
+        "Open appointments list — confirm sync with dev API",
+        "Pull to refresh — confirm loading and updated data"
+      ],
+      "status": "needs_enhancement",
+      "notes": "Reminder scheduled should appear on homepage and not bookings page",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-facility-cards-redesign",
+      "platform": "mobile",
+      "area": "Search",
+      "feature": "Facility cards and public profile display",
+      "steps": [
+        "Search for a facility with public profile configured",
+        "Open facility detail — confirm logo, hours, services from public profile API",
+        "Confirm card layout matches redesign (image, badges, distance)"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "2faf799",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "mobile-search-origin-debug",
+      "platform": "mobile",
+      "area": "Home",
+      "feature": "Search origin debug strip (dev builds)",
+      "steps": [
+        "On dev build home screen, locate debug strip showing search origin",
+        "Change location permission / GPS — confirm origin updates",
+        "Confirm strip hidden or absent on release builds if applicable"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-05",
+      "commit": "1ee8346",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "admin-conditions-tab",
+      "platform": "admin",
+      "area": "Content",
+      "feature": "Conditions tab — catalog CRUD and pending submissions",
+      "steps": [
+        "Log into admin at dev.smarthealth.co.zw",
+        "Content → Conditions tab loads",
+        "Add/edit/delete a common condition — confirm API persists",
+        "Review pending user submissions — approve or reject",
+        "Confirm approved items appear in mobile common list after refresh"
+      ],
+      "status": "needs_enhancement",
+      "notes": "2.Conditions tab, import all known Chronic Conditions into the common section. sort and import from the list below as well(Cardiac Conditions\nHypertension (High Blood Pressure)\nHeart Failure\nCoronary Artery Disease\nPrevious Heart Attack\nAngina\nArrhythmias (e.g. Atrial Fibrillation)\nPacemaker or Implantable Defibrillator\nRespiratory Conditions\nAsthma\nChronic Obstructive Pulmonary Disease (COPD)\nChronic Bronchitis\nEmphysema\nSleep Apnoea\nOxygen Dependence\nEndocrine & Metabolic Conditions\nType 1 Diabetes\nType 2 Diabetes\nHypoglycaemia Risk\nHyperthyroidism\nHypothyroidism\nAdrenal Insufficiency\nNeurological Conditions\nEpilepsy / Seizure Disorder\nStroke History\nTransient Ischaemic Attack (TIA)\nParkinson's Disease\nMultiple Sclerosis\nDementia\nMigraine Disorders\nBlood Disorders\nSickle Cell Disease\nHaemophilia\nThalassaemia\nChronic Anaemia\nBlood Clotting Disorders\nHistory of Deep Vein Thrombosis (DVT)\nKidney & Liver Conditions\nChronic Kidney Disease\nDialysis Patient\nKidney Transplant\nLiver Cirrhosis\nHepatitis B\nHepatitis C\nAutoimmune & Rheumatological Conditions\nRheumatoid Arthritis\nLupus\nPsoriasis with Systemic Treatment\nCrohn's Disease\nUlcerative Colitis\nMental Health Conditions\nSevere Depression\nBipolar Disorder\nSchizophrenia\nSevere Anxiety Disorders\nPTSD\nInfectious Disease Status (where relevant)\nHIV (optional and privacy-controlled)\nTuberculosis History\nActive Infectious Disease Alerts\nCancer History\nActive Cancer Treatment\nChemotherapy\nRadiation Therapy\nImmunotherapy)",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "admin-geocoding-tab",
+      "platform": "admin",
+      "area": "Facilities",
+      "feature": "Geocoding tab for failed facility geocodes",
+      "steps": [
+        "Admin → Geocoding tab",
+        "Confirm failed geocode queue lists facilities",
+        "Retry or manually fix coordinates — confirm status updates",
+        "Verify facility appears correctly on map/search after fix"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-05",
+      "commit": "dff834c",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "facility-public-profile-config",
+      "platform": "facility-portal",
+      "area": "Profile",
+      "feature": "Public profile configuration",
+      "steps": [
+        "Log into facility portal on dev",
+        "Open public profile settings — upload logo, set hours, services",
+        "Save — confirm success toast",
+        "Verify patient app facility detail reflects changes"
+      ],
+      "status": "needs_enhancement",
+      "notes": "2. I have failed to add Gynaecology as a service. make all the services that appear here be configured from the admin portal under a services tab next to conditions. allow facilities to submit new services which will be submited from approval and global availability  from the admin section\nmake all the Medical Aid companies that appear here be configured from the admin portal under a Medical\n2.1 Aid tab next to Services, allow facilities to submit new medical aids which will be submited from approval and global availability  from the admin section",
+      "addedDate": "2026-06-06",
+      "commit": "2faf799",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "facility-map-pin-editor",
+      "platform": "facility-portal",
+      "area": "Location",
+      "feature": "Map pin editor for facility coordinates",
+      "steps": [
+        "Facility portal → map pin editor",
+        "Drag pin or enter coordinates — save",
+        "Confirm coordinates persist on reload",
+        "Search nearby in patient app — distance/order reflects new pin"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "5be71ef",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "facility-staff-calendar-fixes",
+      "platform": "facility-portal",
+      "area": "Staff",
+      "feature": "Staff invite, calendar appointments, nav cleanup",
+      "steps": [
+        "Invite staff member — confirm email/link flow",
+        "Open calendar — appointments load without errors",
+        "Create/view appointment — confirm CRUD works",
+        "Confirm nav items match expected structure (no dead links)"
+      ],
+      "status": "needs_enhancement",
+      "notes": "1. Adding a staff member did not send them an invite\nmove the staff tab to under facility profile. make doctors a tab under staff tab",
+      "addedDate": "2026-06-05",
+      "commit": "ee2e48b",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "facility-logo-public-url",
+      "platform": "facility-portal",
+      "area": "Profile",
+      "feature": "Facility logo uses public Supabase URL (browser-visible)",
+      "steps": [
+        "Upload facility logo in portal",
+        "Confirm logo previews in portal (not broken image)",
+        "Open same facility in patient app — logo renders"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "b2edaa5",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "api-profile-conditions-catalog",
+      "platform": "api",
+      "area": "Catalog",
+      "feature": "Profile conditions catalog endpoints",
+      "steps": [
+        "GET /v1/catalog/profile-conditions — returns common conditions",
+        "POST user custom condition — returns pending status",
+        "Admin approve — GET list includes new common entry"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0"
+    },
+    {
+      "id": "api-emergency-hub",
+      "platform": "api",
+      "area": "Emergency",
+      "feature": "Emergency hub API",
+      "steps": [
+        "Call emergency hub endpoint from mobile or curl",
+        "Confirm contacts/resources payload shape matches app expectations"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0"
+    },
+    {
+      "id": "api-medical-aid-search",
+      "platform": "api",
+      "area": "Catalog",
+      "feature": "Medical aid catalog search",
+      "steps": [
+        "GET medical aid search with query string",
+        "Confirm results match schemes in database",
+        "Confirm empty query handling"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-07",
+      "commit": "d60b7d0"
+    },
+    {
+      "id": "api-facility-public-profile",
+      "platform": "api",
+      "area": "Facilities",
+      "feature": "Facility public profile API",
+      "steps": [
+        "GET public profile for facility with config",
+        "Confirm logo URL, hours, services in JSON",
+        "GET facility without config — graceful empty/partial response"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "2faf799"
+    },
+    {
+      "id": "api-google-geocoding",
+      "platform": "api",
+      "area": "Geocoding",
+      "feature": "Google as sole geocoding provider",
+      "steps": [
+        "Trigger geocode for test facility (admin or CLI)",
+        "Confirm coordinates returned and stored",
+        "Failed geocode appears in admin Geocoding tab"
+      ],
+      "status": "passed",
+      "notes": "",
+      "addedDate": "2026-06-05",
+      "commit": "322900d",
+      "reviewedAt": "2026-06-07"
+    },
+    {
+      "id": "api-facility-types-parse",
+      "platform": "api",
+      "area": "Search",
+      "feature": "Postgres facility_types parsing in nearby responses",
+      "steps": [
+        "GET nearby facilities endpoint",
+        "Confirm facility_types is array (not raw Postgres string)",
+        "Confirm type filters work in patient search"
+      ],
+      "status": "pending",
+      "notes": "",
+      "addedDate": "2026-06-06",
+      "commit": "7fcb5ca"
+    }
+  ]
+}

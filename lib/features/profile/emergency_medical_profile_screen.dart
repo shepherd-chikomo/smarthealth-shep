@@ -5,8 +5,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
-import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
 import 'package:smarthealth_shep/features/profile/widgets/emergency_profile_widgets.dart';
+import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 
@@ -45,13 +45,19 @@ class EmergencyMedicalProfileScreen extends ConsumerWidget {
         error: (error, _) => Center(child: Text(error.toString())),
         data: (members) {
           final patient = patientAsync.value;
-          final member = findPrimaryMember(members) ??
-              buildPrimaryMemberFromProfile(patient);
+          final selectedId = ref.watch(selectedProfileMemberIdProvider);
+          final member = resolveSelectedProfileMember(
+            members: members,
+            patient: patient,
+            selectedMemberId: selectedId,
+          );
           final metadata = member.metadata ?? const EmergencyMedicalMetadata();
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const ProfileMemberSwitcher(),
+              const SizedBox(height: 12),
               EmergencyProfileHeaderBanner(updatedAt: member.updatedAt),
               const SizedBox(height: 16),
               EmergencyPatientIdentityCard(

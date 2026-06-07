@@ -6,7 +6,6 @@ import 'package:smarthealth_shep/features/appointments/bloc/appointments_event.d
 import 'package:smarthealth_shep/features/appointments/bloc/appointments_state.dart';
 import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
 import 'package:smarthealth_shep/features/appointments/widgets/appointment_card.dart';
-import 'package:smarthealth_shep/features/appointments/widgets/appointment_reminder_widgets.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
@@ -67,7 +66,6 @@ class _AppointmentsView extends StatelessWidget {
           }
 
           final upcoming = state.upcoming;
-          final nextReminder = upcoming.isEmpty ? null : upcoming.first;
 
           return RefreshIndicator(
             color: HomeDashboardColors.of(context).primary,
@@ -82,15 +80,6 @@ class _AppointmentsView extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
-                if (nextReminder != null) ...[
-                  AppointmentReminderCard(
-                    appointment: nextReminder,
-                    onTap: () => context.push(
-                      '/appointments/${nextReminder.id}',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
                 if (upcoming.isNotEmpty) ...[
                   _SectionTitle(l10n.appointmentsUpcoming),
                   const SizedBox(height: 10),

@@ -7,6 +7,7 @@ import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/profile/models/selected_primary_provider.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/features/profile/widgets/primary_provider_selection_sheet.dart';
 
 /// Picks a facility or doctor from the database for the emergency profile.
@@ -17,12 +18,16 @@ class PrimaryProviderField extends ConsumerWidget {
     required this.onChanged,
     required this.phoneController,
     this.phoneDecoration,
+    this.noneSelected = false,
+    this.onNoneSelected,
   });
 
   final SelectedPrimaryProvider? selection;
   final ValueChanged<SelectedPrimaryProvider?> onChanged;
   final TextEditingController phoneController;
   final InputDecoration? phoneDecoration;
+  final bool noneSelected;
+  final VoidCallback? onNoneSelected;
 
   Future<void> _openPicker(BuildContext context, WidgetRef ref) async {
     final result = await PrimaryProviderSelectionSheet.show(
@@ -40,13 +45,15 @@ class PrimaryProviderField extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = HomeDashboardColors.of(context);
-    final label = selection?.summaryLabel ?? 'Select facility or doctor';
+    final label = noneSelected
+        ? profileNoneDisplayLabel
+        : (selection?.summaryLabel ?? 'Select facility or doctor');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         OutlinedButton(
-          onPressed: () => _openPicker(context, ref),
+          onPressed: noneSelected ? null : () => _openPicker(context, ref),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(AppConstants.minTapTarget),
             alignment: Alignment.centerLeft,
@@ -62,16 +69,16 @@ class PrimaryProviderField extends ConsumerWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selection?.hasSelection == true
+                    color: noneSelected || selection?.hasSelection == true
                         ? colors.textPrimary
                         : colors.textSecondary,
-                    fontWeight: selection?.hasSelection == true
+                    fontWeight: noneSelected || selection?.hasSelection == true
                         ? FontWeight.w600
                         : FontWeight.w400,
                   ),
                 ),
               ),
-              if (selection?.hasSelection == true)
+              if (noneSelected || selection?.hasSelection == true)
                 IconButton(
                   onPressed: () {
                     onChanged(null);
@@ -82,6 +89,20 @@ class PrimaryProviderField extends ConsumerWidget {
                 ),
               const Icon(Icons.chevron_right),
             ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: onNoneSelected,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(40),
+          ),
+          child: Text(
+            noneSelected ? 'None selected' : 'No primary provider',
+            style: TextStyle(
+              color: noneSelected ? colors.primary : colors.textSecondary,
+              fontWeight: noneSelected ? FontWeight.w600 : FontWeight.w400,
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -97,6 +118,7 @@ class PrimaryProviderField extends ConsumerWidget {
                 ),
               ),
           keyboardType: TextInputType.phone,
+          enabled: !noneSelected,
         ),
       ],
     );

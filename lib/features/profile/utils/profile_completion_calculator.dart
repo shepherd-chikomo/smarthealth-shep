@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smarthealth_shep/core/auth/patient_profile.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 
@@ -45,13 +46,13 @@ ProfileCompletionResult calculateProfileCompletion({
   final hasGender = member.gender != null || patient?.gender != null;
   final hasBloodGroup =
       metadata.bloodGroup != null && metadata.bloodGroup!.trim().isNotEmpty;
-  final hasAllergies =
-      member.allergies != null && member.allergies!.trim().isNotEmpty;
-  final hasConditions = member.medicalConditions.isNotEmpty;
+  final hasAllergies = allergiesSectionComplete(member.allergies);
+  final hasConditions = conditionsSectionComplete(member.medicalConditions);
   final hasEmergencyContact = metadata.emergencyContact.hasAny;
-  final hasMedicalAid = metadata.medicalAid.hasAny;
+  final hasMedicalAid = medicalAidSectionComplete(metadata.medicalAid);
   final hasMedications = metadata.medications.isNotEmpty;
-  final hasPrimaryProvider = metadata.primaryProvider.hasAny;
+  final hasPrimaryProvider =
+      primaryProviderSectionComplete(metadata.primaryProvider);
 
   final items = <ProfileCompletionItem>[
     ProfileCompletionItem(id: 'name', label: 'Full name', isComplete: hasName),

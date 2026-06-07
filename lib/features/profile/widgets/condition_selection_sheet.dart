@@ -6,6 +6,7 @@ import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/profile/models/condition_selection_result.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_slug.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 
@@ -54,6 +55,8 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
   late Set<String> _selected;
   late Map<String, String> _customLabels;
   final _otherController = TextEditingController();
+  final _otherFocusNode = FocusNode();
+  final _scrollController = ScrollController();
   Timer? _suggestDebounce;
 
   List<SearchFilterOption> _common = [];
@@ -71,14 +74,30 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     _customLabels = Map<String, String>.from(widget.customLabels);
     _loadOptions();
     _otherController.addListener(_onOtherChanged);
+    _otherFocusNode.addListener(_scrollOtherFieldIntoView);
   }
 
   @override
   void dispose() {
     _suggestDebounce?.cancel();
     _otherController.removeListener(_onOtherChanged);
+    _otherFocusNode.removeListener(_scrollOtherFieldIntoView);
     _otherController.dispose();
+    _otherFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollOtherFieldIntoView() {
+    if (!_otherFocusNode.hasFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   Future<void> _loadOptions() async {
@@ -155,6 +174,20 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
 
   void _toggle(String id) {
     setState(() {
+      if (id == profileConditionsNoneSlug) {
+        if (_selected.contains(profileConditionsNoneSlug)) {
+          _selected.remove(profileConditionsNoneSlug);
+        } else {
+          _selected
+            ..clear()
+            ..add(profileConditionsNoneSlug);
+          _customLabels.clear();
+        }
+        return;
+      }
+
+      _selected.remove(profileConditionsNoneSlug);
+
       if (_selected.contains(id)) {
         _selected.remove(id);
         _customLabels.remove(id);
@@ -166,6 +199,7 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
 
   void _selectSuggestion(SearchFilterOption option) {
     setState(() {
+      _selected.remove(profileConditionsNoneSlug);
       _selected.add(option.id);
       _customLabels.remove(option.id);
       _otherController.clear();
@@ -180,6 +214,7 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     if (slug.isEmpty) return;
 
     setState(() {
+      _selected.remove(profileConditionsNoneSlug);
       _selected.add(slug);
       if (!_catalogSlugs.contains(slug)) {
         _customLabels[slug] = label;
@@ -196,6 +231,7 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     if (pending.isNotEmpty) {
       final slug = toConditionSlug(pending);
       if (slug.isNotEmpty) {
+        _selected.remove(profileConditionsNoneSlug);
         _selected.add(slug);
         if (!_catalogSlugs.contains(slug)) {
           _customLabels[slug] = pending;
@@ -225,166 +261,170 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
   Widget build(BuildContext context) {
     final colors = HomeDashboardColors.of(context);
     final l10n = AppLocalizations.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.8,
-      minChildSize: 0.45,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
+    return FractionallySizedBox(
+      heightFactor: 0.88,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Select conditions',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _done,
+                  child: Text('Done (${_selected.length})'),
+                ),
+              ],
+            ),
+          ),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator()))
+          else
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: EdgeInsets.only(bottom: 16 + bottomInset),
                 children: [
-                  Expanded(
+                  CheckboxListTile(
+                    value: _selected.contains(profileConditionsNoneSlug),
+                    title: const Text('No known conditions'),
+                    onChanged: (_) => _toggle(profileConditionsNoneSlug),
+                  ),
+                  const Divider(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Text(
-                      'Select conditions',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                      'Common conditions',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _done,
-                    child: Text('Done (${_selected.length})'),
+                  ..._common.map(_buildOptionTile),
+                  if (_other.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: TextButton(
+                        onPressed: () => setState(() => _showMore = !_showMore),
+                        child: Text(
+                          _showMore ? l10n.profileShowLess : l10n.profileShowMore,
+                        ),
+                      ),
+                    ),
+                    if (_showMore) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                        child: Text(
+                          'More conditions',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ),
+                      ..._other.map(_buildOptionTile),
+                    ],
+                  ],
+                  const Divider(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'Other condition',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _otherController,
+                            focusNode: _otherFocusNode,
+                            decoration: InputDecoration(
+                              hintText: 'Type your condition',
+                              filled: true,
+                              fillColor: colors.surface,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _addCustomOther(),
+                            onTap: _scrollOtherFieldIntoView,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton(
+                          onPressed: _addCustomOther,
+                          child: const Text('Add'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_suggestLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    )
+                  else if (_suggestions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _suggestions.map((option) {
+                          return ActionChip(
+                            label: Text(option.label),
+                            onPressed: () => _selectSuggestion(option),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  if (_customLabels.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'Custom (pending review)',
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    ..._customLabels.entries.map((entry) {
+                      final checked = _selected.contains(entry.key);
+                      return CheckboxListTile(
+                        value: checked,
+                        title: Text(entry.value),
+                        subtitle: const Text('Submitted for admin review'),
+                        onChanged: (_) => _toggle(entry.key),
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),
-            if (_loading)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
-            else
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.only(bottom: 16),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                      child: Text(
-                        'Common conditions',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                    ..._common.map(_buildOptionTile),
-                    if (_other.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: TextButton(
-                          onPressed: () => setState(() => _showMore = !_showMore),
-                          child: Text(
-                            _showMore ? l10n.profileShowLess : l10n.profileShowMore,
-                          ),
-                        ),
-                      ),
-                      if (_showMore) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                          child: Text(
-                            'More conditions',
-                            style:
-                                Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                          ),
-                        ),
-                        ..._other.map(_buildOptionTile),
-                      ],
-                    ],
-                    const Divider(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'Other condition',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _otherController,
-                              decoration: InputDecoration(
-                                hintText: 'Type your condition',
-                                filled: true,
-                                fillColor: colors.surface,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _addCustomOther(),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          FilledButton(
-                            onPressed: _addCustomOther,
-                            child: const Text('Add'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_suggestLoading)
-                      const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    else if (_suggestions.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _suggestions.map((option) {
-                            return ActionChip(
-                              label: Text(option.label),
-                              onPressed: () => _selectSuggestion(option),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    if (_customLabels.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          'Custom (pending review)',
-                          style: TextStyle(
-                            color: colors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      ..._customLabels.entries.map((entry) {
-                        final checked = _selected.contains(entry.key);
-                        return CheckboxListTile(
-                          value: checked,
-                          title: Text(entry.value),
-                          subtitle: const Text('Submitted for admin review'),
-                          onChanged: (_) => _toggle(entry.key),
-                        );
-                      }),
-                    ],
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 }

@@ -11,6 +11,7 @@ import type { AuthenticatedUser } from '../lib/auth.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
 import { normalizeEmail, normalizeZimbabwePhone, ensureAuthUserEmail } from '../lib/supabase-auth.js';
+import { sendEmail } from '../lib/email.js';
 import { logAppointmentAudit, logPermissionAudit } from '../lib/audit-log.js';
 import {
   applyManualFacilityCoordinates,
@@ -1934,6 +1935,35 @@ export async function addStaffMember(
     [facilityId, targetUserId, data.role, user.id],
   );
   const membershipId = result.rows[0].id as string;
+
+  const facilityRow = await query<{ name: string }>(
+    `SELECT name FROM public.facilities WHERE id = $1`,
+    [facilityId],
+  );
+  const facilityName = facilityRow.rows[0]?.name ?? 'your facility';
+  const portalUrl =
+    process.env.FACILITY_PORTAL_URL ?? 'https://dev.smarthealth.co.zw';
+
+  await sendEmail(
+    email,
+    `You've been invited to ${facilityName} on SmartHealth`,
+    `<p>Hello ${firstName},</p>
+     <p>You have been added as <strong>${data.role.replace('_', ' ')}</strong> at ${facilityName}.</p>
+     <p>Sign in at <a href="${portalUrl}">${portalUrl}</a> using this email address.</p>`,
+    'staff_invite',
+  );
+
+  await query(
+    `INSERT INTO public.notifications (user_id, channel, status, title, body, payload)
+     SELECT $1, 'in_app', 'pending', 'Facility staff invitation', $2, $3::jsonb
+     WHERE EXISTS (SELECT 1 FROM public.profiles WHERE id = $1)`,
+    [
+      targetUserId,
+      `You have been added to ${facilityName}`,
+      JSON.stringify({ facilityId, role: data.role, type: 'staff_invitation' }),
+    ],
+  );
+
   await logPermissionAudit(
     user.id,
     'permission.grant',
