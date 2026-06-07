@@ -8,6 +8,7 @@ import 'package:smarthealth_shep/features/family/data/family_repository.dart';
 import 'package:smarthealth_shep/features/family/screens/add_edit_family_member_screen.dart';
 import 'package:smarthealth_shep/features/family/widgets/family_member_card.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
+import 'package:smarthealth_shep/shared/widgets/app_shell_with_bottom_nav.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 
@@ -19,9 +20,16 @@ class FamilyMembersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => FamilyBloc(repository: repository),
-      child: const _FamilyMembersView(),
+    return AppShellWithBottomNav(
+      appBar: AppBar(
+        backgroundColor: HomeDashboardColors.of(context).surface,
+        foregroundColor: HomeDashboardColors.of(context).textPrimary,
+        title: const Text('Family Members'),
+      ),
+      body: BlocProvider(
+        create: (_) => FamilyBloc(repository: repository),
+        child: const _FamilyMembersView(),
+      ),
     );
   }
 }
@@ -106,14 +114,7 @@ class _FamilyMembersView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HomeDashboardColors.of(context).background,
-      appBar: AppBar(
-        backgroundColor: HomeDashboardColors.of(context).surface,
-        foregroundColor: HomeDashboardColors.of(context).textPrimary,
-        title: const Text('Family Members'),
-      ),
-      body: BlocConsumer<FamilyBloc, FamilyState>(
+    return BlocConsumer<FamilyBloc, FamilyState>(
         listenWhen: (prev, curr) =>
             prev.errorMessage != curr.errorMessage && curr.errorMessage != null,
         listener: (context, state) {
@@ -184,7 +185,6 @@ class _FamilyMembersView extends StatelessWidget {
             ],
           );
         },
-      ),
     );
   }
 }

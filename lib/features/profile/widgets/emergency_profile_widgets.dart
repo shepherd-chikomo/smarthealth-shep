@@ -5,6 +5,7 @@ import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/core/patient_id/smarthealth_patient_id.dart';
 import 'package:smarthealth_shep/features/family/widgets/family_member_avatar.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
+import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
 import 'package:smarthealth_shep/features/profile/utils/display_text.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
@@ -351,6 +352,19 @@ class CurrentMedicationsCard extends StatelessWidget {
     if (medications.isEmpty) return const SizedBox.shrink();
     final colors = HomeDashboardColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isMedicationsNone(medications)) {
+      return _TintedSectionCard(
+        title: 'CURRENT MEDICATIONS',
+        icon: Symbols.medication,
+        tint: isDark ? const Color(0xFF1A2A3D) : colors.primary.withValues(alpha: 0.08),
+        border: colors.primary.withValues(alpha: 0.35),
+        titleColor: colors.primary,
+        child: Text(
+          profileNoneDisplayLabel,
+          style: TextStyle(color: colors.textSecondary),
+        ),
+      );
+    }
     return _TintedSectionCard(
       title: 'CURRENT MEDICATIONS',
       icon: Symbols.medication,
@@ -660,27 +674,51 @@ class EmergencyContactMedicalAidRow extends StatelessWidget {
   const EmergencyContactMedicalAidRow({
     super.key,
     required this.contact,
+    this.contacts = const [],
     required this.medicalAid,
   });
 
   final EmergencyContactInfo contact;
+  final List<EmergencyContactInfo> contacts;
   final MedicalAidInfo medicalAid;
+
+  List<EmergencyContactInfo> get _displayContacts {
+    if (contacts.isNotEmpty) return contacts.where((c) => c.hasAny).toList();
+    if (contact.hasAny) return [contact];
+    return const [];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final showContact = contact.hasAny;
+    final displayContacts = _displayContacts;
+    final showContact = displayContacts.isNotEmpty;
     final showAid = medicalAid.hasAny;
     if (!showContact && !showAid) return const SizedBox.shrink();
     if (!showContact) return MedicalAidCard(medicalAid: medicalAid);
-    if (!showAid) return EmergencyContactCard(contact: contact);
+    if (!showAid) {
+      return Column(
+        children: [
+          for (var i = 0; i < displayContacts.length; i++) ...[
+            if (i > 0) const SizedBox(height: 10),
+            EmergencyContactCard(
+              contact: displayContacts[i],
+              compact: displayContacts.length > 1,
+            ),
+          ],
+        ],
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final stacked = constraints.maxWidth < 360;
+        final stacked = constraints.maxWidth < 360 || displayContacts.length > 1;
         if (stacked) {
           return Column(
             children: [
-              EmergencyContactCard(contact: contact),
+              for (var i = 0; i < displayContacts.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                EmergencyContactCard(contact: displayContacts[i]),
+              ],
               const SizedBox(height: 10),
               MedicalAidCard(medicalAid: medicalAid),
             ],
@@ -690,7 +728,10 @@ class EmergencyContactMedicalAidRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: EmergencyContactCard(contact: contact, compact: true),
+              child: EmergencyContactCard(
+                contact: displayContacts.first,
+                compact: true,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(

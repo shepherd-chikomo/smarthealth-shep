@@ -103,6 +103,9 @@ class HealthVaultRepository {
       'conditions': record.chronicConditions,
       'medications': record.medications.map((m) => m.name).toList(),
       'emergencyContact': record.emergencyContact.toJson(),
+      if (record.emergencyContacts.isNotEmpty)
+        'emergencyContacts':
+            record.emergencyContacts.map((c) => c.toJson()).toList(),
     });
   }
 

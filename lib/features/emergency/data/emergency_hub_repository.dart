@@ -115,16 +115,6 @@ class EmergencyHubRepository {
     final data = response.data ?? {};
     final apiLocationRequired = data['locationRequired'] as bool? ?? true;
 
-    if (apiLocationRequired && lat == null) {
-      // Fall back to national directory when GPS unavailable.
-      return EmergencyHubData(
-        cachedAt: DateTime.now(),
-        services: const [],
-        facilities: const [],
-        locationRequired: true,
-      );
-    }
-
     // When grid services are empty but facilities exist, surface ER facilities as services.
     var mapped = _mapHubResponse(data, locationRequired: apiLocationRequired);
     if (mapped.services.isEmpty && mapped.facilities.isNotEmpty) {
@@ -250,6 +240,8 @@ class EmergencyHubRepository {
       'police' => EmergencyServiceKind.police,
       'fire' => EmergencyServiceKind.fireRescue,
       'disaster_response' => EmergencyServiceKind.rescueTeam,
+      'hospital_er' => EmergencyServiceKind.rescueTeam,
+      'mental_health_crisis' => EmergencyServiceKind.rescueTeam,
       _ => null,
     };
   }

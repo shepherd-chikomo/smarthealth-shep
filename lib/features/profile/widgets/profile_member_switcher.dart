@@ -9,6 +9,15 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
 import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
+
+String profileMemberSwitcherKey(FamilyMemberModel member) {
+  if (member.isPrimaryAccountHolder &&
+      (member.id.isEmpty || member.id == profilePrimaryLocalId)) {
+    return profilePrimaryLocalId;
+  }
+  return member.id.isNotEmpty ? member.id : member.name;
+}
+
 /// Active profile member for view/edit flows. Null means primary account holder.
 class SelectedProfileMemberId extends Notifier<String?> {
   @override
@@ -33,6 +42,9 @@ FamilyMemberModel resolveSelectedProfileMember({
     for (final member in members) {
       if (member.id == selectedMemberId) return member;
     }
+    if (selectedMemberId == profilePrimaryLocalId) {
+      return findPrimaryMember(members) ?? buildPrimaryMemberFromProfile(patient);
+    }
   }
   return findPrimaryMember(members) ?? buildPrimaryMemberFromProfile(patient);
 }
@@ -51,13 +63,17 @@ class ProfileMemberSwitcher extends ConsumerWidget {
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
       data: (members) {
-        if (members.length <= 1) return const SizedBox.shrink();
+        final options = members.isEmpty && patient != null
+            ? [buildPrimaryMemberFromProfile(patient)]
+            : members;
+        if (options.isEmpty) return const SizedBox.shrink();
 
         final active = resolveSelectedProfileMember(
-          members: members,
+          members: options,
           patient: patient,
           selectedMemberId: selectedId,
         );
+        final activeKey = profileMemberSwitcherKey(active);
 
         return Card(
           margin: EdgeInsets.zero,
@@ -72,12 +88,11 @@ class ProfileMemberSwitcher extends ConsumerWidget {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
-                      value: active.id.isNotEmpty ? active.id : null,
-                      hint: Text(active.name, overflow: TextOverflow.ellipsis),
-                      items: members
+                      value: activeKey,
+                      items: options
                           .map(
                             (member) => DropdownMenuItem<String>(
-                              value: member.id.isNotEmpty ? member.id : member.name,
+                              value: profileMemberSwitcherKey(member),
                               child: Text(
                                 member.isPrimaryAccountHolder
                                     ? '${member.name} (You)'

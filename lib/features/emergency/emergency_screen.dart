@@ -131,6 +131,17 @@ class _EmergencyHubView extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (data.services.isEmpty && !data.locationRequired)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      'No emergency service providers found nearby.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: HomeDashboardColors.of(context).textSecondary,
+                      ),
+                    ),
+                  ),
                 if (data.services.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),

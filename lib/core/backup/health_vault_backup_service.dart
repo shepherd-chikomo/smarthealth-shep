@@ -54,9 +54,11 @@ class HealthVaultBackupService {
 
   Future<void> shareBackup({required String pin}) async {
     final file = await saveBackupToDownloads(pin: pin);
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'MyHealth encrypted backup',
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'MyHealth encrypted backup',
+      ),
     );
   }
 

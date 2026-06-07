@@ -140,6 +140,20 @@ export const api = {
       { method: 'POST', body: JSON.stringify(body) },
     ),
 
+  medicalAidSubmissions: (fid: string, status?: string) =>
+    request<{
+      submissions: Array<{
+        id: string;
+        proposedName: string;
+        proposedSchemeKey: string;
+        status: string;
+        createdAt: string;
+      }>;
+    }>(
+      `/facility/medical-aid-submissions?status=${status ?? 'pending'}`,
+      fid,
+    ),
+
   uploadLogo: async (fid: string, file: File) => {
     const token = await getToken();
     const form = new FormData();

@@ -16,6 +16,7 @@ import 'package:smarthealth_shep/features/emergency/emergency_screen.dart';
 import 'package:smarthealth_shep/features/emergency/emergency_service_detail_screen.dart';
 import 'package:smarthealth_shep/features/emergency/models/emergency_service.dart';
 import 'package:smarthealth_shep/features/family/screens/family_members_screen.dart';
+import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
 import 'package:smarthealth_shep/features/home/home_screen.dart';
 import 'package:smarthealth_shep/features/notifications/screens/notification_preferences_screen.dart';
 import 'package:smarthealth_shep/features/notifications/screens/notifications_screen.dart';
@@ -201,7 +202,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/family',
-        builder: (context, state) => const FamilyMembersScreen(),
+        builder: (context, state) => FamilyMembersScreen(
+          repository: ref.read(familyRepositoryProvider),
+        ),
       ),
       GoRoute(
         path: '/search/results',

@@ -2,6 +2,9 @@ import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 
+/// Stable local id for the primary account holder in profile switcher UI.
+const profilePrimaryLocalId = '__primary__';
+
 FamilyMemberModel? findPrimaryMember(List<FamilyMemberModel> members) {
   for (final member in members) {
     if (member.isPrimaryAccountHolder) return member;
@@ -24,7 +27,7 @@ FamilyMemberModel buildPrimaryMemberFromProfile(PatientProfile? profile) {
         ].join(' ').trim();
 
   return FamilyMemberModel(
-    id: '',
+    id: profilePrimaryLocalId,
     name: name.isEmpty ? 'Patient' : name,
     relationship: FamilyRelationship.self.label,
     dateOfBirth: profile?.dateOfBirth,

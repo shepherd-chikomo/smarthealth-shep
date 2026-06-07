@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smarthealth_shep/core/auth/patient_profile.dart';
@@ -8,7 +9,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
 import 'package:smarthealth_shep/features/profile/profile_edit_focus.dart';
 import 'package:smarthealth_shep/core/network/api_service.dart';
-import 'package:smarthealth_shep/core/network/dio_factory.dart';
+import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_submission_helper.dart';
 import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
@@ -16,7 +17,11 @@ import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.da
 import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/features/profile/models/selected_primary_provider.dart';
 import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
+import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
+import 'package:smarthealth_shep/features/medications/services/prescription_scan_service.dart';
+import 'package:smarthealth_shep/features/medications/widgets/prescription_review_sheet.dart';
 import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
+import 'package:smarthealth_shep/features/profile/widgets/emergency_contacts_editor.dart';
 import 'package:smarthealth_shep/features/profile/widgets/medical_aid_provider_field.dart';
 import 'package:smarthealth_shep/features/profile/widgets/primary_provider_field.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
@@ -58,12 +63,12 @@ class _EditEmergencyMedicalProfileScreenState
 
   late TextEditingController _nameController;
   late TextEditingController _allergiesController;
-  late TextEditingController _ecNameController;
-  late TextEditingController _ecRelationshipController;
-  late TextEditingController _ecPhoneController;
   late TextEditingController _aidMemberController;
+  final _prescriptionScanService = PrescriptionScanService();
+  List<EmergencyContactInfo> _emergencyContacts = [];
   String? _selectedMedicalAidSchemeKey;
   bool _allergiesMarkedNone = false;
+  bool _medicationsMarkedNone = false;
   bool _primaryProviderMarkedNone = false;
   late TextEditingController _providerPhoneController;
   SelectedPrimaryProvider? _selectedPrimaryProvider;
@@ -75,15 +80,14 @@ class _EditEmergencyMedicalProfileScreenState
   Map<String, String> _customConditionLabels = {};
   final List<_MedicationRow> _medications = [];
   String? _existingMemberId;
+  String? _loadedMemberKey;
+  bool _isEditingPrimary = true;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _allergiesController = TextEditingController();
-    _ecNameController = TextEditingController();
-    _ecRelationshipController = TextEditingController();
-    _ecPhoneController = TextEditingController();
     _aidMemberController = TextEditingController();
     _providerPhoneController = TextEditingController();
   }
@@ -108,9 +112,7 @@ class _EditEmergencyMedicalProfileScreenState
     _scrollController.dispose();
     _nameController.dispose();
     _allergiesController.dispose();
-    _ecNameController.dispose();
-    _ecRelationshipController.dispose();
-    _ecPhoneController.dispose();
+    _prescriptionScanService.dispose();
     _aidMemberController.dispose();
     _providerPhoneController.dispose();
     for (final row in _medications) {
@@ -119,10 +121,44 @@ class _EditEmergencyMedicalProfileScreenState
     super.dispose();
   }
 
+  void _resetFormState() {
+    for (final row in _medications) {
+      row.dispose();
+    }
+    _medications.clear();
+    _conditions.clear();
+    _customConditionLabels.clear();
+    _allergiesMarkedNone = false;
+    _medicationsMarkedNone = false;
+    _primaryProviderMarkedNone = false;
+    _selectedPrimaryProvider = null;
+    _selectedMedicalAidSchemeKey = null;
+    _gender = null;
+    _dateOfBirth = null;
+    _bloodGroup = null;
+    _existingMemberId = null;
+    _isEditingPrimary = true;
+    _nameController.clear();
+    _allergiesController.clear();
+    _emergencyContacts = [];
+    _aidMemberController.clear();
+    _providerPhoneController.clear();
+    _initialized = false;
+  }
+
+  void _loadFromMember(FamilyMemberModel member) {
+    _resetFormState();
+    _initFromMember(member);
+    _loadedMemberKey = profileMemberSwitcherKey(member);
+    _isEditingPrimary = member.isPrimaryAccountHolder;
+  }
+
   void _initFromMember(FamilyMemberModel member) {
     if (_initialized) return;
     _initialized = true;
-    _existingMemberId = member.id.isEmpty ? null : member.id;
+    _existingMemberId = member.id.isEmpty || member.id == profilePrimaryLocalId
+        ? null
+        : member.id;
     _nameController.text = member.name;
     _allergiesMarkedNone = isAllergiesNone(member.allergies);
     _allergiesController.text = _allergiesMarkedNone
@@ -136,10 +172,11 @@ class _EditEmergencyMedicalProfileScreenState
     _customConditionLabels =
         Map<String, String>.from(metadata.customConditionLabels);
     _bloodGroup = metadata.bloodGroup;
-    _ecNameController.text = metadata.emergencyContact.name ?? '';
-    _ecRelationshipController.text =
-        metadata.emergencyContact.relationship ?? '';
-    _ecPhoneController.text = metadata.emergencyContact.phone ?? '';
+    _emergencyContacts = metadata.emergencyContacts.isNotEmpty
+        ? List<EmergencyContactInfo>.from(metadata.emergencyContacts)
+        : (metadata.emergencyContact.hasAny
+            ? [metadata.emergencyContact]
+            : []);
     _selectedMedicalAidSchemeKey = _resolveMedicalAidSchemeKey(metadata.medicalAid);
     if (isMedicalAidNone(metadata.medicalAid.schemeKey)) {
       _selectedMedicalAidSchemeKey = profileMedicalAidNoneKey;
@@ -152,8 +189,12 @@ class _EditEmergencyMedicalProfileScreenState
         : SelectedPrimaryProvider.fromInfo(metadata.primaryProvider);
     _providerPhoneController.text = metadata.primaryProvider.phone ?? '';
 
-    for (final med in metadata.medications) {
-      _medications.add(_MedicationRow(name: med.name, frequency: med.frequency));
+    if (isMedicationsNone(metadata.medications)) {
+      _medicationsMarkedNone = true;
+    } else {
+      for (final med in metadata.medications) {
+        _medications.add(_MedicationRow.fromEntry(med));
+      }
     }
   }
 
@@ -182,7 +223,10 @@ class _EditEmergencyMedicalProfileScreenState
   }
 
   void _addMedicationRow() {
-    setState(() => _medications.add(_MedicationRow()));
+    setState(() {
+      _medicationsMarkedNone = false;
+      _medications.add(_MedicationRow());
+    });
   }
 
   void _removeMedicationRow(int index) {
@@ -192,9 +236,52 @@ class _EditEmergencyMedicalProfileScreenState
     });
   }
 
-  String? _optionalText(String value) {
-    final trimmed = value.trim();
-    return trimmed.isEmpty ? null : trimmed;
+  Future<void> _scanPrescription() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+
+    final fields = source == ImageSource.camera
+        ? await _prescriptionScanService.scanFromCamera()
+        : await _prescriptionScanService.scanFromGallery();
+
+    if (!mounted) return;
+    if (fields == null || !fields.hasAny) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not read prescription label')),
+      );
+      return;
+    }
+
+    final result = await PrescriptionReviewSheet.show(context, fields: fields);
+    if (result == null || !mounted) return;
+
+    setState(() {
+      _medicationsMarkedNone = false;
+      _medications.add(_MedicationRow.fromEntry(result.entry));
+    });
+
+    if (result.reminderEnabled) {
+      await MedicationReminderService.instance.ensurePermission();
+    }
   }
 
   Future<void> _pickDateOfBirth() async {
@@ -263,45 +350,57 @@ class _EditEmergencyMedicalProfileScreenState
         : (_selectedPrimaryProvider ?? const SelectedPrimaryProvider())
             .toInfo(phoneOverride: _providerPhoneController.text);
 
+    final medicationEntries = _medicationsMarkedNone
+        ? [const MedicationEntry(name: profileMedicationsNoneSentinel)]
+        : _medications
+            .map((row) => row.toEntry())
+            .where((m) => m.name.isNotEmpty)
+            .toList();
+    final cleanedContacts = _emergencyContacts
+        .where((c) => c.hasAny)
+        .take(EmergencyMedicalMetadata.maxEmergencyContacts)
+        .toList();
+    final primaryContact = cleanedContacts.isNotEmpty
+        ? cleanedContacts.first
+        : const EmergencyContactInfo();
+
     final metadata = EmergencyMedicalMetadata(
       bloodGroup: _bloodGroup,
-      medications: _medications
-          .map(
-            (row) => MedicationEntry(
-              name: row.nameController.text.trim(),
-              frequency: row.frequencyController.text.trim().isEmpty
-                  ? null
-                  : row.frequencyController.text.trim(),
-            ),
-          )
-          .where((m) => m.name.isNotEmpty)
-          .toList(),
-      emergencyContact: EmergencyContactInfo(
-        name: _optionalText(_ecNameController.text),
-        relationship: _optionalText(_ecRelationshipController.text),
-        phone: _optionalText(_ecPhoneController.text),
-      ),
+      medications: medicationEntries,
+      emergencyContact: primaryContact,
+      emergencyContacts: cleanedContacts,
       medicalAid: medicalAid,
       primaryProvider: primaryProvider,
       customConditionLabels: _customConditionLabels,
     );
 
     final patient = ref.read(patientProfileProvider).value;
-    final base = buildPrimaryMemberFromProfile(patient);
+    final members = ref.read(familyMembersProvider).value ?? [];
+    final selectedMemberId = ref.read(selectedProfileMemberIdProvider);
+    final active = resolveSelectedProfileMember(
+      members: members,
+      patient: patient,
+      selectedMemberId: selectedMemberId,
+    );
+    final isPrimary = active.isPrimaryAccountHolder;
 
     final member = FamilyMemberModel(
-      id: _existingMemberId ?? '',
+      id: isPrimary
+          ? (_existingMemberId ?? (active.id == profilePrimaryLocalId ? '' : active.id))
+          : active.id,
       name: _nameController.text.trim(),
-      relationship: FamilyRelationship.self.label,
-      dateOfBirth: _dateOfBirth ?? base.dateOfBirth,
-      gender: _gender ?? base.gender,
+      relationship: isPrimary
+          ? FamilyRelationship.self.label
+          : (active.relationship ?? FamilyRelationship.other.label),
+      dateOfBirth: _dateOfBirth ?? active.dateOfBirth,
+      gender: _gender ?? active.gender,
       medicalConditions: _conditions.toList(),
       allergies: _allergiesMarkedNone
           ? profileAllergiesNoneSentinel
           : (_allergiesController.text.trim().isEmpty
               ? null
               : _allergiesController.text.trim()),
-      isPrimaryAccountHolder: true,
+      isPrimaryAccountHolder: isPrimary,
       metadata: metadata,
     );
 
@@ -310,12 +409,18 @@ class _EditEmergencyMedicalProfileScreenState
       final saved = await repository.saveMember(member);
       if (_customConditionLabels.isNotEmpty) {
         await submitCustomConditionProposals(
-          api: ApiService(createApiDio()),
+          api: ApiService(ref.read(dioProvider)),
           customLabels: _customConditionLabels,
           familyMemberId: saved.id.isNotEmpty ? saved.id : null,
         );
       }
       invalidateFamilyProfileProviders(ref);
+      if (!_medicationsMarkedNone) {
+        await MedicationReminderService.instance.syncMedications(
+          subjectId: saved.id.isNotEmpty ? saved.id : profilePrimaryLocalId,
+          medications: medicationEntries,
+        );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Emergency profile saved')),
@@ -349,6 +454,20 @@ class _EditEmergencyMedicalProfileScreenState
 
     final selectedMemberId = ref.watch(selectedProfileMemberIdProvider);
 
+    ref.listen<String?>(selectedProfileMemberIdProvider, (previous, next) {
+      if (previous == next) return;
+      final currentMembers = ref.read(familyMembersProvider).value;
+      if (currentMembers == null) return;
+      final currentPatient = ref.read(patientProfileProvider).value;
+      final nextMember = resolveSelectedProfileMember(
+        members: currentMembers,
+        patient: currentPatient,
+        selectedMemberId: next,
+      );
+      if (!mounted) return;
+      setState(() => _loadFromMember(nextMember));
+    });
+
     return membersAsync.when(
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -363,11 +482,12 @@ class _EditEmergencyMedicalProfileScreenState
           selectedMemberId: selectedMemberId,
         );
 
-        if (!_initialized) {
+        final memberKey = profileMemberSwitcherKey(member);
+
+        if (!_initialized || _loadedMemberKey != memberKey) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted || _initialized) return;
-            _initFromMember(member);
-            setState(() {});
+            if (!mounted) return;
+            setState(() => _loadFromMember(member));
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _scrollToFocusSection();
             });
@@ -533,6 +653,11 @@ class _EditEmergencyMedicalProfileScreenState
                   child: Row(
                   children: [
                     Expanded(child: _sectionTitle(context, 'Medications')),
+                    IconButton(
+                      tooltip: 'Scan prescription',
+                      onPressed: _medicationsMarkedNone ? null : _scanPrescription,
+                      icon: const Icon(Icons.document_scanner_outlined),
+                    ),
                     TextButton(
                       onPressed: _addMedicationRow,
                       child: const Text('Add'),
@@ -540,11 +665,27 @@ class _EditEmergencyMedicalProfileScreenState
                   ],
                   ),
                 ),
-                if (_medications.isEmpty)
+                if (_medications.isEmpty && !_medicationsMarkedNone)
                   Text(
                     'No medications added',
                     style: TextStyle(color: colors.textSecondary),
                   ),
+                FilterChip(
+                  label: const Text('No medications'),
+                  selected: _medicationsMarkedNone,
+                  onSelected: (selected) {
+                    setState(() {
+                      _medicationsMarkedNone = selected;
+                      if (selected) {
+                        for (final row in _medications) {
+                          row.dispose();
+                        }
+                        _medications.clear();
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
                 for (var i = 0; i < _medications.length; i++) ...[
                   Row(
                     children: [
@@ -568,27 +709,29 @@ class _EditEmergencyMedicalProfileScreenState
                       ),
                     ],
                   ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Remind me'),
+                    subtitle: const Text('Local notifications for 7 days'),
+                    value: _medications[i].reminderEnabled,
+                    onChanged: (value) {
+                      setState(() => _medications[i].reminderEnabled = value);
+                      if (value) {
+                        MedicationReminderService.instance.ensurePermission();
+                      }
+                    },
+                  ),
                   const SizedBox(height: 8),
                 ],
                 const SizedBox(height: 12),
-                _sectionTitle(context, 'Emergency contact'),
+                _sectionTitle(context, 'Emergency contacts'),
                 KeyedSubtree(
                   key: _sectionKeys[ProfileEditFocus.emergencyContact],
-                  child: TextFormField(
-                  controller: _ecNameController,
-                  decoration: _decoration(context, 'Name'),
+                  child: EmergencyContactsEditor(
+                    contacts: _emergencyContacts,
+                    onChanged: (contacts) =>
+                        setState(() => _emergencyContacts = contacts),
                   ),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _ecRelationshipController,
-                  decoration: _decoration(context, 'Relationship'),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _ecPhoneController,
-                  decoration: _decoration(context, 'Phone'),
-                  keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 20),
                 _sectionTitle(context, 'Medical aid'),
@@ -679,12 +822,47 @@ class _EditEmergencyMedicalProfileScreenState
 }
 
 class _MedicationRow {
-  _MedicationRow({String name = '', String? frequency})
-      : nameController = TextEditingController(text: name),
+  _MedicationRow({
+    String name = '',
+    String? frequency,
+    this.id,
+    this.reminderEnabled = false,
+    this.dosesPerDay,
+    this.quantity,
+  })  : nameController = TextEditingController(text: name),
         frequencyController = TextEditingController(text: frequency ?? '');
+
+  factory _MedicationRow.fromEntry(MedicationEntry entry) {
+    return _MedicationRow(
+      name: entry.name,
+      frequency: entry.frequency,
+      id: entry.id,
+      reminderEnabled: entry.reminderEnabled,
+      dosesPerDay: entry.dosesPerDay,
+      quantity: entry.quantity,
+    );
+  }
 
   final TextEditingController nameController;
   final TextEditingController frequencyController;
+  String? id;
+  bool reminderEnabled;
+  int? dosesPerDay;
+  String? quantity;
+
+  MedicationEntry toEntry() {
+    final name = nameController.text.trim();
+    final frequency = frequencyController.text.trim();
+    id ??= 'med_${DateTime.now().microsecondsSinceEpoch}';
+    return MedicationEntry(
+      id: id,
+      name: name,
+      frequency: frequency.isEmpty ? null : frequency,
+      reminderEnabled: reminderEnabled,
+      dosesPerDay: dosesPerDay,
+      quantity: quantity,
+    );
+  }
 
   void dispose() {
     nameController.dispose();

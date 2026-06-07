@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3, Building2, Calendar, Clock, FileText,
   LayoutDashboard, LogOut, Menu, Stethoscope, Users, UserCog,
-  AlertTriangle, X,
+  AlertTriangle, X, MoreHorizontal,
 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 const NAV = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/facility', label: 'Facility Profile', icon: Building2 },
+  { href: '/facility/staff', label: 'Staff', icon: UserCog },
   { href: '/hours', label: 'Operating Hours', icon: Clock },
   { href: '/availability', label: 'Availability', icon: Calendar },
   { href: '/slots', label: 'Appointment Slots', icon: Calendar },
@@ -25,6 +26,13 @@ const NAV = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/provider-analytics', label: 'My Performance', icon: Stethoscope },
   { href: '/reports', label: 'Reports', icon: FileText },
+];
+
+const BOTTOM_NAV = [
+  { href: '/', label: 'Home', icon: LayoutDashboard },
+  { href: '/facility', label: 'Facility', icon: Building2 },
+  { href: '/facility/staff', label: 'Staff', icon: UserCog },
+  { href: '/appointments', label: 'Appts', icon: Calendar },
 ];
 
 export function PortalShell({ children }: { children: React.ReactNode }) {
@@ -111,7 +119,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
               onClick={() => setOpen(false)}
               className={clsx(
                 'mb-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                pathname === href
+                pathname === href || (href !== '/' && pathname.startsWith(href))
                   ? 'bg-teal-600/10 font-medium text-teal-600'
                   : 'text-[var(--muted)] hover:bg-slate-100 dark:hover:bg-slate-800',
               )}
@@ -142,7 +150,34 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
             Sign out
           </button>
         </header>
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-4 pb-24 lg:pb-6 lg:p-6">{children}</main>
+
+        <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] bg-[var(--card)] lg:hidden">
+          {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || (href !== '/' && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={clsx(
+                  'flex flex-1 flex-col items-center gap-1 py-2 text-xs',
+                  active ? 'font-medium text-teal-600' : 'text-[var(--muted)]',
+                )}
+              >
+                <Icon className="h-5 w-5" />
+                {label}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            className="flex flex-1 flex-col items-center gap-1 py-2 text-xs text-[var(--muted)]"
+            onClick={() => setOpen(true)}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            More
+          </button>
+        </nav>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/app.dart';
 import 'package:smarthealth_shep/core/directory/directory_search_service.dart';
 import 'package:smarthealth_shep/core/health_vault/health_vault_repository.dart';
+import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
 import 'package:smarthealth_shep/core/storage/hive_init.dart';
 import 'package:smarthealth_shep/core/storage/sqlite_init.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_background_entrypoint.dart';
@@ -47,6 +48,7 @@ Future<void> main() async {
 
   await initHive();
   await initSqlite();
+  await MedicationReminderService.instance.initialize();
   await HealthVaultRepository().migrateLegacyFamilyPhiIfNeeded();
   await DirectorySearchService().rebuildIndex();
   bg_fetch.BackgroundFetch.registerHeadlessTask(backgroundFetchHeadlessTask);

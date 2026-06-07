@@ -48,9 +48,9 @@ ProfileCompletionResult calculateProfileCompletion({
       metadata.bloodGroup != null && metadata.bloodGroup!.trim().isNotEmpty;
   final hasAllergies = allergiesSectionComplete(member.allergies);
   final hasConditions = conditionsSectionComplete(member.medicalConditions);
-  final hasEmergencyContact = metadata.emergencyContact.hasAny;
+  final hasEmergencyContact = metadata.hasAnyEmergencyContact;
   final hasMedicalAid = medicalAidSectionComplete(metadata.medicalAid);
-  final hasMedications = metadata.medications.isNotEmpty;
+  final hasMedications = medicationsSectionComplete(metadata.medications);
   final hasPrimaryProvider =
       primaryProviderSectionComplete(metadata.primaryProvider);
 

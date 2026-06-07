@@ -76,7 +76,8 @@ class EmergencyMedicalProfileScreen extends ConsumerWidget {
               CurrentMedicationsCard(medications: metadata.medications),
               const SizedBox(height: 12),
               EmergencyContactMedicalAidRow(
-                contact: metadata.emergencyContact,
+                contact: metadata.primaryEmergencyContact,
+                contacts: metadata.emergencyContacts,
                 medicalAid: metadata.medicalAid,
               ),
               const SizedBox(height: 12),

@@ -141,6 +141,25 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
 
+  app.get(
+    '/facility/medical-aid-submissions',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({
+          facilityId: z.string().uuid(),
+          status: z.enum(['pending', 'approved', 'rejected']).optional(),
+        }),
+      },
+    },
+    async (request) =>
+      medicalAidSchemes.listMedicalAidSubmissionsForFacility(
+        request.user!,
+        request.facilityId!,
+        request.query.status,
+      ),
+  );
+
   app.post(
     '/facility/medical-aid-submissions',
     {

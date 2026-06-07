@@ -9,6 +9,7 @@ import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
 import 'package:smarthealth_shep/shared/models/operational_status.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/status_chip.dart';
+import 'package:smarthealth_shep/shared/widgets/app_shell_with_bottom_nav.dart';
 import 'package:smarthealth_shep/shared/widgets/primary_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -64,7 +65,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     final l10n = AppLocalizations.of(context);
 
     if (_loading) {
-      return Scaffold(
+      return AppShellWithBottomNav(
         appBar: AppBar(title: Text(l10n.appointmentsDetailTitle)),
         body: Center(child: CircularProgressIndicator()),
       );
@@ -72,13 +73,13 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
     final appointment = _appointment;
     if (appointment == null) {
-      return Scaffold(
+      return AppShellWithBottomNav(
         appBar: AppBar(title: Text(l10n.appointmentsDetailTitle)),
         body: Center(child: Text(l10n.appointmentsNotFound)),
       );
     }
 
-    return Scaffold(
+    return AppShellWithBottomNav(
       backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.appointmentsDetailTitle),

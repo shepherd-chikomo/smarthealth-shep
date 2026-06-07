@@ -13,6 +13,7 @@ class HealthVaultRecord {
     this.medicalHistory,
     this.familyHistory,
     this.emergencyContact = const EmergencyContactInfo(),
+    this.emergencyContacts = const [],
     this.medicalAid = const MedicalAidInfo(),
     this.primaryProvider = const PrimaryProviderInfo(),
     this.healthNotes = const [],
@@ -29,6 +30,7 @@ class HealthVaultRecord {
   final String? medicalHistory;
   final String? familyHistory;
   final EmergencyContactInfo emergencyContact;
+  final List<EmergencyContactInfo> emergencyContacts;
   final MedicalAidInfo medicalAid;
   final PrimaryProviderInfo primaryProvider;
   final List<String> healthNotes;
@@ -40,13 +42,15 @@ class HealthVaultRecord {
       allergies.isNotEmpty ||
       chronicConditions.isNotEmpty ||
       medications.isNotEmpty ||
-      emergencyContact.hasAny;
+      emergencyContact.hasAny ||
+      emergencyContacts.any((c) => c.hasAny);
 
   EmergencyMedicalMetadata toEmergencyMetadata() {
     return EmergencyMedicalMetadata(
       bloodGroup: bloodGroup,
       medications: medications,
       emergencyContact: emergencyContact,
+      emergencyContacts: emergencyContacts,
       medicalAid: medicalAid,
       primaryProvider: primaryProvider,
     );
@@ -61,6 +65,7 @@ class HealthVaultRecord {
     String? medicalHistory,
     String? familyHistory,
     EmergencyContactInfo? emergencyContact,
+    List<EmergencyContactInfo>? emergencyContacts,
     MedicalAidInfo? medicalAid,
     PrimaryProviderInfo? primaryProvider,
     List<String>? healthNotes,
@@ -77,6 +82,7 @@ class HealthVaultRecord {
       medicalHistory: medicalHistory ?? this.medicalHistory,
       familyHistory: familyHistory ?? this.familyHistory,
       emergencyContact: emergencyContact ?? this.emergencyContact,
+      emergencyContacts: emergencyContacts ?? this.emergencyContacts,
       medicalAid: medicalAid ?? this.medicalAid,
       primaryProvider: primaryProvider ?? this.primaryProvider,
       healthNotes: healthNotes ?? this.healthNotes,
@@ -90,11 +96,13 @@ class HealthVaultRecord {
         'bloodGroup': bloodGroup,
         'allergies': allergies,
         'chronicConditions': chronicConditions,
-        'medications': medications.map((m) => m.toJson()).toList(),
+        'medications': medications.map((m) => m.toLocalJson()).toList(),
         'vaccinations': vaccinations,
         'medicalHistory': medicalHistory,
         'familyHistory': familyHistory,
         'emergencyContact': emergencyContact.toJson(),
+        if (emergencyContacts.isNotEmpty)
+          'emergencyContacts': emergencyContacts.map((c) => c.toJson()).toList(),
         'medicalAid': medicalAid.toJson(),
         'primaryProvider': primaryProvider.toJson(),
         'healthNotes': healthNotes,
@@ -127,6 +135,12 @@ class HealthVaultRecord {
       emergencyContact: EmergencyContactInfo.fromJson(
         json['emergencyContact'] as Map<String, dynamic>?,
       ),
+      emergencyContacts: (json['emergencyContacts'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(EmergencyContactInfo.fromJson)
+              .where((c) => c.hasAny)
+              .toList() ??
+          const [],
       medicalAid: MedicalAidInfo.fromJson(
         json['medicalAid'] as Map<String, dynamic>?,
       ),
@@ -158,7 +172,10 @@ class HealthVaultRecord {
       allergies: allergyList,
       chronicConditions: List<String>.from(member.medicalConditions),
       medications: List<MedicationEntry>.from(metadata.medications),
-      emergencyContact: metadata.emergencyContact,
+      emergencyContact: metadata.primaryEmergencyContact,
+      emergencyContacts: List<EmergencyContactInfo>.from(
+        metadata.emergencyContacts,
+      ),
       medicalAid: metadata.medicalAid,
       primaryProvider: metadata.primaryProvider,
       updatedAt: member.updatedAt ?? DateTime.now().toUtc(),

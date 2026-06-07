@@ -5,6 +5,7 @@ const profileAllergiesNoneSentinel = '__none__';
 const profileConditionsNoneSlug = 'none';
 const profileMedicalAidNoneKey = '__none__';
 const profilePrimaryProviderNoneSentinel = '__none__';
+const profileMedicationsNoneSentinel = '__none_meds__';
 
 const profileNoneDisplayLabel = 'None';
 
@@ -35,3 +36,11 @@ bool medicalAidSectionComplete(MedicalAidInfo medicalAid) =>
 
 bool primaryProviderSectionComplete(PrimaryProviderInfo provider) =>
     isPrimaryProviderNone(provider) || provider.hasAny;
+
+bool isMedicationsNone(Iterable<MedicationEntry> medications) =>
+    medications.length == 1 &&
+    medications.first.name == profileMedicationsNoneSentinel;
+
+bool medicationsSectionComplete(Iterable<MedicationEntry> medications) =>
+    isMedicationsNone(medications) ||
+    medications.any((m) => m.name.trim().isNotEmpty);

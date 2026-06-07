@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smarthealth_shep/features/appointments/providers/appointments_providers.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_bloc.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_event.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_state.dart';
@@ -9,14 +11,15 @@ import 'package:smarthealth_shep/features/booking/widgets/appointment_summary_ca
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 
 /// Step 2 — review details, select patient, and confirm.
-class BookingConfirmScreen extends StatefulWidget {
+class BookingConfirmScreen extends ConsumerStatefulWidget {
   const BookingConfirmScreen({super.key});
 
   @override
-  State<BookingConfirmScreen> createState() => _BookingConfirmScreenState();
+  ConsumerState<BookingConfirmScreen> createState() =>
+      _BookingConfirmScreenState();
 }
 
-class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
+class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
   final _notesController = TextEditingController();
 
   @override
@@ -31,6 +34,7 @@ class _BookingConfirmScreenState extends State<BookingConfirmScreen> {
       listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == BookingStatus.confirmed) {
+          invalidateUpcomingAppointment(ref);
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
               builder: (_) => BlocProvider.value(

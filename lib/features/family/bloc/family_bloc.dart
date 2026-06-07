@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:smarthealth_shep/core/network/dio_error_message.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_event.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_state.dart';
 import 'package:smarthealth_shep/features/family/data/family_repository.dart';
@@ -47,7 +49,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
       emit(
         state.copyWith(
           status: FamilyStatus.error,
-          errorMessage: error.toString(),
+          errorMessage: friendlyDioErrorMessage(error, fallback: 'Failed to load family members.'),
         ),
       );
     }
@@ -84,7 +86,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
       emit(
         state.copyWith(
           status: FamilyStatus.error,
-          errorMessage: error.toString(),
+          errorMessage: friendlyDioErrorMessage(error, fallback: 'Failed to load family members.'),
         ),
       );
     }
@@ -119,7 +121,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
       emit(
         state.copyWith(
           status: FamilyStatus.error,
-          errorMessage: error.toString(),
+          errorMessage: friendlyDioErrorMessage(error, fallback: 'Failed to load family members.'),
         ),
       );
     }
@@ -154,7 +156,7 @@ class FamilyBloc extends Bloc<FamilyEvent, FamilyState> {
       emit(
         state.copyWith(
           status: FamilyStatus.error,
-          errorMessage: error.toString(),
+          errorMessage: friendlyDioErrorMessage(error, fallback: 'Failed to load family members.'),
         ),
       );
     }

@@ -1,16 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
-import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
+import 'package:smarthealth_shep/features/appointments/providers/appointments_providers.dart';
 import 'package:smarthealth_shep/features/appointments/widgets/appointment_reminder_widgets.dart';
-
-final nextUpcomingAppointmentProvider =
-    FutureProvider<AppointmentModel?>((ref) async {
-  final repository = AppointmentsRepository();
-  await repository.syncFromRemote();
-  return repository.getNextUpcoming();
-});
 
 /// Loads and displays the next upcoming appointment on the home dashboard.
 class HomeUpcomingAppointmentBanner extends ConsumerWidget {
@@ -21,7 +13,10 @@ class HomeUpcomingAppointmentBanner extends ConsumerWidget {
     final upcomingAsync = ref.watch(nextUpcomingAppointmentProvider);
 
     return upcomingAsync.when(
-      loading: () => const SizedBox.shrink(),
+      loading: () => const Padding(
+        padding: EdgeInsets.only(bottom: 12),
+        child: LinearProgressIndicator(minHeight: 2),
+      ),
       error: (_, __) => const SizedBox.shrink(),
       data: (appointment) {
         if (appointment == null) return const SizedBox.shrink();

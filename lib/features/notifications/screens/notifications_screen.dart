@@ -9,7 +9,7 @@ import 'package:smarthealth_shep/features/notifications/services/deep_link_handl
 import 'package:smarthealth_shep/features/notifications/utils/notification_grouping.dart';
 import 'package:smarthealth_shep/features/notifications/widgets/notification_card.dart';
 import 'package:smarthealth_shep/l10n/app_localizations.dart';
-import 'package:smarthealth_shep/shared/widgets/app_shell_scaffold.dart';
+import 'package:smarthealth_shep/shared/widgets/app_shell_with_bottom_nav.dart';
 import 'package:smarthealth_shep/shared/widgets/design_system/empty_state.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -51,7 +51,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return AppShellScaffold(
+    return AppShellWithBottomNav(
       backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
         title: Text(l10n.notificationsTitle),
@@ -162,4 +162,4 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-
+

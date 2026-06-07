@@ -176,6 +176,29 @@ function mapSubmission(row: Row) {
   };
 }
 
+export async function listMedicalAidSubmissionsForFacility(
+  user: AuthenticatedUser,
+  facilityId: string,
+  status?: string,
+) {
+  await requireFacilityAdmin(user, facilityId);
+  const params: unknown[] = [facilityId];
+  let where = 'ms.facility_id = $1';
+  if (status) {
+    where += ` AND ms.status = $2::public.condition_submission_status`;
+    params.push(status);
+  }
+  const rows = await query(
+    `SELECT ms.id, ms.facility_id, ms.submitted_by, ms.proposed_name, ms.proposed_scheme_key,
+            ms.status, ms.reviewed_by, ms.reviewed_at, ms.resulting_scheme_id, ms.created_at
+     FROM public.medical_aid_submissions ms
+     WHERE ${where}
+     ORDER BY ms.created_at DESC`,
+    params,
+  );
+  return { submissions: rows.rows.map(mapSubmission) };
+}
+
 export async function createMedicalAidSubmission(
   user: AuthenticatedUser,
   facilityId: string,

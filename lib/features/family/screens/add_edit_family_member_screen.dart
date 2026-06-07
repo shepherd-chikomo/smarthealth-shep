@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:smarthealth_shep/core/network/api_service.dart';
+import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_bloc.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_event.dart';
 import 'package:smarthealth_shep/features/family/bloc/family_state.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
-import 'package:smarthealth_shep/core/network/api_service.dart';
-import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_labels.dart';
 import 'package:smarthealth_shep/features/profile/utils/condition_submission_helper.dart';
 import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
@@ -16,7 +17,7 @@ import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
 import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 
 /// Add or edit a family member (full-screen form).
-class AddEditFamilyMemberScreen extends StatefulWidget {
+class AddEditFamilyMemberScreen extends ConsumerStatefulWidget {
   const AddEditFamilyMemberScreen({super.key, this.member});
 
   final FamilyMemberModel? member;
@@ -24,11 +25,11 @@ class AddEditFamilyMemberScreen extends StatefulWidget {
   bool get isEditing => member != null;
 
   @override
-  State<AddEditFamilyMemberScreen> createState() =>
+  ConsumerState<AddEditFamilyMemberScreen> createState() =>
       _AddEditFamilyMemberScreenState();
 }
 
-class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
+class _AddEditFamilyMemberScreenState extends ConsumerState<AddEditFamilyMemberScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _allergiesController;
@@ -176,7 +177,7 @@ class _AddEditFamilyMemberScreenState extends State<AddEditFamilyMemberScreen> {
     if (_customConditionLabels.isNotEmpty &&
         !hasConditionsNone(_conditions)) {
       await submitCustomConditionProposals(
-        api: ApiService(createApiDio()),
+        api: ApiService(ref.read(dioProvider)),
         customLabels: _customConditionLabels,
         familyMemberId: savedMember.id.isNotEmpty ? savedMember.id : null,
       );

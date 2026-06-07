@@ -1940,13 +1940,14 @@ export async function addStaffMember(
   const facilityName = facilityRow.rows[0]?.name ?? 'your facility';
   const portalUrl =
     process.env.FACILITY_PORTAL_URL ?? 'https://dev.smarthealth.co.zw';
+  const loginUrl = `${portalUrl}/login?email=${encodeURIComponent(email)}`;
 
-  await sendEmail(
+  const emailResult = await sendEmail(
     email,
     `You've been invited to ${facilityName} on SmartHealth`,
     `<p>Hello ${firstName},</p>
      <p>You have been added as <strong>${data.role.replace('_', ' ')}</strong> at ${facilityName}.</p>
-     <p>Sign in at <a href="${portalUrl}">${portalUrl}</a> using this email address.</p>`,
+     <p>Sign in at <a href="${loginUrl}">${loginUrl}</a> using this email address and request a staff login code.</p>`,
     'staff_invite',
   );
 
@@ -1970,7 +1971,7 @@ export async function addStaffMember(
     context,
     { targetUserId, role: data.role },
   );
-  return { id: membershipId, userId: targetUserId };
+  return { id: membershipId, userId: targetUserId, emailSent: emailResult.success };
 }
 
 export async function removeStaffMember(

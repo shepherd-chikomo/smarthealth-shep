@@ -55,6 +55,12 @@
 		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SmartHealth uses your location to find nearby healthcare providers and emergency services.</string>
+		<key>NSContactsUsageDescription</key>
+		<string>MyHealth uses your contacts to add emergency contacts to your profile. Contact data stays on this device.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>MyHealth uses the camera to scan prescription labels. Images are processed on this device only.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>MyHealth uses your photo library to scan prescription labels. Images are processed on this device only.</string>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>

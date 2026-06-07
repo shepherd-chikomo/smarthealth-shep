@@ -11,7 +11,6 @@ const TABS = [
   'Logo',
   'Services',
   'Medical Aid',
-  'Staff',
   'Accessibility',
   'Booking',
   'Features',
@@ -67,6 +66,12 @@ export function FacilityProfileTabs({
   const { data: catalogData } = useQuery({
     queryKey: ['medical-aid-catalog', facilityId],
     queryFn: () => api.medicalAidCatalog(facilityId),
+    enabled: !!facilityId && tab === 'Medical Aid',
+  });
+
+  const { data: medicalAidSubmissionsData } = useQuery({
+    queryKey: ['medical-aid-submissions', facilityId],
+    queryFn: () => api.medicalAidSubmissions(facilityId, 'pending'),
     enabled: !!facilityId && tab === 'Medical Aid',
   });
 
@@ -151,7 +156,29 @@ export function FacilityProfileTabs({
 
   const submitMedicalAid = useMutation({
     mutationFn: (name: string) => api.submitMedicalAidProposal(facilityId, { name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['medical-aid-submissions', facilityId] });
+    },
   });
+
+  const catalogSchemes = useMemo(() => {
+    const approved =
+      (catalogData?.schemes as { schemeKey: string; name: string }[] | undefined) ?? [];
+    const pending =
+      medicalAidSubmissionsData?.submissions
+        ?.filter((s) => s.status === 'pending')
+        .map((s) => ({ schemeKey: s.proposedSchemeKey, name: s.proposedName })) ??
+      [];
+    const seen = new Set(approved.map((s) => s.schemeKey));
+    const merged = [...approved];
+    for (const item of pending) {
+      if (!seen.has(item.schemeKey)) {
+        merged.push({ schemeKey: item.schemeKey, name: item.name });
+        seen.add(item.schemeKey);
+      }
+    }
+    return merged;
+  }, [catalogData, medicalAidSubmissionsData]);
 
   const catalogServices = useMemo(
     () => [
@@ -344,21 +371,25 @@ export function FacilityProfileTabs({
       {tab === 'Medical Aid' && (
         <div className="card max-w-2xl space-y-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            {(catalogData?.schemes as { schemeKey: string; name: string }[] | undefined)?.map(
-              (scheme) => {
-                const checked = effective.medicalAids.some((m) => m.schemeKey === scheme.schemeKey);
-                return (
-                  <label key={scheme.schemeKey} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleMedicalAid(scheme.schemeKey, scheme.name)}
-                    />
-                    {scheme.name}
-                  </label>
-                );
-              },
-            )}
+            {catalogSchemes.map((scheme) => {
+              const checked = effective.medicalAids.some((m) => m.schemeKey === scheme.schemeKey);
+              const isPending = medicalAidSubmissionsData?.submissions?.some(
+                (s) => s.proposedSchemeKey === scheme.schemeKey && s.status === 'pending',
+              );
+              return (
+                <label key={scheme.schemeKey} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleMedicalAid(scheme.schemeKey, scheme.name)}
+                  />
+                  {scheme.name}
+                  {isPending && (
+                    <span className="text-xs text-amber-600">(pending review)</span>
+                  )}
+                </label>
+              );
+            })}
           </div>
           <CustomMedicalAidForm
             pending={submitMedicalAid.isPending}
@@ -381,22 +412,6 @@ export function FacilityProfileTabs({
           >
             Save medical aid
           </button>
-        </div>
-      )}
-
-      {tab === 'Staff' && (
-        <div className="card max-w-2xl space-y-4">
-          <p className="text-sm text-[var(--muted)]">
-            Manage facility team members and linked doctors from your profile.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/facility/staff" className="btn-primary text-sm">
-              Team members
-            </Link>
-            <Link href="/facility/staff/doctors" className="btn-secondary text-sm">
-              Doctors
-            </Link>
-          </div>
         </div>
       )}
 

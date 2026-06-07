@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/features/notifications/models/notification_model.dart';
 import 'package:smarthealth_shep/features/notifications/providers/notification_providers.dart';
 
+import 'package:smarthealth_shep/shared/widgets/app_shell_with_bottom_nav.dart';
+
 class NotificationPreferencesScreen extends ConsumerStatefulWidget {
   const NotificationPreferencesScreen({super.key});
 
@@ -58,7 +60,7 @@ class _NotificationPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppShellWithBottomNav(
       appBar: AppBar(title: const Text('Notification preferences')),
       body: FutureBuilder<List<NotificationPreference>>(
         future: _future,

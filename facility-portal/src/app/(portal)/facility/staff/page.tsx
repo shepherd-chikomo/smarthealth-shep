@@ -21,6 +21,7 @@ export default function StaffPage() {
   const [q, setQ] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['staff', facilityId, page, q],
@@ -36,10 +37,16 @@ export default function StaffPage() {
         phone: form.phone.trim() || undefined,
         role: form.role,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       void qc.invalidateQueries({ queryKey: ['staff', facilityId] });
       setForm(EMPTY_FORM);
       setFormError('');
+      const emailSent = (result as { emailSent?: boolean }).emailSent;
+      setFormSuccess(
+        emailSent
+          ? 'Staff member added and invite email sent.'
+          : 'Staff member added. Invite email could not be sent — check server email configuration.',
+      );
     },
     onError: (err: Error) => setFormError(err.message),
   });
@@ -106,6 +113,9 @@ export default function StaffPage() {
         </button>
         {formError && (
           <p className="text-sm text-red-600 sm:col-span-2 lg:col-span-5">{formError}</p>
+        )}
+        {formSuccess && (
+          <p className="text-sm text-teal-600 sm:col-span-2 lg:col-span-5">{formSuccess}</p>
         )}
       </form>
 

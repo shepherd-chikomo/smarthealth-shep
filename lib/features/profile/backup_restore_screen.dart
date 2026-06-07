@@ -115,7 +115,16 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     }
   }
 
-  Future<void> _exportBackup() async {
+  Future<void> _saveToDownloads() async {
+    final pin = await _promptPin(confirm: true);
+    if (pin == null) return;
+    await _run(() async {
+      final file = await _backup.saveBackupToDownloads(pin: pin);
+      setState(() => _message = 'Saved to ${file.path}');
+    }, 'Backup saved to Downloads.');
+  }
+
+  Future<void> _shareBackup() async {
     final pin = await _promptPin(confirm: true);
     if (pin == null) return;
     await _run(
@@ -202,8 +211,13 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             const SizedBox(height: 12),
           ],
           FilledButton(
-            onPressed: _busy ? null : _exportBackup,
-            child: const Text('Export encrypted backup'),
+            onPressed: _busy ? null : _saveToDownloads,
+            child: const Text('Save to Downloads'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: _busy ? null : _shareBackup,
+            child: const Text('Share backup'),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
