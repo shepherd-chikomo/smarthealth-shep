@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { ErrorState, LoadingState, Modal, PaginationBar, SearchBar } from '../ui';
+import { ErrorState, LoadingState, PaginationBar, SearchBar } from '../ui';
 
 export function ServicesPanel() {
   const qc = useQueryClient();
