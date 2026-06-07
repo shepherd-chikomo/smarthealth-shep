@@ -504,16 +504,6 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
       profileConditions.rejectSubmission(request.params.id, request.user!.id),
   );
 
-  const facilityServiceAdminSchema = z.object({
-    id: z.string().uuid(),
-    slug: z.string(),
-    label: z.string(),
-    iconKey: z.string(),
-    isPreset: z.boolean(),
-    sortOrder: z.number(),
-    isActive: z.boolean(),
-  });
-
   app.get(
     '/admin/content/facility-services',
     { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
@@ -602,15 +592,6 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) =>
       facilityServicesCatalog.rejectServiceSubmission(request.params.id, request.user!.id),
   );
-
-  const medicalAidSchemeAdminSchema = z.object({
-    id: z.string().uuid(),
-    schemeKey: z.string(),
-    name: z.string(),
-    logoPath: z.string().nullable(),
-    sortOrder: z.number(),
-    isActive: z.boolean(),
-  });
 
   app.get(
     '/admin/content/medical-aid-schemes',

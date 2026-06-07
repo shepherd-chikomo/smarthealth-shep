@@ -127,7 +127,7 @@ async function searchGovernmentHospitals(options: {
     facility_category: string | null;
     distance_km: number;
   }>(
-    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address, f.city, f.province,
+    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
             f.latitude, f.longitude, f.facility_category,
             ST_Distance(
               ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
@@ -192,7 +192,7 @@ async function searchProfileEmergencyFacilities(options: {
     distance_km: number;
     is_24_hour: boolean;
   }>(
-    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address, f.city, f.province,
+    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
             f.latitude, f.longitude,
             COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) AS is_24_hour,
             ST_Distance(

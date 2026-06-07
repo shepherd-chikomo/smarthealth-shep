@@ -259,9 +259,37 @@ class _EditEmergencyMedicalProfileScreenState
     );
     if (source == null || !mounted) return;
 
-    final fields = source == ImageSource.camera
-        ? await _prescriptionScanService.scanFromCamera()
-        : await _prescriptionScanService.scanFromGallery();
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Reading prescription label…'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    PrescriptionLabelFields? fields;
+    try {
+      fields = source == ImageSource.camera
+          ? await _prescriptionScanService.scanFromCamera()
+          : await _prescriptionScanService.scanFromGallery();
+    } finally {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    }
 
     if (!mounted) return;
     if (fields == null || !fields.hasAny) {

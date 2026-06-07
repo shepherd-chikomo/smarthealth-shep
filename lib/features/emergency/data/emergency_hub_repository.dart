@@ -27,7 +27,7 @@ class EmergencyHubRepository {
   final Dio? _dio;
   final SearchOriginResolver? _searchOrigin;
 
-  static const _hubCacheKey = 'emergency_hub_data_v2';
+  static const _hubCacheKey = 'emergency_hub_data_v3';
 
   Box get _box => Hive.box(HiveBoxes.emergency);
 

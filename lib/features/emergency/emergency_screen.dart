@@ -194,6 +194,17 @@ class _EmergencyHubView extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (data.facilities.isEmpty && !data.locationRequired)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      'No hospitals or emergency departments found within 50 km.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: HomeDashboardColors.of(context).textSecondary,
+                      ),
+                    ),
+                  ),
                 ...data.facilities.map((facility) {
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

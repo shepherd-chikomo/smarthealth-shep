@@ -47,7 +47,9 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().default(2500),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
   // Google Maps Platform (Geocoding + Places — optional, for geocode pilot/backfill)
   GOOGLE_MAPS_API_KEY: z.string().min(1).optional(),
 });

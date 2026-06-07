@@ -74,12 +74,13 @@ services:
       GOTRUE_EXTERNAL_PHONE_ENABLED: "true"
       GOTRUE_SMS_AUTOCONFIRM: "true"
       GOTRUE_MAILER_AUTOCONFIRM: "false"
-      GOTRUE_SMTP_HOST: ${SMTP_HOST:-inbucket}
-      GOTRUE_SMTP_PORT: ${SMTP_PORT:-2500}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
       GOTRUE_SMTP_USER: ${SMTP_USER:-}
       GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
       GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-noreply@smarthealth.co.zw}
       GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-SmartHealth}
+      GOTRUE_MAILER_EXTERNAL_HOSTS: ${MAILER_EXTERNAL_HOSTS:-dev.smarthealth.co.zw,localhost}
       # GoTrue requires an SMS provider even when using test OTP (see supabase/auth#1293).
       # textlocal with dummy credentials satisfies the provider check; test numbers skip real SMS.
       GOTRUE_SMS_PROVIDER: textlocal
@@ -319,9 +320,11 @@ services:
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
-      SMTP_HOST: inbucket
-      SMTP_PORT: 2500
-      EMAIL_FROM: SmartHealth <noreply@smarthealth.co.zw>
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${SMTP_ADMIN_EMAIL:-SmartHealth <noreply@smarthealth.co.zw>}
       RETENTION_WORKER_ENABLED: "true"
     depends_on:
       smarthealth-migrate:

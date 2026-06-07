@@ -1,4 +1,5 @@
-import net from 'node:net';
+import nodemailer from 'nodemailer';
+import { env } from '../config.js';
 
 export interface SmtpSendResult {
   success: boolean;
@@ -6,11 +7,27 @@ export interface SmtpSendResult {
   error?: string;
 }
 
-function readCode(buffer: string): number {
-  return Number.parseInt(buffer.slice(0, 3), 10);
+let transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter | null {
+  const host = env.SMTP_HOST;
+  if (!host) return null;
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host,
+      port: env.SMTP_PORT,
+      secure: env.SMTP_PORT === 465,
+      auth:
+        env.SMTP_USER && env.SMTP_PASS
+          ? { user: env.SMTP_USER, pass: env.SMTP_PASS }
+          : undefined,
+    });
+  }
+  return transporter;
 }
 
-/** Minimal SMTP client for dev Inbucket (plain, no auth). */
+/** Send transactional email via configured SMTP (Gmail). */
 export async function sendSmtpEmail(options: {
   host: string;
   port: number;
@@ -19,68 +36,21 @@ export async function sendSmtpEmail(options: {
   subject: string;
   html: string;
 }): Promise<SmtpSendResult> {
-  return new Promise((resolve) => {
-    const messageId = `smtp-${Date.now()}@${options.host}`;
-    const commands = [
-      `EHLO smarthealth-api\r\n`,
-      `MAIL FROM:<${options.from}>\r\n`,
-      `RCPT TO:<${options.to}>\r\n`,
-      `DATA\r\n`,
-      [
-        `From: ${options.from}`,
-        `To: ${options.to}`,
-        `Subject: ${options.subject}`,
-        `Content-Type: text/html; charset=utf-8`,
-        '',
-        options.html,
-      ].join('\r\n') + '\r\n.\r\n',
-      `QUIT\r\n`,
-    ];
+  const transport = getTransporter();
+  if (!transport) {
+    return { success: false, error: 'SMTP not configured' };
+  }
 
-    let step = 0;
-    let buffer = '';
-
-    const socket = net.createConnection(
-      { host: options.host, port: options.port },
-      () => {},
-    );
-
-    const fail = (error: string) => {
-      socket.destroy();
-      resolve({ success: false, error });
-    };
-
-    const next = () => {
-      if (step >= commands.length) {
-        socket.end();
-        resolve({ success: true, messageId });
-        return;
-      }
-      socket.write(commands[step]);
-      step += 1;
-    };
-
-    socket.on('data', (chunk) => {
-      buffer += chunk.toString();
-      while (buffer.includes('\n')) {
-        const lineEnd = buffer.indexOf('\n');
-        const line = buffer.slice(0, lineEnd).trim();
-        buffer = buffer.slice(lineEnd + 1);
-        if (!line) continue;
-
-        const code = readCode(line);
-        if (Number.isNaN(code) || code >= 400) {
-          fail(`SMTP error ${code}: ${line}`);
-          return;
-        }
-
-        // Multi-line replies use hyphen after code (e.g. 250-).
-        if (line.length > 3 && line[3] === '-') continue;
-        next();
-      }
+  try {
+    const info = await transport.sendMail({
+      from: options.from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
     });
-
-    socket.on('error', (err) => fail(err.message));
-    socket.setTimeout(10_000, () => fail('SMTP timeout'));
-  });
+    return { success: true, messageId: info.messageId };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'SMTP send failed';
+    return { success: false, error: message };
+  }
 }

@@ -1,45 +1,52 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 /// Improves OCR accuracy by normalizing contrast and resolution before ML Kit.
 abstract final class PrescriptionImagePreprocess {
-  static const _minWidth = 1200;
-  static const _maxWidth = 2400;
+  static const _minWidth = 1000;
+  static const _maxWidth = 1800;
 
   /// Returns a temp JPEG path suitable for [InputImage.fromFilePath].
   static Future<String> prepareForOcr(String sourcePath) async {
     final bytes = await File(sourcePath).readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return sourcePath;
-
-    var image = img.grayscale(decoded);
-    image = img.adjustColor(image, contrast: 1.25, brightness: 0.03);
-    image = img.gaussianBlur(image, radius: 1);
-
-    if (image.width < _minWidth) {
-      final scale = _minWidth / image.width;
-      image = img.copyResize(
-        image,
-        width: _minWidth,
-        height: (image.height * scale).round(),
-        interpolation: img.Interpolation.cubic,
-      );
-    } else if (image.width > _maxWidth) {
-      final scale = _maxWidth / image.width;
-      image = img.copyResize(
-        image,
-        width: _maxWidth,
-        height: (image.height * scale).round(),
-        interpolation: img.Interpolation.cubic,
-      );
-    }
+    final encoded = await compute(_processImageBytes, bytes);
+    if (encoded == null) return sourcePath;
 
     final outPath =
         '${Directory.systemTemp.path}/rx_ocr_${DateTime.now().microsecondsSinceEpoch}.jpg';
-    final encoded = Uint8List.fromList(img.encodeJpg(image, quality: 92));
     await File(outPath).writeAsBytes(encoded, flush: true);
     return outPath;
   }
+}
+
+/// CPU-heavy work — must run off the UI isolate to avoid ANR.
+Uint8List? _processImageBytes(Uint8List bytes) {
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) return null;
+
+  var image = img.grayscale(decoded);
+  image = img.adjustColor(image, contrast: 1.2, brightness: 0.02);
+
+  if (image.width < PrescriptionImagePreprocess._minWidth) {
+    final scale = PrescriptionImagePreprocess._minWidth / image.width;
+    image = img.copyResize(
+      image,
+      width: PrescriptionImagePreprocess._minWidth,
+      height: (image.height * scale).round(),
+      interpolation: img.Interpolation.linear,
+    );
+  } else if (image.width > PrescriptionImagePreprocess._maxWidth) {
+    final scale = PrescriptionImagePreprocess._maxWidth / image.width;
+    image = img.copyResize(
+      image,
+      width: PrescriptionImagePreprocess._maxWidth,
+      height: (image.height * scale).round(),
+      interpolation: img.Interpolation.linear,
+    );
+  }
+
+  return Uint8List.fromList(img.encodeJpg(image, quality: 88));
 }

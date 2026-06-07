@@ -19,7 +19,7 @@ export async function sendEmail(
       const smtpResult = await sendSmtpEmail({
         host: smtpHost,
         port: env.SMTP_PORT,
-        from: env.EMAIL_FROM ?? 'SmartHealth <noreply@smarthealth.co.zw>',
+        from: env.EMAIL_FROM ?? env.SMTP_USER ?? 'SmartHealth <noreply@smarthealth.co.zw>',
         to,
         subject,
         html,
