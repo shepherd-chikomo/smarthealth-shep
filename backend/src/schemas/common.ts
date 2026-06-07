@@ -343,7 +343,7 @@ export const createReviewSchema = z.object({
 });
 
 export const emergencyServiceSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1),
   name: z.string(),
   serviceType: z.string(),
   phone: z.string(),
