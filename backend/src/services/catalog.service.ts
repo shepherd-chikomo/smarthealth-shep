@@ -139,22 +139,22 @@ const DEFAULT_MEDICAL_AID_SCHEMES = [
 ] as const;
 
 export async function listMedicalAidCatalog() {
-  const row = await query<{ value: unknown }>(
-    `SELECT value FROM public.app_settings
-     WHERE tenant_id IS NULL AND scope = 'platform' AND key = 'medical_aid_catalog'`,
+  const result = await query(
+    `SELECT scheme_key, name, logo_path
+     FROM public.medical_aid_schemes
+     WHERE deleted_at IS NULL AND is_active = true
+     ORDER BY sort_order ASC, name ASC`,
   );
-  const raw = row.rows[0]?.value;
-  if (!Array.isArray(raw) || raw.length === 0) {
+
+  if (result.rows.length === 0) {
     return { schemes: [...DEFAULT_MEDICAL_AID_SCHEMES] };
   }
 
-  const schemes = raw
-    .filter((item): item is Record<string, unknown> => item != null && typeof item === 'object')
-    .map((item) => ({
-      schemeKey: String(item.schemeKey ?? '').trim(),
-      name: String(item.name ?? '').trim(),
-    }))
-    .filter((item) => item.schemeKey.length > 0 && item.name.length > 0);
-
-  return { schemes: schemes.length > 0 ? schemes : [...DEFAULT_MEDICAL_AID_SCHEMES] };
+  return {
+    schemes: result.rows.map((row) => ({
+      schemeKey: String(row.scheme_key),
+      name: String(row.name),
+      ...(row.logo_path ? { logoPath: String(row.logo_path) } : {}),
+    })),
+  };
 }

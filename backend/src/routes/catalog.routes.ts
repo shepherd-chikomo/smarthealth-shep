@@ -8,6 +8,7 @@ import {
 } from '../schemas/common.js';
 import * as catalogService from '../services/catalog.service.js';
 import * as profileConditions from '../services/profile-conditions.service.js';
+import * as facilityServicesCatalog from '../services/facility-services-catalog.service.js';
 
 const facilityTypeCatalogItemSchema = z.object({
   facilityType: z.string(),
@@ -139,6 +140,49 @@ export const catalogRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) =>
       profileConditions.suggestProfileConditions(request.query.q, request.query.limit),
+  );
+
+  app.get(
+    '/catalog/facility-services',
+    {
+      schema: {
+        tags: ['Catalog'],
+        summary: 'Global facility service catalog for public profile configuration',
+        response: {
+          200: z.object({
+            preset: z.array(
+              z.object({ id: z.string(), label: z.string(), iconKey: z.string() }),
+            ),
+            other: z.array(
+              z.object({ id: z.string(), label: z.string(), iconKey: z.string() }),
+            ),
+          }),
+        },
+      },
+    },
+    async () => facilityServicesCatalog.listFacilityServicesCatalog(),
+  );
+
+  app.get(
+    '/catalog/facility-services/suggest',
+    {
+      schema: {
+        tags: ['Catalog'],
+        querystring: z.object({
+          q: z.string().default(''),
+          limit: z.coerce.number().int().min(1).max(20).default(8),
+        }),
+        response: {
+          200: z.object({
+            suggestions: z.array(
+              z.object({ id: z.string(), label: z.string(), iconKey: z.string() }),
+            ),
+          }),
+        },
+      },
+    },
+    async (request) =>
+      facilityServicesCatalog.suggestFacilityServices(request.query.q, request.query.limit),
   );
 
   app.get(

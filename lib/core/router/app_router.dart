@@ -301,7 +301,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                   GoRoute(
                     path: 'backup',
-                    builder: (context, state) => const BackupRestoreScreen(),
+                    builder: (context, state) => BackupRestoreScreen(
+                      discovered: state.uri.queryParameters['discovered'] == 'true',
+                    ),
                   ),
                   GoRoute(
                     path: 'edit',

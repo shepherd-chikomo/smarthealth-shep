@@ -22,6 +22,7 @@ import {
   deleteStorageObject,
   uploadFacilityLogo,
 } from '../lib/facility-assets.js';
+import * as medicalAidSchemes from './medical-aid-schemes.service.js';
 import {
   mergeProfileSettings,
   parseProfileSettings,
@@ -272,11 +273,7 @@ export async function getFacilityProfile(user: AuthenticatedUser, facilityId: st
 }
 
 export async function getMedicalAidCatalog() {
-  const row = await query<{ value: unknown }>(
-    `SELECT value FROM public.app_settings
-     WHERE tenant_id IS NULL AND scope = 'platform' AND key = 'medical_aid_catalog'`,
-  );
-  return { schemes: row.rows[0]?.value ?? [] };
+  return medicalAidSchemes.listMedicalAidSchemesCatalog();
 }
 
 export async function updateFacilityProfileSettings(

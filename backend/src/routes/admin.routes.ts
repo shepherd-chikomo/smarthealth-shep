@@ -13,6 +13,8 @@ import * as registryDiff from '../services/registry-diff.service.js';
 import * as practitionerClaim from '../services/practitioner-claim.service.js';
 import * as platformBroadcast from '../services/platform-broadcast.service.js';
 import * as profileConditions from '../services/profile-conditions.service.js';
+import * as facilityServicesCatalog from '../services/facility-services-catalog.service.js';
+import * as medicalAidSchemes from '../services/medical-aid-schemes.service.js';
 import {
   approveConditionSubmissionSchema,
   conditionSubmissionSchema,
@@ -500,6 +502,195 @@ export const adminRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async (request) =>
       profileConditions.rejectSubmission(request.params.id, request.user!.id),
+  );
+
+  const facilityServiceAdminSchema = z.object({
+    id: z.string().uuid(),
+    slug: z.string(),
+    label: z.string(),
+    iconKey: z.string(),
+    isPreset: z.boolean(),
+    sortOrder: z.number(),
+    isActive: z.boolean(),
+  });
+
+  app.get(
+    '/admin/content/facility-services',
+    { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
+    async (request) => facilityServicesCatalog.listServicesAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/facility-services',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        body: z.object({
+          label: z.string().min(1),
+          iconKey: z.string().optional(),
+          isPreset: z.boolean().optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const result = await facilityServicesCatalog.createService(request.body);
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.put(
+    '/admin/content/facility-services/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          label: z.string().min(1).optional(),
+          iconKey: z.string().optional(),
+          isPreset: z.boolean().optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      },
+    },
+    async (request) => facilityServicesCatalog.updateService(request.params.id, request.body),
+  );
+
+  app.delete(
+    '/admin/content/facility-services/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) => facilityServicesCatalog.deleteService(request.params.id),
+  );
+
+  app.get(
+    '/admin/content/service-submissions',
+    { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
+    async (request) => facilityServicesCatalog.listServiceSubmissionsAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/service-submissions/:id/approve',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({ isPreset: z.boolean().optional() }),
+      },
+    },
+    async (request) =>
+      facilityServicesCatalog.approveServiceSubmission(
+        request.params.id,
+        request.user!.id,
+        request.body,
+      ),
+  );
+
+  app.post(
+    '/admin/content/service-submissions/:id/reject',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) =>
+      facilityServicesCatalog.rejectServiceSubmission(request.params.id, request.user!.id),
+  );
+
+  const medicalAidSchemeAdminSchema = z.object({
+    id: z.string().uuid(),
+    schemeKey: z.string(),
+    name: z.string(),
+    logoPath: z.string().nullable(),
+    sortOrder: z.number(),
+    isActive: z.boolean(),
+  });
+
+  app.get(
+    '/admin/content/medical-aid-schemes',
+    { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
+    async (request) => medicalAidSchemes.listSchemesAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/medical-aid-schemes',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        body: z.object({
+          name: z.string().min(1),
+          schemeKey: z.string().optional(),
+          logoPath: z.string().optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const result = await medicalAidSchemes.createScheme(request.body);
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.put(
+    '/admin/content/medical-aid-schemes/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: {
+        tags: ['Admin'],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({
+          name: z.string().min(1).optional(),
+          schemeKey: z.string().optional(),
+          logoPath: z.string().nullable().optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }),
+      },
+    },
+    async (request) => medicalAidSchemes.updateScheme(request.params.id, request.body),
+  );
+
+  app.delete(
+    '/admin/content/medical-aid-schemes/:id',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) => medicalAidSchemes.deleteScheme(request.params.id),
+  );
+
+  app.get(
+    '/admin/content/medical-aid-submissions',
+    { preHandler: requireStaffAuth, schema: { tags: ['Admin'], querystring: adminListQuerySchema } },
+    async (request) => medicalAidSchemes.listMedicalAidSubmissionsAdmin(request.query),
+  );
+
+  app.post(
+    '/admin/content/medical-aid-submissions/:id/approve',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) =>
+      medicalAidSchemes.approveMedicalAidSubmission(request.params.id, request.user!.id),
+  );
+
+  app.post(
+    '/admin/content/medical-aid-submissions/:id/reject',
+    {
+      preHandler: requireSuperAdminAuth,
+      schema: { tags: ['Admin'], params: z.object({ id: z.string().uuid() }) },
+    },
+    async (request) =>
+      medicalAidSchemes.rejectMedicalAidSubmission(request.params.id, request.user!.id),
   );
 
   app.get(

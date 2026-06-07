@@ -120,6 +120,26 @@ export const api = {
   medicalAidCatalog: (fid: string) =>
     request<{ schemes: unknown[] }>(`/facility/medical-aid-catalog`, fid),
 
+  servicesCatalog: (fid: string) =>
+    request<{
+      preset: { id: string; label: string; iconKey: string }[];
+      other: { id: string; label: string; iconKey: string }[];
+    }>(`/facility/services-catalog`, fid),
+
+  submitServiceProposal: (fid: string, body: { label: string; iconKey?: string }) =>
+    request<{ submission: unknown | null; skipped: boolean; reason: string | null }>(
+      `/facility/service-submissions`,
+      fid,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  submitMedicalAidProposal: (fid: string, body: { name: string }) =>
+    request<{ submission: unknown | null; skipped: boolean; reason: string | null }>(
+      `/facility/medical-aid-submissions`,
+      fid,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
   uploadLogo: async (fid: string, file: File) => {
     const token = await getToken();
     const form = new FormData();

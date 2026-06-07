@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
-import { PRESET_FACILITY_SERVICES, type FacilityServiceEntry, type ProfileSettings } from '@/lib/facility-services';
+import { type ProfileSettings } from '@/lib/facility-services';
 
 const TABS = [
   'General',
@@ -68,6 +68,12 @@ export function FacilityProfileTabs({
     queryKey: ['medical-aid-catalog', facilityId],
     queryFn: () => api.medicalAidCatalog(facilityId),
     enabled: !!facilityId && tab === 'Medical Aid',
+  });
+
+  const { data: servicesCatalogData } = useQuery({
+    queryKey: ['services-catalog', facilityId],
+    queryFn: () => api.servicesCatalog(facilityId),
+    enabled: !!facilityId && tab === 'Services',
   });
 
   const { data: slotsData } = useQuery({
@@ -139,19 +145,33 @@ export function FacilityProfileTabs({
     onSuccess: () => qc.invalidateQueries({ queryKey: ['slots', facilityId] }),
   });
 
-  const togglePresetService = (key: string) => {
-    const preset = PRESET_FACILITY_SERVICES.find((s) => s.key === key);
-    if (!preset) return;
-    const exists = effective.services.find((s) => s.key === key);
+  const submitService = useMutation({
+    mutationFn: (label: string) => api.submitServiceProposal(facilityId, { label }),
+  });
+
+  const submitMedicalAid = useMutation({
+    mutationFn: (name: string) => api.submitMedicalAidProposal(facilityId, { name }),
+  });
+
+  const catalogServices = useMemo(
+    () => [
+      ...(servicesCatalogData?.preset ?? []),
+      ...(servicesCatalogData?.other ?? []),
+    ],
+    [servicesCatalogData],
+  );
+
+  const toggleCatalogService = (slug: string, label: string, iconKey: string) => {
+    const exists = effective.services.find((s) => s.key === slug);
     const nextServices = exists
-      ? effective.services.filter((s) => s.key !== key)
+      ? effective.services.filter((s) => s.key !== slug)
       : [
           ...effective.services,
           {
             id: crypto.randomUUID(),
-            key: preset.key,
-            name: preset.name,
-            iconKey: preset.iconKey,
+            key: slug,
+            name: label,
+            iconKey,
             isCustom: false,
           },
         ];
@@ -283,30 +303,32 @@ export function FacilityProfileTabs({
             Services patients can book. Assign providers to services on the Doctors page.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {PRESET_FACILITY_SERVICES.map((preset) => {
-              const checked = effective.services.some((s) => s.key === preset.key);
+            {catalogServices.map((item) => {
+              const checked = effective.services.some((s) => s.key === item.id);
               return (
-                <label key={preset.key} className="flex items-center gap-2 text-sm">
+                <label key={item.id} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => togglePresetService(preset.key)}
+                    onChange={() => toggleCatalogService(item.id, item.label, item.iconKey)}
                   />
-                  {preset.name}
+                  {item.label}
                 </label>
               );
             })}
           </div>
           <CustomServiceForm
-            onAdd={(name) => {
-              const entry: FacilityServiceEntry = {
-                id: crypto.randomUUID(),
-                name,
-                iconKey: 'custom',
-                isCustom: true,
-              };
-              setSettings({ ...effective, services: [...effective.services, entry] });
-            }}
+            pending={submitService.isPending}
+            message={
+              submitService.isSuccess
+                ? submitService.data?.skipped
+                  ? 'That service is already in the catalog or pending review.'
+                  : 'Service submitted for admin review.'
+                : submitService.isError
+                  ? (submitService.error as Error).message
+                  : null
+            }
+            onSubmit={(name) => submitService.mutate(name)}
           />
           <button
             type="button"
@@ -338,6 +360,19 @@ export function FacilityProfileTabs({
               },
             )}
           </div>
+          <CustomMedicalAidForm
+            pending={submitMedicalAid.isPending}
+            message={
+              submitMedicalAid.isSuccess
+                ? submitMedicalAid.data?.skipped
+                  ? 'That scheme is already in the catalog or pending review.'
+                  : 'Medical aid submitted for admin review.'
+                : submitMedicalAid.isError
+                  ? (submitMedicalAid.error as Error).message
+                  : null
+            }
+            onSubmit={(name) => submitMedicalAid.mutate(name)}
+          />
           <button
             type="button"
             className="btn-primary"
@@ -532,27 +567,80 @@ export function FacilityProfileTabs({
   );
 }
 
-function CustomServiceForm({ onAdd }: { onAdd: (name: string) => void }) {
+function CustomServiceForm({
+  onSubmit,
+  pending,
+  message,
+}: {
+  onSubmit: (name: string) => void;
+  pending: boolean;
+  message: string | null;
+}) {
   const [name, setName] = useState('');
   return (
-    <div className="flex gap-2">
-      <input
-        className="input flex-1"
-        placeholder="Custom service name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <button
-        type="button"
-        className="btn-secondary"
-        disabled={!name.trim()}
-        onClick={() => {
-          onAdd(name.trim());
-          setName('');
-        }}
-      >
-        Add
-      </button>
+    <div className="space-y-2">
+      <p className="text-sm text-[var(--muted)]">
+        Propose a service not listed above. Admin review adds it to the global catalog.
+      </p>
+      <div className="flex gap-2">
+        <input
+          className="input flex-1"
+          placeholder="Custom service name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={!name.trim() || pending}
+          onClick={() => {
+            onSubmit(name.trim());
+            setName('');
+          }}
+        >
+          {pending ? 'Submitting…' : 'Propose'}
+        </button>
+      </div>
+      {message && <p className="text-sm text-slate-600">{message}</p>}
+    </div>
+  );
+}
+
+function CustomMedicalAidForm({
+  onSubmit,
+  pending,
+  message,
+}: {
+  onSubmit: (name: string) => void;
+  pending: boolean;
+  message: string | null;
+}) {
+  const [name, setName] = useState('');
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-[var(--muted)]">
+        Propose a medical aid scheme not listed above.
+      </p>
+      <div className="flex gap-2">
+        <input
+          className="input flex-1"
+          placeholder="Medical aid scheme name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={!name.trim() || pending}
+          onClick={() => {
+            onSubmit(name.trim());
+            setName('');
+          }}
+        >
+          {pending ? 'Submitting…' : 'Propose'}
+        </button>
+      </div>
+      {message && <p className="text-sm text-slate-600">{message}</p>}
     </div>
   );
 }

@@ -5,10 +5,14 @@ import type { EmergencyServiceInput, EmergencyServiceRecord } from '../lib/api';
 import { ErrorState, LoadingState, PageHeader, PaginationBar, SearchBar } from '../components/ui';
 import { ConditionsPanel } from '../components/content/ConditionsPanel';
 import { EmergencyServiceModal } from '../components/content/EmergencyServiceModal';
+import { MedicalAidPanel } from '../components/content/MedicalAidPanel';
+import { ServicesPanel } from '../components/content/ServicesPanel';
 
 export function ContentPage() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'emergency' | 'notifications' | 'conditions'>('emergency');
+  const [tab, setTab] = useState<
+    'emergency' | 'notifications' | 'conditions' | 'services' | 'medicalAid'
+  >('emergency');
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<EmergencyServiceRecord | null | undefined>(undefined);
@@ -68,13 +72,15 @@ export function ContentPage() {
     <div>
       <PageHeader
         title="Content Management"
-        description="Emergency services, medical profile conditions, and platform notifications"
+        description="Emergency services, catalogs, medical profile conditions, and platform notifications"
       />
       <div className="mb-4 flex gap-2">
         {([
           ['emergency', 'Emergency'],
           ['notifications', 'Notifications'],
           ['conditions', 'Conditions'],
+          ['services', 'Services'],
+          ['medicalAid', 'Medical Aid'],
         ] as const).map(([t, label]) => (
           <button
             key={t}
@@ -144,6 +150,10 @@ export function ContentPage() {
       )}
 
       {tab === 'conditions' && <ConditionsPanel />}
+
+      {tab === 'services' && <ServicesPanel />}
+
+      {tab === 'medicalAid' && <MedicalAidPanel />}
 
       {tab === 'notifications' && (
         <>

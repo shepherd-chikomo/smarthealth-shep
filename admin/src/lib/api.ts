@@ -142,6 +142,70 @@ export interface ConditionSubmissionRecord {
   userEmail?: string | null;
 }
 
+export interface FacilityServiceRecord {
+  id: string;
+  slug: string;
+  label: string;
+  iconKey: string;
+  isPreset: boolean;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface FacilityServiceInput {
+  label: string;
+  iconKey?: string;
+  isPreset?: boolean;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface ServiceSubmissionRecord {
+  id: string;
+  facilityId: string;
+  submittedBy: string;
+  proposedLabel: string;
+  proposedSlug: string;
+  proposedIconKey: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  resultingServiceId: string | null;
+  createdAt: string;
+  facilityName?: string | null;
+}
+
+export interface MedicalAidSchemeRecord {
+  id: string;
+  schemeKey: string;
+  name: string;
+  logoPath: string | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface MedicalAidSchemeInput {
+  name: string;
+  schemeKey?: string;
+  logoPath?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface MedicalAidSubmissionRecord {
+  id: string;
+  facilityId: string;
+  submittedBy: string;
+  proposedName: string;
+  proposedSchemeKey: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  resultingSchemeId: string | null;
+  createdAt: string;
+  facilityName?: string | null;
+}
+
 export interface PlatformBroadcast {
   id: string;
   title: string;
@@ -449,6 +513,80 @@ export const api = {
   rejectConditionSubmission: (id: string) =>
     request<{ submission: ConditionSubmissionRecord }>(
       `/admin/content/condition-submissions/${id}/reject`,
+      { method: 'POST' },
+    ),
+
+  facilityServices: (params?: ListParams) =>
+    request<{ services: FacilityServiceRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/facility-services${qs(params)}`,
+    ),
+
+  createFacilityService: (body: FacilityServiceInput) =>
+    request<{ service: FacilityServiceRecord }>('/admin/content/facility-services', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateFacilityService: (id: string, body: Partial<FacilityServiceInput>) =>
+    request<{ service: FacilityServiceRecord }>(`/admin/content/facility-services/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteFacilityService: (id: string) =>
+    request(`/admin/content/facility-services/${id}`, { method: 'DELETE' }),
+
+  serviceSubmissions: (params?: ListParams) =>
+    request<{ submissions: ServiceSubmissionRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/service-submissions${qs(params)}`,
+    ),
+
+  approveServiceSubmission: (id: string, body: { isPreset?: boolean }) =>
+    request<{ submission: ServiceSubmissionRecord; service: FacilityServiceRecord }>(
+      `/admin/content/service-submissions/${id}/approve`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+
+  rejectServiceSubmission: (id: string) =>
+    request<{ submission: ServiceSubmissionRecord }>(
+      `/admin/content/service-submissions/${id}/reject`,
+      { method: 'POST' },
+    ),
+
+  medicalAidSchemes: (params?: ListParams) =>
+    request<{ schemes: MedicalAidSchemeRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/medical-aid-schemes${qs(params)}`,
+    ),
+
+  createMedicalAidScheme: (body: MedicalAidSchemeInput) =>
+    request<{ scheme: MedicalAidSchemeRecord }>('/admin/content/medical-aid-schemes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateMedicalAidScheme: (id: string, body: Partial<MedicalAidSchemeInput>) =>
+    request<{ scheme: MedicalAidSchemeRecord }>(`/admin/content/medical-aid-schemes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteMedicalAidScheme: (id: string) =>
+    request(`/admin/content/medical-aid-schemes/${id}`, { method: 'DELETE' }),
+
+  medicalAidSubmissions: (params?: ListParams) =>
+    request<{ submissions: MedicalAidSubmissionRecord[]; pagination: PaginationMeta }>(
+      `/admin/content/medical-aid-submissions${qs(params)}`,
+    ),
+
+  approveMedicalAidSubmission: (id: string) =>
+    request<{ submission: MedicalAidSubmissionRecord; scheme: MedicalAidSchemeRecord }>(
+      `/admin/content/medical-aid-submissions/${id}/approve`,
+      { method: 'POST' },
+    ),
+
+  rejectMedicalAidSubmission: (id: string) =>
+    request<{ submission: MedicalAidSubmissionRecord }>(
+      `/admin/content/medical-aid-submissions/${id}/reject`,
       { method: 'POST' },
     ),
 

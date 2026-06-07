@@ -6,6 +6,8 @@ import { ValidationError } from '../lib/errors.js';
 import { getRequestContext } from '../lib/request-context.js';
 import { facilityListQuerySchema, requireFacilityStaffAuth } from '../plugins/facility-guard.js';
 import * as facility from '../services/facility.service.js';
+import * as facilityServicesCatalog from '../services/facility-services-catalog.service.js';
+import * as medicalAidSchemes from '../services/medical-aid-schemes.service.js';
 import * as invitations from '../services/invitations.service.js';
 
 const hourEntrySchema = z.object({
@@ -107,6 +109,55 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     '/facility/medical-aid-catalog',
     { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },
     async () => facility.getMedicalAidCatalog(),
+  );
+
+  app.get(
+    '/facility/services-catalog',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async () => facilityServicesCatalog.listFacilityServicesCatalog(),
+  );
+
+  app.post(
+    '/facility/service-submissions',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ label: z.string().min(1).max(120), iconKey: z.string().max(40).optional() }),
+      },
+    },
+    async (request, reply) => {
+      const result = await facilityServicesCatalog.createServiceSubmission(
+        request.user!,
+        request.facilityId!,
+        request.body,
+      );
+      return reply.status(result.skipped ? 200 : 201).send(result);
+    },
+  );
+
+  app.post(
+    '/facility/medical-aid-submissions',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({ name: z.string().min(1).max(120) }),
+      },
+    },
+    async (request, reply) => {
+      const result = await medicalAidSchemes.createMedicalAidSubmission(
+        request.user!,
+        request.facilityId!,
+        request.body,
+      );
+      return reply.status(result.skipped ? 200 : 201).send(result);
+    },
   );
 
   app.post(

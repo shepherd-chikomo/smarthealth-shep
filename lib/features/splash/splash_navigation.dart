@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
 import 'package:smarthealth_shep/core/auth/secure_storage.dart';
+import 'package:smarthealth_shep/core/backup/health_vault_backup_service.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 
@@ -22,11 +23,17 @@ abstract final class SplashNavigation {
 
     if (AppConfig.skipAuthForTesting) {
       await ref.read(authControllerProvider.notifier).refresh();
+      if (await HealthVaultBackupService().shouldOfferDiscoveredImport()) {
+        return '/profile/backup?discovered=true';
+      }
       return '/home';
     }
 
     if (hasSession) {
       await ref.read(authControllerProvider.notifier).refresh();
+      if (await HealthVaultBackupService().shouldOfferDiscoveredImport()) {
+        return '/profile/backup?discovered=true';
+      }
       return '/home';
     }
 
