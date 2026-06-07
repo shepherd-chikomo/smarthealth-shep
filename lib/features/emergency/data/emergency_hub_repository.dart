@@ -27,7 +27,7 @@ class EmergencyHubRepository {
   final Dio? _dio;
   final SearchOriginResolver? _searchOrigin;
 
-  static const _hubCacheKey = 'emergency_hub_data_v3';
+  static const _hubCacheKey = 'emergency_hub_data_v4';
 
   Box get _box => Hive.box(HiveBoxes.emergency);
 
@@ -41,7 +41,7 @@ class EmergencyHubRepository {
   Future<EmergencyHubData> loadHub({bool forceRefresh = false}) async {
     if (!forceRefresh) {
       final cached = _readCache();
-      if (cached != null) {
+      if (cached != null && _hasContent(cached)) {
         if (await _isOnline()) {
           _refreshInBackground();
         }
@@ -52,22 +52,43 @@ class EmergencyHubRepository {
     if (await _isOnline()) {
       try {
         final remote = await _fetchFromApi();
-        await _writeCache(remote);
-        return remote;
+        final enriched = _ensureNationalServices(remote);
+        await _writeCache(enriched);
+        return enriched;
       } catch (_) {
         final cached = _readCache();
-        if (cached != null) return cached;
-        if (AppConfig.allowMockFallbacks) {
-          final fallback = EmergencyFallbackData.hub();
-          await _writeCache(fallback);
+        if (cached != null && _hasContent(cached)) return cached;
+        final fallback = _ensureNationalServices(
+          EmergencyHubData(
+            services: const [],
+            facilities: const [],
+            cachedAt: DateTime.now(),
+          ),
+        );
+        if (_hasContent(fallback)) {
           return fallback;
+        }
+        if (AppConfig.allowMockFallbacks) {
+          final mock = EmergencyFallbackData.hub();
+          await _writeCache(mock);
+          return mock;
         }
         rethrow;
       }
     }
 
     final cached = _readCache();
-    if (cached != null) return cached;
+    if (cached != null && _hasContent(cached)) return cached;
+
+    final offlineFallback = _ensureNationalServices(
+      EmergencyHubData(
+        services: const [],
+        facilities: const [],
+        cachedAt: DateTime.now(),
+        locationRequired: true,
+      ),
+    );
+    if (_hasContent(offlineFallback)) return offlineFallback;
 
     if (AppConfig.allowMockFallbacks) {
       final fallback = EmergencyFallbackData.hub();
@@ -75,6 +96,14 @@ class EmergencyHubRepository {
       return fallback;
     }
     throw StateError('No network and no cached emergency hub data.');
+  }
+
+  bool _hasContent(EmergencyHubData data) =>
+      data.services.isNotEmpty || data.facilities.isNotEmpty;
+
+  EmergencyHubData _ensureNationalServices(EmergencyHubData data) {
+    if (data.services.isNotEmpty) return data;
+    return data.copyWith(services: EmergencyFallbackData.hub().services);
   }
 
   Future<EmergencyHubData> _fetchFromApi() async {
@@ -102,6 +131,9 @@ class EmergencyHubRepository {
       }
     }
 
+    lat ??= AppConfig.defaultLatitude;
+    lon ??= AppConfig.defaultLongitude;
+
     final response = await _client.get<Map<String, dynamic>>(
       '/emergency/hub',
       queryParameters: {
@@ -117,6 +149,7 @@ class EmergencyHubRepository {
 
     // When grid services are empty but facilities exist, surface ER facilities as services.
     var mapped = _mapHubResponse(data, locationRequired: apiLocationRequired);
+    mapped = _ensureNationalServices(mapped);
     if (mapped.services.isEmpty && mapped.facilities.isNotEmpty) {
       mapped = mapped.copyWith(
         services: mapped.facilities
@@ -254,7 +287,9 @@ class EmergencyHubRepository {
   }
 
   void _refreshInBackground() {
-    _fetchFromApi().then(_writeCache).ignore();
+    _fetchFromApi()
+        .then((data) => _writeCache(_ensureNationalServices(data)))
+        .ignore();
   }
 
   EmergencyHubData? _readCache() {
@@ -268,6 +303,14 @@ class EmergencyHubRepository {
   }
 
   Future<void> _writeCache(EmergencyHubData data) async {
-    await _box.put(_hubCacheKey, jsonEncode(data.toJson()));
+    await _box.put(
+      _hubCacheKey,
+      jsonEncode({
+        'services': data.services.map((s) => s.toJson()).toList(),
+        'facilities': data.facilities.map((f) => f.toJson()).toList(),
+        'cachedAt': data.cachedAt.toIso8601String(),
+        'locationRequired': data.locationRequired,
+      }),
+    );
   }
 }

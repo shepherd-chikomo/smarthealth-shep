@@ -165,9 +165,9 @@ class _EmergencyHubView extends StatelessWidget {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 1.05,
+                      childAspectRatio: 1.1,
                     ),
-                    itemCount: data.services.length,
+                    itemCount: data.services.length.clamp(0, 8),
                     itemBuilder: (context, index) {
                       final service = data.services[index];
                       return EmergencyServiceGridCard(

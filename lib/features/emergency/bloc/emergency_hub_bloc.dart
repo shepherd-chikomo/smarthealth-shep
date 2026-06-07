@@ -63,18 +63,13 @@ class EmergencyHubBloc extends Bloc<EmergencyHubEvent, EmergencyHubState> {
         ),
       );
     } catch (error) {
+      final fallback = EmergencyFallbackData.hub();
       emit(
         state.copyWith(
-          status: EmergencyHubStatus.error,
-          errorMessage: error.toString(),
-          data: AppConfig.allowMockFallbacks
-              ? EmergencyFallbackData.hub()
-              : EmergencyHubData(
-                  services: const [],
-                  facilities: const [],
-                  cachedAt: DateTime.now(),
-                ),
+          status: EmergencyHubStatus.loaded,
+          data: fallback,
           isOffline: true,
+          errorMessage: error.toString(),
         ),
       );
     }
