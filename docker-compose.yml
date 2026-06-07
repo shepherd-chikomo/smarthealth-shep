@@ -319,6 +319,9 @@ services:
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      SMTP_HOST: inbucket
+      SMTP_PORT: 2500
+      EMAIL_FROM: SmartHealth <noreply@smarthealth.co.zw>
       RETENTION_WORKER_ENABLED: "true"
     depends_on:
       smarthealth-migrate:

@@ -721,6 +721,25 @@ class _EditEmergencyMedicalProfileScreenState
                       }
                     },
                   ),
+                  if (_medications[i].reminderEnabled)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Reminder time'),
+                      subtitle: Text(
+                        '${_medications[i].reminderTime.hour.toString().padLeft(2, '0')}:'
+                        '${_medications[i].reminderTime.minute.toString().padLeft(2, '0')}',
+                      ),
+                      trailing: const Icon(Icons.schedule),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: _medications[i].reminderTime,
+                        );
+                        if (picked != null && mounted) {
+                          setState(() => _medications[i].reminderTime = picked);
+                        }
+                      },
+                    ),
                   const SizedBox(height: 8),
                 ],
                 const SizedBox(height: 12),
@@ -829,10 +848,22 @@ class _MedicationRow {
     this.reminderEnabled = false,
     this.dosesPerDay,
     this.quantity,
+    TimeOfDay? reminderTime,
   })  : nameController = TextEditingController(text: name),
-        frequencyController = TextEditingController(text: frequency ?? '');
+        frequencyController = TextEditingController(text: frequency ?? ''),
+        reminderTime = reminderTime ?? const TimeOfDay(hour: 8, minute: 0);
 
   factory _MedicationRow.fromEntry(MedicationEntry entry) {
+    TimeOfDay? time;
+    if (entry.reminderTimes.isNotEmpty) {
+      final parts = entry.reminderTimes.first.split(':');
+      if (parts.length == 2) {
+        time = TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? 8,
+          minute: int.tryParse(parts[1]) ?? 0,
+        );
+      }
+    }
     return _MedicationRow(
       name: entry.name,
       frequency: entry.frequency,
@@ -840,6 +871,7 @@ class _MedicationRow {
       reminderEnabled: entry.reminderEnabled,
       dosesPerDay: entry.dosesPerDay,
       quantity: entry.quantity,
+      reminderTime: time,
     );
   }
 
@@ -849,6 +881,11 @@ class _MedicationRow {
   bool reminderEnabled;
   int? dosesPerDay;
   String? quantity;
+  TimeOfDay reminderTime;
+
+  String _formatTime(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
 
   MedicationEntry toEntry() {
     final name = nameController.text.trim();
@@ -859,6 +896,7 @@ class _MedicationRow {
       name: name,
       frequency: frequency.isEmpty ? null : frequency,
       reminderEnabled: reminderEnabled,
+      reminderTimes: reminderEnabled ? [_formatTime(reminderTime)] : const [],
       dosesPerDay: dosesPerDay,
       quantity: quantity,
     );

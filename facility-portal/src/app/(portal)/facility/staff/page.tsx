@@ -42,10 +42,13 @@ export default function StaffPage() {
       setForm(EMPTY_FORM);
       setFormError('');
       const emailSent = (result as { emailSent?: boolean }).emailSent;
+      const emailError = (result as { emailError?: string | null }).emailError;
       setFormSuccess(
         emailSent
           ? 'Staff member added and invite email sent.'
-          : 'Staff member added. Invite email could not be sent — check server email configuration.',
+          : emailError
+            ? `Staff member added. Email failed: ${emailError}`
+            : 'Staff member added. Invite email could not be sent — check server email configuration (Inbucket on dev: port 54324).',
       );
     },
     onError: (err: Error) => setFormError(err.message),

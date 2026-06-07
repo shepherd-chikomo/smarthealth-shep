@@ -1,5 +1,6 @@
 import { query } from '../lib/db.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
+import { getNationalEmergencyServices } from './national-emergency.service.js';
 import { searchEmergencyNearby } from './search.service.js';
 
 const GRID_SERVICE_TYPES = new Set(['ambulance', 'police', 'fire', 'disaster_response']);
@@ -8,10 +9,13 @@ const GOV_HOSPITAL_SQL = `(
   f.ownership_type ILIKE '%government%'
   OR f.ownership_type ILIKE '%public%'
   OR f.ownership_type ILIKE '%ministry%'
+  OR f.ownership_type ILIKE '%municipal%'
   OR f.facility_category ILIKE '%central%'
   OR f.facility_category ILIKE '%provincial%'
   OR f.facility_category ILIKE '%district%'
   OR f.facility_category ILIKE '%referral%'
+  OR f.name ILIKE '%hospital%'
+  OR f.name ILIKE '%general%'
 )`;
 
 const PROFILE_EMERGENCY_SQL = `(
@@ -42,6 +46,22 @@ export interface EmergencyHubFacility {
   is24Hours: boolean;
   source: EmergencyHubFacilitySource;
   referralLabel: string | null;
+}
+
+export interface EmergencyHubGridService {
+  id: string;
+  name: string;
+  serviceType: string;
+  phone: string;
+  alternatePhone: string | null;
+  address: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  is24Hours: boolean;
+  isNational: boolean;
 }
 
 const SOURCE_PRIORITY: Record<EmergencyHubFacilitySource, number> = {
@@ -76,6 +96,18 @@ export function sortFacilities(items: EmergencyHubFacility[]): EmergencyHubFacil
   });
 }
 
+function dedupeGridServices(items: EmergencyHubGridService[]): EmergencyHubGridService[] {
+  const byType = new Map<string, EmergencyHubGridService>();
+  for (const item of items) {
+    const key = item.isNational ? `national:${item.serviceType}` : item.id;
+    const existing = byType.get(key);
+    if (!existing || (item.isNational && !existing.isNational)) {
+      byType.set(key, item);
+    }
+  }
+  return [...byType.values()];
+}
+
 async function searchGovernmentHospitals(options: {
   lat: number;
   lon: number;
@@ -106,7 +138,12 @@ async function searchGovernmentHospitals(options: {
        AND f.deleted_at IS NULL
        AND f.latitude IS NOT NULL
        AND f.longitude IS NOT NULL
-       AND f.facility_type = 'hospital'
+       AND (
+         f.facility_type = 'hospital'
+         OR f.name ILIKE '%hospital%'
+         OR f.name ILIKE '%medical centre%'
+         OR f.name ILIKE '%medical center%'
+       )
        AND ${GOV_HOSPITAL_SQL}
        AND ST_DWithin(
          ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
@@ -211,8 +248,24 @@ export async function getEmergencyHub(options: {
   const hasLocation = options.lat != null && options.lon != null;
 
   if (!hasLocation) {
+    const national = getNationalEmergencyServices().map((s) => ({
+      id: s.id,
+      name: s.name,
+      serviceType: s.serviceType,
+      phone: s.phone,
+      alternatePhone: null,
+      address: null,
+      city: s.city,
+      province: s.province,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      distanceKm: 0,
+      is24Hours: true,
+      isNational: s.isNational,
+    }));
+
     return {
-      services: [],
+      services: national,
       facilities: [],
       locationRequired: true,
       pagination: buildPaginationMeta(page, limit, 0),
@@ -230,9 +283,41 @@ export async function getEmergencyHub(options: {
     limit: 200,
   });
 
-  const gridServices = directory.services.filter((s) =>
-    GRID_SERVICE_TYPES.has(s.serviceType),
-  );
+  const nationalServices = getNationalEmergencyServices({ lat, lon }).map((s) => ({
+    id: s.id,
+    name: s.name,
+    serviceType: s.serviceType,
+    phone: s.phone,
+    alternatePhone: null,
+    address: null,
+    city: s.city,
+    province: s.province,
+    latitude: s.latitude,
+    longitude: s.longitude,
+    distanceKm: 0,
+    is24Hours: true,
+    isNational: s.isNational,
+  }));
+
+  const nearbyGrid = directory.services
+    .filter((s) => GRID_SERVICE_TYPES.has(s.serviceType))
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      serviceType: s.serviceType,
+      phone: s.phone,
+      alternatePhone: s.alternatePhone,
+      address: s.address,
+      city: s.city,
+      province: s.province,
+      latitude: s.latitude,
+      longitude: s.longitude,
+      distanceKm: s.distanceKm ?? 0,
+      is24Hours: s.is24Hours,
+      isNational: false,
+    }));
+
+  const gridServices = dedupeGridServices([...nationalServices, ...nearbyGrid]);
 
   const directoryFacilities: EmergencyHubFacility[] = directory.services
     .filter((s) => s.serviceType === 'hospital_er' || !GRID_SERVICE_TYPES.has(s.serviceType))

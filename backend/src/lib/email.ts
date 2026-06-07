@@ -1,4 +1,5 @@
 import { env } from '../config.js';
+import { sendSmtpEmail } from './smtp.js';
 
 export interface EmailResult {
   success: boolean;
@@ -13,6 +14,22 @@ export async function sendEmail(
   templateKey?: string,
 ): Promise<EmailResult> {
   if (!env.RESEND_API_KEY) {
+    const smtpHost = env.SMTP_HOST;
+    if (smtpHost) {
+      const smtpResult = await sendSmtpEmail({
+        host: smtpHost,
+        port: env.SMTP_PORT,
+        from: env.EMAIL_FROM ?? 'SmartHealth <noreply@smarthealth.co.zw>',
+        to,
+        subject,
+        html,
+      });
+      if (smtpResult.success) {
+        console.info('[Email SMTP]', to, subject, templateKey ?? '');
+      }
+      return smtpResult;
+    }
+
     if (env.NODE_ENV === 'development') {
       console.info('[Email dev]', to, subject, templateKey ?? '');
       return { success: true, messageId: `dev-email-${Date.now()}` };

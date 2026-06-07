@@ -1971,7 +1971,7 @@ export async function addStaffMember(
     context,
     { targetUserId, role: data.role },
   );
-  return { id: membershipId, userId: targetUserId, emailSent: emailResult.success };
+  return { id: membershipId, userId: targetUserId, emailSent: emailResult.success, emailError: emailResult.error ?? null };
 }
 
 export async function removeStaffMember(

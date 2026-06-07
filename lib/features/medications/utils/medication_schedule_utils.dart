@@ -21,10 +21,49 @@ abstract final class MedicationScheduleUtils {
         .map(_parseTimeString)
         .whereType<MedicationTimeOfDay>()
         .toList();
-    if (explicit.isNotEmpty) return explicit;
+    if (explicit.isNotEmpty) {
+      final doses = entry.dosesPerDay ?? _dosesFromFrequency(entry.frequency);
+      if (explicit.length >= doses) {
+        return explicit.take(doses).toList();
+      }
+      return _timesFromAnchor(explicit.first, doses);
+    }
 
     final doses = entry.dosesPerDay ?? _dosesFromFrequency(entry.frequency);
     return _timesForDoses(doses);
+  }
+
+  static List<MedicationTimeOfDay> _timesFromAnchor(
+    MedicationTimeOfDay anchor,
+    int doses,
+  ) {
+    switch (doses.clamp(1, 4)) {
+      case 4:
+        return [
+          anchor,
+          _offsetHours(anchor, 4),
+          _offsetHours(anchor, 8),
+          _offsetHours(anchor, 12),
+        ];
+      case 3:
+        return [
+          anchor,
+          _offsetHours(anchor, 6),
+          _offsetHours(anchor, 12),
+        ];
+      case 2:
+        return [anchor, _offsetHours(anchor, 12)];
+      default:
+        return [anchor];
+    }
+  }
+
+  static MedicationTimeOfDay _offsetHours(MedicationTimeOfDay base, int hours) {
+    final totalMinutes = base.hour * 60 + base.minute + hours * 60;
+    return MedicationTimeOfDay(
+      (totalMinutes ~/ 60) % 24,
+      totalMinutes % 60,
+    );
   }
 
   static int dosesPerDayFromFrequency(String? frequency) =>

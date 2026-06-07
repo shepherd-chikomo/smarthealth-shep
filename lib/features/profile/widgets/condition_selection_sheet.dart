@@ -8,7 +8,8 @@ import 'package:smarthealth_shep/features/profile/models/condition_selection_res
 import 'package:smarthealth_shep/features/profile/utils/condition_slug.dart';
 import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.dart';
 import 'package:smarthealth_shep/features/search/search_filter_options.dart';
-import 'package:smarthealth_shep/l10n/app_localizations.dart';
+
+const _pageSize = 10;
 
 /// Multi-select bottom sheet for medical profile conditions.
 class ConditionSelectionSheet extends StatefulWidget {
@@ -54,16 +55,18 @@ class ConditionSelectionSheet extends StatefulWidget {
 class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
   late Set<String> _selected;
   late Map<String, String> _customLabels;
+  final _searchController = TextEditingController();
   final _otherController = TextEditingController();
-  final _otherFocusNode = FocusNode();
+  Timer? _searchDebounce;
   Timer? _suggestDebounce;
 
-  List<SearchFilterOption> _common = [];
-  List<SearchFilterOption> _other = [];
+  List<SearchFilterOption> _catalog = [];
   final Set<String> _catalogSlugs = {};
+  List<SearchFilterOption> _searchResults = [];
   List<SearchFilterOption> _suggestions = [];
+  int _visibleCount = _pageSize;
   bool _loading = true;
-  bool _showMore = false;
+  bool _searching = false;
   bool _suggestLoading = false;
 
   @override
@@ -72,15 +75,18 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     _selected = Set<String>.from(widget.selectedIds);
     _customLabels = Map<String, String>.from(widget.customLabels);
     _loadOptions();
+    _searchController.addListener(_onSearchChanged);
     _otherController.addListener(_onOtherChanged);
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _suggestDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _otherController.removeListener(_onOtherChanged);
+    _searchController.dispose();
     _otherController.dispose();
-    _otherFocusNode.dispose();
     super.dispose();
   }
 
@@ -89,39 +95,82 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
       final api = widget.apiService ?? ApiService(createApiDio());
       final remote = await api.fetchProfileConditions();
       if (!mounted) return;
-      _applyCatalog(remote.common, remote.other);
+      _applyCatalog([
+        ...remote.common.map((e) => SearchFilterOption(id: e.id, label: e.label)),
+        ...remote.other.map((e) => SearchFilterOption(id: e.id, label: e.label)),
+      ]);
       return;
     } catch (_) {
       // fall through to static list
     }
     if (mounted) {
-      final fallback = SearchFilterOptions.conditions
-          .map((e) => (id: e.id, label: e.label))
-          .toList();
-      _applyCatalog(fallback, const []);
+      _applyCatalog(SearchFilterOptions.conditions);
     }
   }
 
-  void _applyCatalog(
-    List<({String id, String label})> common,
-    List<({String id, String label})> other,
-  ) {
+  void _applyCatalog(List<SearchFilterOption> options) {
     _catalogSlugs.clear();
-    _common = common
-        .map((e) => SearchFilterOption(id: e.id, label: e.label))
-        .toList();
-    _other = other
-        .map((e) => SearchFilterOption(id: e.id, label: e.label))
-        .toList();
-    for (final option in [..._common, ..._other]) {
+    _catalog = options;
+    for (final option in options) {
       _catalogSlugs.add(option.id);
     }
     setState(() => _loading = false);
   }
 
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 200), () async {
+      final query = _searchController.text.trim();
+      if (query.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _searchResults = [];
+            _searching = false;
+            _visibleCount = _pageSize;
+          });
+        }
+        return;
+      }
+
+      setState(() => _searching = true);
+
+      final local = _catalog
+          .where(
+            (o) =>
+                o.label.toLowerCase().contains(query.toLowerCase()) ||
+                o.id.toLowerCase().contains(query.toLowerCase()),
+          )
+          .take(20)
+          .toList();
+
+      try {
+        final api = widget.apiService ?? ApiService(createApiDio());
+        final remote = await api.suggestProfileConditions(query);
+        if (!mounted) return;
+        final merged = <String, SearchFilterOption>{};
+        for (final option in remote) {
+          merged[option.id] = SearchFilterOption(id: option.id, label: option.label);
+        }
+        for (final option in local) {
+          merged.putIfAbsent(option.id, () => option);
+        }
+        setState(() {
+          _searchResults = merged.values.take(20).toList();
+          _searching = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _searchResults = local;
+          _searching = false;
+        });
+      }
+    });
+  }
+
   void _onOtherChanged() {
     _suggestDebounce?.cancel();
-    _suggestDebounce = Timer(const Duration(milliseconds: 250), () async {
+    _suggestDebounce = Timer(const Duration(milliseconds: 300), () async {
       final query = _otherController.text.trim();
       if (query.isEmpty) {
         if (mounted) setState(() => _suggestions = []);
@@ -135,21 +184,19 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
         setState(() {
           _suggestions = remote
               .map((e) => SearchFilterOption(id: e.id, label: e.label))
+              .take(8)
               .toList();
           _suggestLoading = false;
         });
       } catch (_) {
         if (!mounted) return;
-        final local = [..._common, ..._other]
-            .where(
-              (o) =>
-                  o.label.toLowerCase().contains(query.toLowerCase()) ||
-                  o.id.toLowerCase().contains(query.toLowerCase()),
-            )
-            .take(8)
-            .toList();
         setState(() {
-          _suggestions = local;
+          _suggestions = _catalog
+              .where(
+                (o) => o.label.toLowerCase().contains(query.toLowerCase()),
+              )
+              .take(8)
+              .toList();
           _suggestLoading = false;
         });
       }
@@ -231,15 +278,9 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     );
   }
 
-  List<SearchFilterOption> get _visibleOther =>
-      _showMore ? _other : const <SearchFilterOption>[];
-
-  int get _listItemCount {
-    var count = 1 + _common.length;
-    if (_other.isNotEmpty) count += 1;
-    if (_showMore) count += 1 + _other.length;
-    count += _customLabels.length;
-    return count;
+  List<SearchFilterOption> get _visibleCatalog {
+    if (_searchController.text.trim().isNotEmpty) return _searchResults;
+    return _catalog.take(_visibleCount).toList();
   }
 
   Widget _buildOptionTile(SearchFilterOption option) {
@@ -255,7 +296,8 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = HomeDashboardColors.of(context);
-    final l10n = AppLocalizations.of(context);
+    final isSearching = _searchController.text.trim().isNotEmpty;
+    final visible = _visibleCatalog;
 
     return FractionallySizedBox(
       heightFactor: 0.88,
@@ -280,84 +322,86 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search conditions…',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: colors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else ...[
             Expanded(
               child: ListView.builder(
-                itemCount: _listItemCount,
+                itemCount: 1 +
+                    visible.length +
+                    (_customLabels.length) +
+                    (isSearching ? 0 : (_visibleCount < _catalog.length ? 1 : 0)),
                 itemBuilder: (context, index) {
-                  var cursor = 0;
-
-                  if (index == cursor) {
+                  if (index == 0) {
                     return CheckboxListTile(
                       value: _selected.contains(profileConditionsNoneSlug),
                       title: const Text('No known conditions'),
                       onChanged: (_) => _toggle(profileConditionsNoneSlug),
                     );
                   }
-                  cursor++;
 
-                  if (index == cursor) {
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: Text(
-                        'Common conditions',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
+                  final listIndex = index - 1;
+
+                  if (listIndex < visible.length) {
+                    if (!isSearching && listIndex == 0) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                            child: Text(
+                              isSearching ? 'Matches' : 'Conditions',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w600),
                             ),
-                      ),
-                    );
+                          ),
+                          _buildOptionTile(visible[listIndex]),
+                        ],
+                      );
+                    }
+                    return _buildOptionTile(visible[listIndex]);
                   }
-                  cursor++;
 
-                  final commonEnd = cursor + _common.length;
-                  if (index < commonEnd) {
-                    return _buildOptionTile(_common[index - cursor]);
-                  }
-                  cursor = commonEnd;
-
-                  if (_other.isNotEmpty) {
-                    if (index == cursor) {
+                  var cursor = visible.length;
+                  if (!isSearching && _visibleCount < _catalog.length) {
+                    if (listIndex == cursor) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: TextButton(
-                          onPressed: () => setState(() => _showMore = !_showMore),
+                          onPressed: () => setState(
+                            () => _visibleCount += _pageSize,
+                          ),
                           child: Text(
-                            _showMore ? l10n.profileShowLess : l10n.profileShowMore,
+                            'Load ${_pageSize} more (${_catalog.length - _visibleCount} remaining)',
                           ),
                         ),
                       );
                     }
-                    cursor++;
-
-                    if (_showMore) {
-                      if (index == cursor) {
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: Text(
-                            'More conditions',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        );
-                      }
-                      cursor++;
-
-                      final otherEnd = cursor + _other.length;
-                      if (index < otherEnd) {
-                        return _buildOptionTile(_other[index - cursor]);
-                      }
-                      cursor = otherEnd;
-                    }
+                    cursor += 1;
                   }
 
-                  final customIndex = index - cursor;
+                  final customIndex = listIndex - cursor;
                   final entry = _customLabels.entries.elementAt(customIndex);
-                  final checked = _selected.contains(entry.key);
                   return CheckboxListTile(
-                    value: checked,
+                    value: _selected.contains(entry.key),
                     title: Text(entry.value),
                     subtitle: const Text('Submitted for admin review'),
                     onChanged: (_) => _toggle(entry.key),
@@ -365,6 +409,11 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
                 },
               ),
             ),
+            if (_searching)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -383,7 +432,6 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
                       Expanded(
                         child: TextField(
                           controller: _otherController,
-                          focusNode: _otherFocusNode,
                           decoration: InputDecoration(
                             hintText: 'Type your condition',
                             filled: true,

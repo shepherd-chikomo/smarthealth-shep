@@ -53,6 +53,7 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
   late final TextEditingController _frequencyController;
   late final TextEditingController _quantityController;
   bool _reminderEnabled = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 8, minute: 0);
 
   @override
   void initState() {
@@ -71,6 +72,22 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
     _frequencyController.dispose();
     _quantityController.dispose();
     super.dispose();
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  Future<void> _pickReminderTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _reminderTime,
+    );
+    if (picked != null) {
+      setState(() => _reminderTime = picked);
+    }
   }
 
   void _confirm() {
@@ -94,6 +111,7 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
       quantity: quantity.isEmpty ? null : quantity,
       dosesPerDay: dosesPerDay,
       reminderEnabled: _reminderEnabled,
+      reminderTimes: _reminderEnabled ? [_formatTime(_reminderTime)] : const [],
     );
 
     Navigator.of(context).pop(
@@ -105,10 +123,9 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
   Widget build(BuildContext context) {
     final colors = HomeDashboardColors.of(context);
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
@@ -157,6 +174,14 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
             value: _reminderEnabled,
             onChanged: (value) => setState(() => _reminderEnabled = value),
           ),
+          if (_reminderEnabled)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Reminder time'),
+              subtitle: Text(_formatTime(_reminderTime)),
+              trailing: const Icon(Icons.schedule),
+              onTap: _pickReminderTime,
+            ),
           const SizedBox(height: 8),
           FilledButton(
             onPressed: _confirm,

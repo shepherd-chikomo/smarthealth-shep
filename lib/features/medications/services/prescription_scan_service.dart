@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smarthealth_shep/features/medications/utils/prescription_image_preprocess.dart';
 import 'package:smarthealth_shep/features/medications/utils/prescription_label_parser.dart';
 
 /// Device-local prescription label OCR — images never leave the device.
@@ -32,25 +33,45 @@ class PrescriptionScanService {
 
     final image = await _picker.pickImage(
       source: source,
-      imageQuality: 85,
-      maxWidth: 2048,
+      imageQuality: 92,
+      maxWidth: 3000,
     );
     if (image == null) return null;
 
+    String? preprocessedPath;
     try {
-      final input = InputImage.fromFilePath(image.path);
+      preprocessedPath = await PrescriptionImagePreprocess.prepareForOcr(
+        image.path,
+      );
+      final input = InputImage.fromFilePath(preprocessedPath);
       final result = await _recognizer.processImage(input);
-      final text = result.text.trim();
-      if (text.isEmpty) return null;
-      return _parser.parse(text);
+      final structured = _extractStructuredText(result);
+      if (structured.trim().isEmpty) return null;
+      return _parser.parse(structured, rawText: result.text);
     } finally {
       if (!kIsWeb) {
-        final file = File(image.path);
-        if (await file.exists()) {
-          await file.delete();
+        for (final path in {image.path, preprocessedPath}) {
+          if (path == null) continue;
+          final file = File(path);
+          if (await file.exists()) {
+            await file.delete();
+          }
         }
       }
     }
+  }
+
+  /// Prefer line-ordered text from ML Kit blocks over flat [RecognizedText.text].
+  String _extractStructuredText(RecognizedText result) {
+    final lines = <String>[];
+    for (final block in result.blocks) {
+      for (final line in block.lines) {
+        final text = line.text.trim();
+        if (text.isNotEmpty) lines.add(text);
+      }
+    }
+    if (lines.isEmpty) return result.text.trim();
+    return lines.join('\n');
   }
 
   Future<bool> _ensurePermission(ImageSource source) async {
