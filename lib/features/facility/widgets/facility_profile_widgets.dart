@@ -88,10 +88,6 @@ class FacilityProfileHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!facility.isVerified) ...[
-                const SizedBox(height: 8),
-                const UnverifiedListingBadge(label: 'Pending Verification'),
-              ],
               if (facility.description != null && facility.description!.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Text(
