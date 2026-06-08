@@ -33,7 +33,7 @@ ssh smarthealth-dev 'cd /opt/smarthealth && sh docker/scripts/healthcheck.sh'
 From Windows-hosted terminals, prefix with `wsl` if not already in a WSL shell.
 
 **Scope by change:**
-- Backend/import/geocode only → rebuild `smarthealth-api`
+- Backend/import/geocode only → rebuild `smarthealth-api`, then `docker compose restart nginx`
 - Admin UI → rebuild `smarthealth-admin`
 - Facility portal → rebuild `smarthealth-facility-portal`
 - SQL migrations under `supabase/migrations/` → run `smarthealth-migrate` before `up -d`
