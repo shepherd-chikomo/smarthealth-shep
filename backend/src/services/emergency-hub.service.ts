@@ -202,7 +202,10 @@ async function searchClassifiedEmergencyHospitals(options: {
        AND f.latitude IS NOT NULL
        AND f.longitude IS NOT NULL
        AND ${CLASSIFIED_HOSPITAL_SQL}
-       AND ${EMERGENCY_OFFERED_SQL}
+       AND (
+         ${EMERGENCY_OFFERED_SQL}
+         OR f.facility_category IN ('Central Hospital', 'Provincial Hospital')
+       )
        ${radiusClause}
      ORDER BY distance_km ASC
      LIMIT ${limitParam}`,
@@ -366,25 +369,6 @@ export async function getEmergencyHub(options: {
 
   const gridServices = dedupeGridServices([...nationalServices, ...nearbyGrid]);
 
-  const directoryFacilities: EmergencyHubFacility[] = directory.services
-    .filter((s) => s.serviceType === 'hospital_er')
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      serviceType: s.serviceType,
-      phone: s.phone,
-      alternatePhone: s.alternatePhone,
-      address: s.address,
-      city: s.city,
-      province: s.province,
-      latitude: s.latitude,
-      longitude: s.longitude,
-      distanceKm: s.distanceKm ?? 0,
-      is24Hours: s.is24Hours,
-      source: 'emergency_directory' as const,
-      referralLabel: null,
-    }));
-
   let classifiedHospitals = await searchClassifiedEmergencyHospitals({
     lat,
     lon,
@@ -403,11 +387,8 @@ export async function getEmergencyHub(options: {
     expandedSearch = classifiedHospitals.length > 0;
   }
 
-  // Hospitals section: classified facility tiers only. ER directory is a separate curated list.
-  let hospitalFacilities = classifiedHospitals;
-  if (hospitalFacilities.length === 0) {
-    hospitalFacilities = directoryFacilities;
-  }
+  // Hospitals section: classified facility tiers only.
+  const hospitalFacilities = classifiedHospitals;
 
   const ambulanceServices = await searchAmbulanceFacilities({
     lat,
