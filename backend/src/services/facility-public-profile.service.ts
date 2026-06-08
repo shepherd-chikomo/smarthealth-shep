@@ -10,7 +10,7 @@ import {
 } from '../lib/facility-profile-settings.js';
 import { effectiveFacilityTypes } from '../lib/facility-types.js';
 import { NotFoundError } from '../lib/errors.js';
-import { getNextAvailableSlot } from './availability.service.js';
+import { getNextAvailableSlot, facilityHasBookableSlots } from './availability.service.js';
 
 const HARARE_TZ = 'Africa/Harare';
 
@@ -140,8 +140,12 @@ export async function getPublicProfile(facilityId: string, distanceKm?: number) 
   });
 
   const openStatus = computeOpenStatus(hoursResult.rows);
-  const bookingEnabled =
-    profile.booking.enabled !== false && profile.smarthealthFeatures.onlineBooking !== false;
+  const bookingRequested =
+    profile.booking.enabled === true && profile.smarthealthFeatures.onlineBooking === true;
+  const hasAvailableSlots = bookingRequested
+    ? await facilityHasBookableSlots(facilityId)
+    : false;
+  const bookingEnabled = bookingRequested && hasAvailableSlots;
 
   return {
     facility: {

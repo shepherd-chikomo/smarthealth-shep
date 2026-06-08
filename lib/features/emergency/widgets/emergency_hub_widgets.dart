@@ -64,13 +64,11 @@ class EmergencyServiceGridCard extends StatelessWidget {
     required this.service,
     required this.distanceLabel,
     required this.onTap,
-    this.onCall,
   });
 
   final EmergencyService service;
   final String distanceLabel;
   final VoidCallback onTap;
-  final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) {
@@ -91,31 +89,34 @@ class EmergencyServiceGridCard extends StatelessWidget {
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 52,
-                  height: 52,
+                  width: 44,
+                  height: 44,
                   child: SvgPicture.asset(
                     emergencyIconAsset(service.kind),
-                    width: 52,
-                    height: 52,
+                    width: 44,
+                    height: 44,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
                   service.name,
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: HomeDashboardColors.of(context).textPrimary,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   distanceLabel,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
@@ -124,25 +125,12 @@ class EmergencyServiceGridCard extends StatelessWidget {
                   Text(
                     service.phone,
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: HomeDashboardColors.of(context).textPrimary,
-                    ),
-                  ),
-                ],
-                if (onCall != null) ...[
-                  const SizedBox(height: 8),
-                  FilledButton(
-                    onPressed: onCall,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.of(context).emergency,
-                      minimumSize: const Size(64, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                    ),
-                    child: const Text(
-                      'Call',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],

@@ -393,7 +393,7 @@ export async function getEmergencyHub(options: {
   });
 
   let expandedSearch = false;
-  if (classifiedHospitals.length === 0 && directoryFacilities.length === 0) {
+  if (classifiedHospitals.length === 0) {
     classifiedHospitals = await searchClassifiedEmergencyHospitals({
       lat,
       lon,
@@ -403,6 +403,12 @@ export async function getEmergencyHub(options: {
     expandedSearch = classifiedHospitals.length > 0;
   }
 
+  // Hospitals section: classified facility tiers only. ER directory is a separate curated list.
+  let hospitalFacilities = classifiedHospitals;
+  if (hospitalFacilities.length === 0) {
+    hospitalFacilities = directoryFacilities;
+  }
+
   const ambulanceServices = await searchAmbulanceFacilities({
     lat,
     lon,
@@ -410,9 +416,7 @@ export async function getEmergencyHub(options: {
     limit: 50,
   });
 
-  const merged = sortFacilities(
-    dedupeFacilities([...directoryFacilities, ...classifiedHospitals]),
-  );
+  const merged = sortFacilities(dedupeFacilities(hospitalFacilities));
 
   const offset = (page - 1) * limit;
   const pagedFacilities = merged.slice(offset, offset + limit);

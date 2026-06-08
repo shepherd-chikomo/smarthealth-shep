@@ -19,11 +19,16 @@ import 'package:url_launcher/url_launcher.dart';
 
 enum _EmergencyServiceFilter { all, ambulances }
 
-class EmergencyScreen extends ConsumerWidget {
+class EmergencyScreen extends ConsumerStatefulWidget {
   const EmergencyScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmergencyScreen> createState() => _EmergencyScreenState();
+}
+
+class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
+  @override
+  Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => EmergencyHubBloc(
         repository: EmergencyHubRepository(
@@ -35,14 +40,14 @@ class EmergencyScreen extends ConsumerWidget {
   }
 }
 
-class _EmergencyHubView extends StatefulWidget {
+class _EmergencyHubView extends ConsumerStatefulWidget {
   const _EmergencyHubView();
 
   @override
-  State<_EmergencyHubView> createState() => _EmergencyHubViewState();
+  ConsumerState<_EmergencyHubView> createState() => _EmergencyHubViewState();
 }
 
-class _EmergencyHubViewState extends State<_EmergencyHubView> {
+class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
   _EmergencyServiceFilter _filter = _EmergencyServiceFilter.all;
 
   Future<void> _call(String phone) async {
@@ -54,10 +59,29 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
   String? _sourceBadge(EmergencyFacility facility) {
     return switch (facility.source) {
       EmergencyFacilitySource.profileEmergency => 'Emergency dept',
-      EmergencyFacilitySource.emergencyDirectory => 'ER directory',
+      EmergencyFacilitySource.emergencyDirectory => null,
       EmergencyFacilitySource.governmentHospital => null,
       null => null,
     };
+  }
+
+  String _locationLabel(EmergencyHubState state) {
+    final l10n = AppLocalizations.of(context);
+    final origin =
+        state.searchOrigin ?? ref.read(searchOriginResolverProvider).readCached();
+    if (origin?.source == LocationSource.manual) {
+      final city = origin?.cityName;
+      return city != null && city.isNotEmpty
+          ? l10n.emergencySelectedLocation(city)
+          : l10n.emergencySelectedLocation('Harare');
+    }
+    return l10n.emergencyCurrentLocation;
+  }
+
+  bool _isManualLocation(EmergencyHubState state) {
+    final origin =
+        state.searchOrigin ?? ref.read(searchOriginResolverProvider).readCached();
+    return origin?.source == LocationSource.manual;
   }
 
   List<EmergencyService> _visibleServices(EmergencyHubState state) {
@@ -90,13 +114,9 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
     }
   }
 
-  Widget _locationPill(BuildContext context, EmergencyHubState state) {
+  Widget _locationBar(BuildContext context, EmergencyHubState state) {
     final l10n = AppLocalizations.of(context);
-    final origin = state.searchOrigin;
-    final isManual = origin?.source == LocationSource.manual;
-    final label = isManual
-        ? l10n.emergencySelectedLocation(origin?.cityName ?? '')
-        : l10n.emergencyCurrentLocation;
+    final isManual = _isManualLocation(state);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -110,7 +130,7 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              label,
+              _locationLabel(state),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -137,7 +157,24 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
     return AppShellScaffold(
       backgroundColor: HomeDashboardColors.of(context).background,
       appBar: AppBar(
-        title: Text(l10n.navEmergency),
+        title: BlocBuilder<EmergencyHubBloc, EmergencyHubState>(
+          builder: (context, state) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.navEmergency),
+                Text(
+                  _locationLabel(state),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: HomeDashboardColors.of(context).textSecondary,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
         backgroundColor: HomeDashboardColors.of(context).background,
       ),
       body: BlocBuilder<EmergencyHubBloc, EmergencyHubState>(
@@ -172,7 +209,7 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
               padding: const EdgeInsets.only(bottom: 24),
               children: [
                 EmergencyWarningBanner(message: l10n.emergencyWarningBanner),
-                if (!data.locationRequired) _locationPill(context, state),
+                _locationBar(context, state),
                 if (data.locationRequired)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -263,7 +300,7 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
-                        childAspectRatio: 0.95,
+                        childAspectRatio: 1.15,
                       ),
                       itemCount: visibleServices.length.clamp(0, 8),
                       itemBuilder: (context, index) {
@@ -277,9 +314,6 @@ class _EmergencyHubViewState extends State<_EmergencyHubView> {
                             '/emergency/service/${service.id}',
                             extra: service,
                           ),
-                          onCall: service.phone.trim().isNotEmpty
-                              ? () => _call(service.phone)
-                              : null,
                         );
                       },
                     ),

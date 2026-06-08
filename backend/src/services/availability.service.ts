@@ -327,3 +327,12 @@ export async function getNextAvailableSlot(
   }
   return null;
 }
+
+/** True when at least one bookable slot exists in the next [days] days. */
+export async function facilityHasBookableSlots(
+  facilityId: string,
+  days = 14,
+): Promise<boolean> {
+  const result = await getFacilityAvailability(facilityId, { days });
+  return result.days.some((day) => day.slots.length > 0);
+}

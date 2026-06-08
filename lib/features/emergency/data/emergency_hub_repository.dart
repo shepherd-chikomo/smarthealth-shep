@@ -304,7 +304,7 @@ class EmergencyHubRepository {
     if (referralLabel?.isNotEmpty == true) return referralLabel!;
     return switch (source) {
       'profile_emergency' => 'Emergency department',
-      'emergency_directory' => 'ER directory',
+      'emergency_directory' => 'Emergency directory',
       _ => serviceType == 'hospital_er'
           ? 'Hospital Emergency'
           : serviceType.replaceAll('_', ' '),
