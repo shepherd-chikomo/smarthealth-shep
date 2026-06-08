@@ -736,6 +736,72 @@ abstract class AppLocalizations {
   /// **'Offline · emergency numbers ready'**
   String get emergencyOfflineReady;
 
+  /// No description provided for @emergencyNearestServicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest Emergency Services'**
+  String get emergencyNearestServicesTitle;
+
+  /// No description provided for @emergencyHospitalsFacilitiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hospitals & Emergency Facilities'**
+  String get emergencyHospitalsFacilitiesTitle;
+
+  /// No description provided for @emergencyFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get emergencyFilterAll;
+
+  /// No description provided for @emergencyFilterAmbulances.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambulances'**
+  String get emergencyFilterAmbulances;
+
+  /// No description provided for @emergencySelectedLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location · {city}'**
+  String emergencySelectedLocation(String city);
+
+  /// No description provided for @emergencyCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get emergencyCurrentLocation;
+
+  /// No description provided for @emergencyUseCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location'**
+  String get emergencyUseCurrentLocation;
+
+  /// No description provided for @emergencyExpandedSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No facilities within 50 km — showing nearest 10.'**
+  String get emergencyExpandedSearchHint;
+
+  /// No description provided for @emergencyNoServicesNearby.
+  ///
+  /// In en, this message translates to:
+  /// **'No emergency service providers found nearby.'**
+  String get emergencyNoServicesNearby;
+
+  /// No description provided for @emergencyNoFacilitiesNearby.
+  ///
+  /// In en, this message translates to:
+  /// **'No hospitals or emergency departments found within 50 km.'**
+  String get emergencyNoFacilitiesNearby;
+
+  /// No description provided for @emergencyLocationPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to see nearest emergency services and hospitals.'**
+  String get emergencyLocationPrompt;
+
   /// No description provided for @onboardingSkip.
   ///
   /// In en, this message translates to:

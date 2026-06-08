@@ -43,6 +43,7 @@ export default function FacilityProfilePage() {
   });
 
   const [form, setForm] = useState<Record<string, string>>({});
+  const [facilityCategory, setFacilityCategory] = useState<string>('');
   const [facilityTypes, setFacilityTypes] = useState<string[]>([]);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [mapPosition, setMapPosition] = useState<MapPosition | null>(null);
@@ -68,6 +69,7 @@ export default function FacilityProfilePage() {
         ? [String(f.facilityType)]
         : [];
     setFacilityTypes(types);
+    setFacilityCategory(f.facilityCategory ? String(f.facilityCategory) : '');
 
     const lat = f.latitude != null ? Number(f.latitude) : null;
     const lng = f.longitude != null ? Number(f.longitude) : null;
@@ -87,6 +89,9 @@ export default function FacilityProfilePage() {
 
   const buildPayload = (locationMode?: 'manual' | 'geocode'): Record<string, unknown> => {
     const body: Record<string, unknown> = { ...form, facilityTypes };
+    if (facilityCategory) {
+      body.facilityCategory = facilityCategory;
+    }
     if (locationMode) body.locationMode = locationMode;
     if (locationMode === 'manual' && mapPosition) {
       body.latitude = mapPosition.lat;
@@ -150,6 +155,8 @@ export default function FacilityProfilePage() {
           facility={f}
           generalForm={form}
           setGeneralForm={setForm}
+          facilityCategory={facilityCategory}
+          setFacilityCategory={setFacilityCategory}
           facilityTypes={facilityTypes}
           toggleCategory={toggleCategory}
           categoryError={categoryError}

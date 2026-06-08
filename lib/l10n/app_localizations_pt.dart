@@ -354,6 +354,46 @@ class AppLocalizationsPt extends AppLocalizations {
   String get emergencyOfflineReady => 'Offline · emergency numbers ready';
 
   @override
+  String get emergencyNearestServicesTitle => 'Nearest Emergency Services';
+
+  @override
+  String get emergencyHospitalsFacilitiesTitle =>
+      'Hospitals & Emergency Facilities';
+
+  @override
+  String get emergencyFilterAll => 'All';
+
+  @override
+  String get emergencyFilterAmbulances => 'Ambulances';
+
+  @override
+  String emergencySelectedLocation(String city) {
+    return 'Selected location · $city';
+  }
+
+  @override
+  String get emergencyCurrentLocation => 'Current location';
+
+  @override
+  String get emergencyUseCurrentLocation => 'Use current location';
+
+  @override
+  String get emergencyExpandedSearchHint =>
+      'No facilities within 50 km — showing nearest 10.';
+
+  @override
+  String get emergencyNoServicesNearby =>
+      'No emergency service providers found nearby.';
+
+  @override
+  String get emergencyNoFacilitiesNearby =>
+      'No hospitals or emergency departments found within 50 km.';
+
+  @override
+  String get emergencyLocationPrompt =>
+      'Turn on location to see nearest emergency services and hospitals.';
+
+  @override
   String get onboardingSkip => 'Skip';
 
   @override

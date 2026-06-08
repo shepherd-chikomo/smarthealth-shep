@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { AMBULANCE_SERVICE_TYPE_VALUES } from './facility-classification.js';
 
 export const PRESET_FACILITY_SERVICES = [
   { key: 'gp', name: 'General Practice', iconKey: 'gp' },
@@ -48,6 +49,7 @@ export const facilityProfileSettingsSchema = z.object({
       is24Hour: z.boolean().optional(),
     })
     .default({}),
+  ambulanceServiceTypes: z.array(z.enum(AMBULANCE_SERVICE_TYPE_VALUES)).default([]),
   smarthealthFeatures: z
     .object({
       onlineBooking: z.boolean().optional(),
@@ -91,6 +93,7 @@ export function mergeProfileSettings(
     medicalAids: patch.medicalAids ?? current.medicalAids,
     accessibility: { ...current.accessibility, ...patch.accessibility },
     emergency: { ...current.emergency, ...patch.emergency },
+    ambulanceServiceTypes: patch.ambulanceServiceTypes ?? current.ambulanceServiceTypes,
     smarthealthFeatures: { ...current.smarthealthFeatures, ...patch.smarthealthFeatures },
     booking: { ...current.booking, ...patch.booking },
   });

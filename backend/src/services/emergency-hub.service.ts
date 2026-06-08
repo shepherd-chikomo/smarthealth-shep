@@ -1,30 +1,20 @@
 import { query } from '../lib/db.js';
+import { EMERGENCY_HOSPITAL_CLASSIFICATIONS } from '../lib/facility-classification.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
 import { getNationalEmergencyServices } from './national-emergency.service.js';
 import { searchEmergencyNearby } from './search.service.js';
 
 const GRID_SERVICE_TYPES = new Set(['ambulance', 'police', 'fire', 'disaster_response']);
 
-const GOV_HOSPITAL_SQL = `(
-  f.ownership_type ILIKE '%government%'
-  OR f.ownership_type ILIKE '%public%'
-  OR f.ownership_type ILIKE '%ministry%'
-  OR f.ownership_type ILIKE '%municipal%'
-  OR f.facility_category ILIKE '%central%'
-  OR f.facility_category ILIKE '%provincial%'
-  OR f.facility_category ILIKE '%district%'
-  OR f.facility_category ILIKE '%referral%'
-  OR f.name ILIKE '%hospital%'
-  OR f.name ILIKE '%general%'
-)`;
-
-const PROFILE_EMERGENCY_SQL = `(
+const EMERGENCY_OFFERED_SQL = `(
   COALESCE((f.settings->'profile'->'emergency'->>'department')::boolean, false)
   OR COALESCE((f.settings->'profile'->'emergency'->>'ambulance')::boolean, false)
   OR COALESCE((f.settings->'profile'->'emergency'->>'trauma')::boolean, false)
   OR COALESCE((f.settings->'profile'->'emergency'->>'icu')::boolean, false)
   OR COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false)
 )`;
+
+const CLASSIFIED_HOSPITAL_SQL = `f.facility_category IN (${EMERGENCY_HOSPITAL_CLASSIFICATIONS.map((c) => `'${c.replace(/'/g, "''")}'`).join(', ')})`;
 
 export type EmergencyHubFacilitySource =
   | 'emergency_directory'
@@ -64,6 +54,22 @@ export interface EmergencyHubGridService {
   isNational: boolean;
 }
 
+export interface EmergencyHubAmbulanceService {
+  id: string;
+  name: string;
+  serviceType: 'ambulance';
+  phone: string;
+  alternatePhone: string | null;
+  address: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  distanceKm: number;
+  ambulanceServiceTypes: string[];
+  is24Hours: boolean;
+}
+
 const SOURCE_PRIORITY: Record<EmergencyHubFacilitySource, number> = {
   emergency_directory: 0,
   profile_emergency: 1,
@@ -96,24 +102,122 @@ export function sortFacilities(items: EmergencyHubFacility[]): EmergencyHubFacil
   });
 }
 
-function dedupeGridServices(items: EmergencyHubGridService[]): EmergencyHubGridService[] {
-  const byType = new Map<string, EmergencyHubGridService>();
-  for (const item of items) {
-    const key = item.isNational ? `national:${item.serviceType}` : item.id;
-    const existing = byType.get(key);
-    if (!existing || (item.isNational && !existing.isNational)) {
-      byType.set(key, item);
-    }
-  }
-  return [...byType.values()];
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '');
 }
 
-async function searchGovernmentHospitals(options: {
+function isUuid(id: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
+export function dedupeGridServices(items: EmergencyHubGridService[]): EmergencyHubGridService[] {
+  const byKey = new Map<string, EmergencyHubGridService>();
+  for (const item of items) {
+    const key = item.isNational
+      ? `national:${item.serviceType}`
+      : `local:${item.serviceType}:${normalizePhone(item.phone)}`;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, item);
+      continue;
+    }
+    if (item.isNational && !existing.isNational) {
+      byKey.set(key, item);
+      continue;
+    }
+    if (!item.isNational && !existing.isNational) {
+      const preferItem = isUuid(existing.id) && !isUuid(item.id);
+      if (preferItem) byKey.set(key, item);
+    }
+  }
+  return [...byKey.values()];
+}
+
+type FacilityRow = {
+  id: string;
+  name: string;
+  phone: string | null;
+  whatsapp_phone: string | null;
+  address: string | null;
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  facility_category: string | null;
+  distance_km: number;
+  is_24_hour: boolean;
+};
+
+function mapClassifiedHospital(row: FacilityRow): EmergencyHubFacility {
+  return {
+    id: row.id,
+    name: row.name,
+    serviceType: 'hospital_er',
+    phone: row.phone ?? row.whatsapp_phone ?? '',
+    alternatePhone: null,
+    address: row.address,
+    city: row.city,
+    province: row.province,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    distanceKm: Number(row.distance_km),
+    is24Hours: row.is_24_hour,
+    source: 'government_hospital' as const,
+    referralLabel: row.facility_category,
+  };
+}
+
+async function searchClassifiedEmergencyHospitals(options: {
+  lat: number;
+  lon: number;
+  radiusKm: number | null;
+  limit: number;
+}): Promise<EmergencyHubFacility[]> {
+  const radiusClause =
+    options.radiusKm != null
+      ? `AND ST_DWithin(
+           ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
+           ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+           $3 * 1000
+         )`
+      : '';
+
+  const params: unknown[] = [options.lon, options.lat];
+  if (options.radiusKm != null) params.push(options.radiusKm);
+  params.push(options.limit);
+
+  const limitParam = options.radiusKm != null ? '$4' : '$3';
+
+  const result = await query<FacilityRow>(
+    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
+            f.latitude, f.longitude, f.facility_category,
+            COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) AS is_24_hour,
+            ST_Distance(
+              ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
+              ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
+            ) / 1000.0 AS distance_km
+     FROM public.facilities f
+     WHERE f.is_active = true
+       AND f.deleted_at IS NULL
+       AND f.latitude IS NOT NULL
+       AND f.longitude IS NOT NULL
+       AND ${CLASSIFIED_HOSPITAL_SQL}
+       AND ${EMERGENCY_OFFERED_SQL}
+       ${radiusClause}
+     ORDER BY distance_km ASC
+     LIMIT ${limitParam}`,
+    params,
+  );
+
+  return result.rows.map(mapClassifiedHospital);
+}
+
+async function searchAmbulanceFacilities(options: {
   lat: number;
   lon: number;
   radiusKm: number;
   limit: number;
-}): Promise<EmergencyHubFacility[]> {
+}): Promise<EmergencyHubAmbulanceService[]> {
   const result = await query<{
     id: string;
     name: string;
@@ -124,11 +228,21 @@ async function searchGovernmentHospitals(options: {
     province: string;
     latitude: number;
     longitude: number;
-    facility_category: string | null;
     distance_km: number;
+    ambulance_types: string[] | null;
+    is_24_hour: boolean;
   }>(
     `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
-            f.latitude, f.longitude, f.facility_category,
+            f.latitude, f.longitude,
+            COALESCE(
+              ARRAY(
+                SELECT jsonb_array_elements_text(
+                  COALESCE(f.settings->'profile'->'ambulanceServiceTypes', '[]'::jsonb)
+                )
+              ),
+              ARRAY[]::text[]
+            ) AS ambulance_types,
+            COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) AS is_24_hour,
             ST_Distance(
               ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
               ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
@@ -138,13 +252,7 @@ async function searchGovernmentHospitals(options: {
        AND f.deleted_at IS NULL
        AND f.latitude IS NOT NULL
        AND f.longitude IS NOT NULL
-       AND (
-         f.facility_type = 'hospital'
-         OR f.name ILIKE '%hospital%'
-         OR f.name ILIKE '%medical centre%'
-         OR f.name ILIKE '%medical center%'
-       )
-       AND ${GOV_HOSPITAL_SQL}
+       AND f.facility_category = 'Ambulance Service'
        AND ST_DWithin(
          ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
          ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
@@ -158,7 +266,7 @@ async function searchGovernmentHospitals(options: {
   return result.rows.map((row) => ({
     id: row.id,
     name: row.name,
-    serviceType: 'hospital_er',
+    serviceType: 'ambulance' as const,
     phone: row.phone ?? row.whatsapp_phone ?? '',
     alternatePhone: null,
     address: row.address,
@@ -167,71 +275,8 @@ async function searchGovernmentHospitals(options: {
     latitude: row.latitude,
     longitude: row.longitude,
     distanceKm: Number(row.distance_km),
-    is24Hours: false,
-    source: 'government_hospital' as const,
-    referralLabel: row.facility_category,
-  }));
-}
-
-async function searchProfileEmergencyFacilities(options: {
-  lat: number;
-  lon: number;
-  radiusKm: number;
-  limit: number;
-}): Promise<EmergencyHubFacility[]> {
-  const result = await query<{
-    id: string;
-    name: string;
-    phone: string | null;
-    whatsapp_phone: string | null;
-    address: string | null;
-    city: string;
-    province: string;
-    latitude: number;
-    longitude: number;
-    distance_km: number;
-    is_24_hour: boolean;
-  }>(
-    `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
-            f.latitude, f.longitude,
-            COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) AS is_24_hour,
-            ST_Distance(
-              ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
-              ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
-            ) / 1000.0 AS distance_km
-     FROM public.facilities f
-     WHERE f.is_active = true
-       AND f.deleted_at IS NULL
-       AND f.latitude IS NOT NULL
-       AND f.longitude IS NOT NULL
-       AND ${PROFILE_EMERGENCY_SQL}
-       AND ST_DWithin(
-         ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,
-         ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
-         $3 * 1000
-       )
-     ORDER BY
-       CASE WHEN COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) THEN 0 ELSE 1 END,
-       distance_km ASC
-     LIMIT $4`,
-    [options.lon, options.lat, options.radiusKm, options.limit],
-  );
-
-  return result.rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    serviceType: 'hospital_er',
-    phone: row.phone ?? row.whatsapp_phone ?? '',
-    alternatePhone: null,
-    address: row.address,
-    city: row.city,
-    province: row.province,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    distanceKm: Number(row.distance_km),
+    ambulanceServiceTypes: row.ambulance_types ?? [],
     is24Hours: row.is_24_hour,
-    source: 'profile_emergency' as const,
-    referralLabel: null,
   }));
 }
 
@@ -267,6 +312,8 @@ export async function getEmergencyHub(options: {
     return {
       services: national,
       facilities: [],
+      ambulanceServices: [],
+      expandedSearch: false,
       locationRequired: true,
       pagination: buildPaginationMeta(page, limit, 0),
     };
@@ -320,7 +367,7 @@ export async function getEmergencyHub(options: {
   const gridServices = dedupeGridServices([...nationalServices, ...nearbyGrid]);
 
   const directoryFacilities: EmergencyHubFacility[] = directory.services
-    .filter((s) => s.serviceType === 'hospital_er' || !GRID_SERVICE_TYPES.has(s.serviceType))
+    .filter((s) => s.serviceType === 'hospital_er')
     .map((s) => ({
       id: s.id,
       name: s.name,
@@ -338,13 +385,33 @@ export async function getEmergencyHub(options: {
       referralLabel: null,
     }));
 
-  const [govHospitals, profileEmergency] = await Promise.all([
-    searchGovernmentHospitals({ lat, lon, radiusKm, limit: 100 }),
-    searchProfileEmergencyFacilities({ lat, lon, radiusKm, limit: 100 }),
-  ]);
+  let classifiedHospitals = await searchClassifiedEmergencyHospitals({
+    lat,
+    lon,
+    radiusKm,
+    limit: 100,
+  });
+
+  let expandedSearch = false;
+  if (classifiedHospitals.length === 0 && directoryFacilities.length === 0) {
+    classifiedHospitals = await searchClassifiedEmergencyHospitals({
+      lat,
+      lon,
+      radiusKm: null,
+      limit: 10,
+    });
+    expandedSearch = classifiedHospitals.length > 0;
+  }
+
+  const ambulanceServices = await searchAmbulanceFacilities({
+    lat,
+    lon,
+    radiusKm,
+    limit: 50,
+  });
 
   const merged = sortFacilities(
-    dedupeFacilities([...directoryFacilities, ...govHospitals, ...profileEmergency]),
+    dedupeFacilities([...directoryFacilities, ...classifiedHospitals]),
   );
 
   const offset = (page - 1) * limit;
@@ -353,6 +420,8 @@ export async function getEmergencyHub(options: {
   return {
     services: gridServices,
     facilities: pagedFacilities,
+    ambulanceServices,
+    expandedSearch,
     locationRequired: false,
     pagination: buildPaginationMeta(page, limit, merged.length),
   };

@@ -402,9 +402,16 @@ export const emergencyHubFacilitySchema = emergencyServiceSchema.extend({
   referralLabel: z.string().nullable(),
 });
 
+export const emergencyHubAmbulanceServiceSchema = emergencyServiceSchema.extend({
+  serviceType: z.literal('ambulance'),
+  ambulanceServiceTypes: z.array(z.string()).default([]),
+});
+
 export const emergencyHubSchema = z.object({
   services: z.array(emergencyServiceSchema),
   facilities: z.array(emergencyHubFacilitySchema),
+  ambulanceServices: z.array(emergencyHubAmbulanceServiceSchema).default([]),
+  expandedSearch: z.boolean().default(false),
   locationRequired: z.boolean(),
   pagination: paginationMetaSchema,
 });

@@ -176,6 +176,22 @@
   "emergencyShowDirections": "Show Directions",
   "emergencyNearestProvider": "Nearest provider",
   "emergencyOfflineReady": "Offline · emergency numbers ready",
+  "emergencyNearestServicesTitle": "Nearest Emergency Services",
+  "emergencyHospitalsFacilitiesTitle": "Hospitals & Emergency Facilities",
+  "emergencyFilterAll": "All",
+  "emergencyFilterAmbulances": "Ambulances",
+  "emergencySelectedLocation": "Selected location · {city}",
+  "@emergencySelectedLocation": {
+    "placeholders": {
+      "city": { "type": "String" }
+    }
+  },
+  "emergencyCurrentLocation": "Current location",
+  "emergencyUseCurrentLocation": "Use current location",
+  "emergencyExpandedSearchHint": "No facilities within 50 km — showing nearest 10.",
+  "emergencyNoServicesNearby": "No emergency service providers found nearby.",
+  "emergencyNoFacilitiesNearby": "No hospitals or emergency departments found within 50 km.",
+  "emergencyLocationPrompt": "Turn on location to see nearest emergency services and hospitals.",
   "onboardingSkip": "Skip",
   "onboardingNext": "Next",
   "onboardingGetStarted": "Get started",

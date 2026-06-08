@@ -24,6 +24,7 @@ export type ProfileSettings = {
   medicalAids: { schemeKey: string; name: string; logoPath?: string }[];
   accessibility: Record<string, boolean | undefined>;
   emergency: Record<string, boolean | undefined>;
+  ambulanceServiceTypes: string[];
   smarthealthFeatures: Record<string, boolean | undefined>;
   booking: Record<string, unknown>;
 };

@@ -2,9 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_event.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_state.dart';
-import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_fallback_data.dart';
-import 'package:smarthealth_shep/features/emergency/models/emergency_hub_data.dart';
 import 'package:smarthealth_shep/features/emergency/data/emergency_hub_repository.dart';
 
 class EmergencyHubBloc extends Bloc<EmergencyHubEvent, EmergencyHubState> {
@@ -38,27 +36,36 @@ class EmergencyHubBloc extends Bloc<EmergencyHubEvent, EmergencyHubState> {
         clearError: true,
       ),
     );
-    await _fetch(emit, forceRefresh: false);
+    await _fetch(emit, forceRefresh: false, refreshGps: false);
   }
 
   Future<void> _onRefresh(
     RefreshEmergencyHub event,
     Emitter<EmergencyHubState> emit,
   ) async {
-    await _fetch(emit, forceRefresh: true);
+    await _fetch(
+      emit,
+      forceRefresh: true,
+      refreshGps: event.useCurrentLocation,
+    );
   }
 
   Future<void> _fetch(
     Emitter<EmergencyHubState> emit, {
     required bool forceRefresh,
+    required bool refreshGps,
   }) async {
     try {
       final online = await _isOnline();
-      final data = await _repository.loadHub(forceRefresh: forceRefresh);
+      final result = await _repository.loadHub(
+        forceRefresh: forceRefresh,
+        refreshGps: refreshGps,
+      );
       emit(
         state.copyWith(
           status: EmergencyHubStatus.loaded,
-          data: data,
+          data: result.data,
+          searchOrigin: result.searchOrigin,
           isOffline: !online,
         ),
       );

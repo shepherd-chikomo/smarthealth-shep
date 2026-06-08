@@ -64,11 +64,13 @@ class EmergencyServiceGridCard extends StatelessWidget {
     required this.service,
     required this.distanceLabel,
     required this.onTap,
+    this.onCall,
   });
 
   final EmergencyService service;
   final String distanceLabel;
   final VoidCallback onTap;
+  final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +119,33 @@ class EmergencyServiceGridCard extends StatelessWidget {
                     color: HomeDashboardColors.of(context).textSecondary,
                   ),
                 ),
+                if (service.phone.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    service.phone,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: HomeDashboardColors.of(context).textPrimary,
+                    ),
+                  ),
+                ],
+                if (onCall != null) ...[
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: onCall,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: HomeDashboardColors.of(context).emergency,
+                      minimumSize: const Size(64, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    child: const Text(
+                      'Call',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -192,7 +221,7 @@ class EmergencyFacilityCard extends StatelessWidget {
   final String distanceLabel;
   final String callLabel;
   final String directionsLabel;
-  final VoidCallback onCall;
+  final VoidCallback? onCall;
   final VoidCallback onDirections;
 
   @override
@@ -261,25 +290,27 @@ class EmergencyFacilityCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Semantics(
-                  button: true,
-                  label: callLabel,
-                  child: FilledButton(
-                    onPressed: onCall,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: HomeDashboardColors.of(context).emergency,
-                      minimumSize: const Size(72, 40),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                    child: Text(
-                      callLabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                if (onCall != null)
+                  Semantics(
+                    button: true,
+                    label: callLabel,
+                    child: FilledButton(
+                      onPressed: onCall,
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            HomeDashboardColors.of(context).emergency,
+                        minimumSize: const Size(72, 40),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      child: Text(
+                        callLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
             Align(
@@ -308,7 +339,7 @@ class EmergencyCallNowButton extends StatelessWidget {
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

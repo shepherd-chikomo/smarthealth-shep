@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EmergencyHubData {
 
- List<EmergencyService> get services; List<EmergencyFacility> get facilities; DateTime get cachedAt; bool get locationRequired;
+ List<EmergencyService> get services; List<EmergencyFacility> get facilities; List<EmergencyService> get ambulanceServices; DateTime get cachedAt; bool get locationRequired; bool get expandedSearch;
 /// Create a copy of EmergencyHubData
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $EmergencyHubDataCopyWith<EmergencyHubData> get copyWith => _$EmergencyHubDataCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmergencyHubData&&const DeepCollectionEquality().equals(other.services, services)&&const DeepCollectionEquality().equals(other.facilities, facilities)&&(identical(other.cachedAt, cachedAt) || other.cachedAt == cachedAt)&&(identical(other.locationRequired, locationRequired) || other.locationRequired == locationRequired));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmergencyHubData&&const DeepCollectionEquality().equals(other.services, services)&&const DeepCollectionEquality().equals(other.facilities, facilities)&&const DeepCollectionEquality().equals(other.ambulanceServices, ambulanceServices)&&(identical(other.cachedAt, cachedAt) || other.cachedAt == cachedAt)&&(identical(other.locationRequired, locationRequired) || other.locationRequired == locationRequired)&&(identical(other.expandedSearch, expandedSearch) || other.expandedSearch == expandedSearch));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(services),const DeepCollectionEquality().hash(facilities),cachedAt,locationRequired);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(services),const DeepCollectionEquality().hash(facilities),const DeepCollectionEquality().hash(ambulanceServices),cachedAt,locationRequired,expandedSearch);
 
 @override
 String toString() {
-  return 'EmergencyHubData(services: $services, facilities: $facilities, cachedAt: $cachedAt, locationRequired: $locationRequired)';
+  return 'EmergencyHubData(services: $services, facilities: $facilities, ambulanceServices: $ambulanceServices, cachedAt: $cachedAt, locationRequired: $locationRequired, expandedSearch: $expandedSearch)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $EmergencyHubDataCopyWith<$Res>  {
   factory $EmergencyHubDataCopyWith(EmergencyHubData value, $Res Function(EmergencyHubData) _then) = _$EmergencyHubDataCopyWithImpl;
 @useResult
 $Res call({
- List<EmergencyService> services, List<EmergencyFacility> facilities, DateTime cachedAt, bool locationRequired
+ List<EmergencyService> services, List<EmergencyFacility> facilities, List<EmergencyService> ambulanceServices, DateTime cachedAt, bool locationRequired, bool expandedSearch
 });
 
 
@@ -65,12 +65,14 @@ class _$EmergencyHubDataCopyWithImpl<$Res>
 
 /// Create a copy of EmergencyHubData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? services = null,Object? facilities = null,Object? cachedAt = null,Object? locationRequired = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? services = null,Object? facilities = null,Object? ambulanceServices = null,Object? cachedAt = null,Object? locationRequired = null,Object? expandedSearch = null,}) {
   return _then(_self.copyWith(
 services: null == services ? _self.services : services // ignore: cast_nullable_to_non_nullable
 as List<EmergencyService>,facilities: null == facilities ? _self.facilities : facilities // ignore: cast_nullable_to_non_nullable
-as List<EmergencyFacility>,cachedAt: null == cachedAt ? _self.cachedAt : cachedAt // ignore: cast_nullable_to_non_nullable
+as List<EmergencyFacility>,ambulanceServices: null == ambulanceServices ? _self.ambulanceServices : ambulanceServices // ignore: cast_nullable_to_non_nullable
+as List<EmergencyService>,cachedAt: null == cachedAt ? _self.cachedAt : cachedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,locationRequired: null == locationRequired ? _self.locationRequired : locationRequired // ignore: cast_nullable_to_non_nullable
+as bool,expandedSearch: null == expandedSearch ? _self.expandedSearch : expandedSearch // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -156,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  DateTime cachedAt,  bool locationRequired)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  List<EmergencyService> ambulanceServices,  DateTime cachedAt,  bool locationRequired,  bool expandedSearch)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EmergencyHubData() when $default != null:
-return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationRequired);case _:
+return $default(_that.services,_that.facilities,_that.ambulanceServices,_that.cachedAt,_that.locationRequired,_that.expandedSearch);case _:
   return orElse();
 
 }
@@ -177,10 +179,10 @@ return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationReq
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  DateTime cachedAt,  bool locationRequired)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  List<EmergencyService> ambulanceServices,  DateTime cachedAt,  bool locationRequired,  bool expandedSearch)  $default,) {final _that = this;
 switch (_that) {
 case _EmergencyHubData():
-return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationRequired);case _:
+return $default(_that.services,_that.facilities,_that.ambulanceServices,_that.cachedAt,_that.locationRequired,_that.expandedSearch);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +199,10 @@ return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationReq
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  DateTime cachedAt,  bool locationRequired)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<EmergencyService> services,  List<EmergencyFacility> facilities,  List<EmergencyService> ambulanceServices,  DateTime cachedAt,  bool locationRequired,  bool expandedSearch)?  $default,) {final _that = this;
 switch (_that) {
 case _EmergencyHubData() when $default != null:
-return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationRequired);case _:
+return $default(_that.services,_that.facilities,_that.ambulanceServices,_that.cachedAt,_that.locationRequired,_that.expandedSearch);case _:
   return null;
 
 }
@@ -212,7 +214,7 @@ return $default(_that.services,_that.facilities,_that.cachedAt,_that.locationReq
 @JsonSerializable()
 
 class _EmergencyHubData implements EmergencyHubData {
-  const _EmergencyHubData({required final  List<EmergencyService> services, required final  List<EmergencyFacility> facilities, required this.cachedAt, this.locationRequired = false}): _services = services,_facilities = facilities;
+  const _EmergencyHubData({required final  List<EmergencyService> services, required final  List<EmergencyFacility> facilities, final  List<EmergencyService> ambulanceServices = const [], required this.cachedAt, this.locationRequired = false, this.expandedSearch = false}): _services = services,_facilities = facilities,_ambulanceServices = ambulanceServices;
   factory _EmergencyHubData.fromJson(Map<String, dynamic> json) => _$EmergencyHubDataFromJson(json);
 
  final  List<EmergencyService> _services;
@@ -229,8 +231,16 @@ class _EmergencyHubData implements EmergencyHubData {
   return EqualUnmodifiableListView(_facilities);
 }
 
+ final  List<EmergencyService> _ambulanceServices;
+@override@JsonKey() List<EmergencyService> get ambulanceServices {
+  if (_ambulanceServices is EqualUnmodifiableListView) return _ambulanceServices;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_ambulanceServices);
+}
+
 @override final  DateTime cachedAt;
 @override@JsonKey() final  bool locationRequired;
+@override@JsonKey() final  bool expandedSearch;
 
 /// Create a copy of EmergencyHubData
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +255,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmergencyHubData&&const DeepCollectionEquality().equals(other._services, _services)&&const DeepCollectionEquality().equals(other._facilities, _facilities)&&(identical(other.cachedAt, cachedAt) || other.cachedAt == cachedAt)&&(identical(other.locationRequired, locationRequired) || other.locationRequired == locationRequired));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmergencyHubData&&const DeepCollectionEquality().equals(other._services, _services)&&const DeepCollectionEquality().equals(other._facilities, _facilities)&&const DeepCollectionEquality().equals(other._ambulanceServices, _ambulanceServices)&&(identical(other.cachedAt, cachedAt) || other.cachedAt == cachedAt)&&(identical(other.locationRequired, locationRequired) || other.locationRequired == locationRequired)&&(identical(other.expandedSearch, expandedSearch) || other.expandedSearch == expandedSearch));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_services),const DeepCollectionEquality().hash(_facilities),cachedAt,locationRequired);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_services),const DeepCollectionEquality().hash(_facilities),const DeepCollectionEquality().hash(_ambulanceServices),cachedAt,locationRequired,expandedSearch);
 
 @override
 String toString() {
-  return 'EmergencyHubData(services: $services, facilities: $facilities, cachedAt: $cachedAt, locationRequired: $locationRequired)';
+  return 'EmergencyHubData(services: $services, facilities: $facilities, ambulanceServices: $ambulanceServices, cachedAt: $cachedAt, locationRequired: $locationRequired, expandedSearch: $expandedSearch)';
 }
 
 
@@ -265,7 +275,7 @@ abstract mixin class _$EmergencyHubDataCopyWith<$Res> implements $EmergencyHubDa
   factory _$EmergencyHubDataCopyWith(_EmergencyHubData value, $Res Function(_EmergencyHubData) _then) = __$EmergencyHubDataCopyWithImpl;
 @override @useResult
 $Res call({
- List<EmergencyService> services, List<EmergencyFacility> facilities, DateTime cachedAt, bool locationRequired
+ List<EmergencyService> services, List<EmergencyFacility> facilities, List<EmergencyService> ambulanceServices, DateTime cachedAt, bool locationRequired, bool expandedSearch
 });
 
 
@@ -282,12 +292,14 @@ class __$EmergencyHubDataCopyWithImpl<$Res>
 
 /// Create a copy of EmergencyHubData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? services = null,Object? facilities = null,Object? cachedAt = null,Object? locationRequired = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? services = null,Object? facilities = null,Object? ambulanceServices = null,Object? cachedAt = null,Object? locationRequired = null,Object? expandedSearch = null,}) {
   return _then(_EmergencyHubData(
 services: null == services ? _self._services : services // ignore: cast_nullable_to_non_nullable
 as List<EmergencyService>,facilities: null == facilities ? _self._facilities : facilities // ignore: cast_nullable_to_non_nullable
-as List<EmergencyFacility>,cachedAt: null == cachedAt ? _self.cachedAt : cachedAt // ignore: cast_nullable_to_non_nullable
+as List<EmergencyFacility>,ambulanceServices: null == ambulanceServices ? _self._ambulanceServices : ambulanceServices // ignore: cast_nullable_to_non_nullable
+as List<EmergencyService>,cachedAt: null == cachedAt ? _self.cachedAt : cachedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,locationRequired: null == locationRequired ? _self.locationRequired : locationRequired // ignore: cast_nullable_to_non_nullable
+as bool,expandedSearch: null == expandedSearch ? _self.expandedSearch : expandedSearch // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

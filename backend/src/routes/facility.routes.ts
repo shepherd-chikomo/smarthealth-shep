@@ -2,6 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { facilityProfileSettingsPatchSchema } from '../lib/facility-profile-settings.js';
 import { FACILITY_TYPE_VALUES } from '../lib/facility-types.js';
+import { FACILITY_CLASSIFICATION_VALUES } from '../lib/facility-classification.js';
 import { ValidationError } from '../lib/errors.js';
 import { getRequestContext } from '../lib/request-context.js';
 import { facilityListQuerySchema, requireFacilityStaffAuth } from '../plugins/facility-guard.js';
@@ -66,6 +67,7 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
             email: z.string().optional(),
             website: z.string().optional(),
             facilityTypes: z.array(z.enum(FACILITY_TYPE_VALUES)).min(1).optional(),
+            facilityCategory: z.enum(FACILITY_CLASSIFICATION_VALUES).nullable().optional(),
             latitude: z.number().min(-90).max(90).optional(),
             longitude: z.number().min(-180).max(180).optional(),
             locationMode: z.enum(['manual', 'geocode']).optional(),

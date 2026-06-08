@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { type ProfileSettings } from '@/lib/facility-services';
+import {
+  AMBULANCE_SERVICE_TYPE_OPTIONS,
+  FACILITY_CLASSIFICATION_OPTIONS,
+} from '@/lib/facility-classifications';
 
 const TABS = [
   'General',
@@ -24,6 +28,7 @@ function emptySettings(): ProfileSettings {
     medicalAids: [],
     accessibility: {},
     emergency: {},
+    ambulanceServiceTypes: [],
     smarthealthFeatures: {},
     booking: { enabled: true, showSlots: true },
   };
@@ -35,6 +40,8 @@ export function FacilityProfileTabs({
   onSaveGeneral,
   generalForm,
   setGeneralForm,
+  facilityCategory,
+  setFacilityCategory,
   facilityTypes,
   toggleCategory,
   categoryError,
@@ -47,6 +54,8 @@ export function FacilityProfileTabs({
   onSaveGeneral: () => void;
   generalForm: Record<string, string>;
   setGeneralForm: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  facilityCategory: string;
+  setFacilityCategory: React.Dispatch<React.SetStateAction<string>>;
   facilityTypes: string[];
   toggleCategory: (id: string) => void;
   categoryError: string | null;
@@ -249,6 +258,32 @@ export function FacilityProfileTabs({
         >
           {[
             ['name', 'Name', 'name'],
+          ].map(([key, label, field]) => (
+            <div key={key}>
+              <label className="text-sm font-medium">{label}</label>
+              <input
+                className="input mt-1"
+                defaultValue={String(generalForm[field as string] ?? facility[field as string] ?? '')}
+                onChange={(e) => setGeneralForm((prev) => ({ ...prev, [key]: e.target.value }))}
+              />
+            </div>
+          ))}
+          <div>
+            <label className="text-sm font-medium">Facility Classification</label>
+            <select
+              className="input mt-1"
+              value={facilityCategory}
+              onChange={(e) => setFacilityCategory(e.target.value)}
+            >
+              <option value="">Select classification…</option>
+              {FACILITY_CLASSIFICATION_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+          {[
             ['description', 'Description', 'description'],
             ['addressLine1', 'Address', 'addressLine1'],
             ['city', 'City', 'city'],
@@ -458,6 +493,36 @@ export function FacilityProfileTabs({
               ))}
             </div>
           </section>
+          {facilityCategory === 'Ambulance Service' && (
+            <section>
+              <h3 className="font-semibold">Ambulance service types</h3>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Select all ambulance and rescue services your facility provides.
+              </p>
+              <div className="mt-2 grid gap-2">
+                {AMBULANCE_SERVICE_TYPE_OPTIONS.map(({ value, description }) => (
+                  <label key={value} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={effective.ambulanceServiceTypes?.includes(value) ?? false}
+                      onChange={() => {
+                        const current = effective.ambulanceServiceTypes ?? [];
+                        const next = current.includes(value)
+                          ? current.filter((t) => t !== value)
+                          : [...current, value];
+                        setSettings({ ...effective, ambulanceServiceTypes: next });
+                      }}
+                    />
+                    <span>
+                      <span className="font-medium">{value}</span>
+                      <span className="block text-[var(--muted)]">{description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
           <button
             type="button"
             className="btn-primary"
@@ -466,6 +531,7 @@ export function FacilityProfileTabs({
               saveSettings.mutate({
                 accessibility: effective.accessibility,
                 emergency: effective.emergency,
+                ambulanceServiceTypes: effective.ambulanceServiceTypes ?? [],
               })
             }
           >

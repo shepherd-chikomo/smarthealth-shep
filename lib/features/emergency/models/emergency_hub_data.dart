@@ -10,8 +10,10 @@ abstract class EmergencyHubData with _$EmergencyHubData {
   const factory EmergencyHubData({
     required List<EmergencyService> services,
     required List<EmergencyFacility> facilities,
+    @Default([]) List<EmergencyService> ambulanceServices,
     required DateTime cachedAt,
     @Default(false) bool locationRequired,
+    @Default(false) bool expandedSearch,
   }) = _EmergencyHubData;
 
   factory EmergencyHubData.fromJson(Map<String, dynamic> json) =>

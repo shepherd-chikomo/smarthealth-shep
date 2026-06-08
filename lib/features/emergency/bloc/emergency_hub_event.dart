@@ -12,5 +12,10 @@ final class LoadEmergencyHub extends EmergencyHubEvent {
 }
 
 final class RefreshEmergencyHub extends EmergencyHubEvent {
-  const RefreshEmergencyHub();
+  const RefreshEmergencyHub({this.useCurrentLocation = false});
+
+  final bool useCurrentLocation;
+
+  @override
+  List<Object?> get props => [useCurrentLocation];
 }

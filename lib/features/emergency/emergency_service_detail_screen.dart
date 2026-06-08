@@ -93,9 +93,23 @@ class EmergencyServiceDetailScreen extends StatelessWidget {
               ),
             ],
             Spacer(),
+            if (service.phone.trim().isNotEmpty) ...[
+              Text(
+                service.phone,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: HomeDashboardColors.of(context).textPrimary,
+                ),
+              ),
+              SizedBox(height: 16),
+            ],
             EmergencyCallNowButton(
               label: l10n.emergencyCallNow,
-              onPressed: () => _call(service.phone),
+              onPressed: service.phone.trim().isNotEmpty
+                  ? () => _call(service.phone)
+                  : null,
             ),
             SizedBox(height: 12),
             SizedBox(

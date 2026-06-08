@@ -32,6 +32,7 @@ import {
   effectiveFacilityTypes,
   normalizeFacilityTypes,
 } from '../lib/facility-types.js';
+import { normalizeFacilityClassification } from '../lib/facility-classification.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
 import type { RequestContext } from '../lib/request-context.js';
 
@@ -46,6 +47,7 @@ function mapFacility(row: Record<string, unknown>) {
     slug: row.slug,
     facilityType: row.facility_type,
     facilityTypes,
+    facilityCategory: row.facility_category != null ? String(row.facility_category) : null,
     description: row.description,
     addressLine1: row.address_line1,
     addressLine2: row.address_line2,
@@ -416,6 +418,7 @@ export async function updateFacilityProfile(
     email?: string;
     website?: string;
     facilityTypes?: string[];
+    facilityCategory?: string | null;
     latitude?: number;
     longitude?: number;
     locationMode?: 'manual' | 'geocode';
@@ -425,6 +428,13 @@ export async function updateFacilityProfile(
 
   const normalizedTypes =
     data.facilityTypes !== undefined ? normalizeFacilityTypes(data.facilityTypes) : null;
+
+  const normalizedCategory =
+    data.facilityCategory !== undefined
+      ? data.facilityCategory === null
+        ? null
+        : normalizeFacilityClassification(data.facilityCategory)
+      : undefined;
 
   const hasManualCoords =
     data.locationMode === 'manual' &&
@@ -464,6 +474,7 @@ export async function updateFacilityProfile(
        website = COALESCE($10, website),
        facility_type = COALESCE($11, facility_type),
        facility_types = COALESCE($12, facility_types),
+       facility_category = CASE WHEN $13::text IS NOT NULL THEN $13 ELSE facility_category END,
        updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -480,6 +491,7 @@ export async function updateFacilityProfile(
       data.website ?? null,
       normalizedTypes ? normalizedTypes[0] : null,
       normalizedTypes ? normalizedTypes : null,
+      normalizedCategory !== undefined ? normalizedCategory : null,
     ],
   );
 
