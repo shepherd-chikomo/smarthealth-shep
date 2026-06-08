@@ -82,7 +82,7 @@ class EmergencyServiceGridCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE5E8EE)),
@@ -92,15 +92,15 @@ class EmergencyServiceGridCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   child: SvgPicture.asset(
                     emergencyIconAsset(service.kind),
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   service.name,
                   textAlign: TextAlign.center,
@@ -201,11 +201,13 @@ class EmergencyFacilityCard extends StatelessWidget {
     required this.onCall,
     required this.onDirections,
     this.sourceBadge,
+    this.pendingVerification = false,
   });
 
   final String name;
   final String type;
   final String? sourceBadge;
+  final bool pendingVerification;
   final String distanceLabel;
   final String callLabel;
   final String directionsLabel;
@@ -253,16 +255,26 @@ class EmergencyFacilityCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: HomeDashboardColors.of(context)
-                                .emergencySoft,
+                            color: pendingVerification
+                                ? const Color(0xFFB45309).withValues(alpha: 0.12)
+                                : HomeDashboardColors.of(context)
+                                    .emergencySoft,
                             borderRadius: BorderRadius.circular(8),
+                            border: pendingVerification
+                                ? Border.all(
+                                    color: const Color(0xFFB45309)
+                                        .withValues(alpha: 0.4),
+                                  )
+                                : null,
                           ),
                           child: Text(
                             sourceBadge!,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: HomeDashboardColors.of(context).emergency,
+                              color: pendingVerification
+                                  ? const Color(0xFFB45309)
+                                  : HomeDashboardColors.of(context).emergency,
                             ),
                           ),
                         ),

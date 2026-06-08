@@ -21,6 +21,7 @@ _EmergencyFacility _$EmergencyFacilityFromJson(Map<String, dynamic> json) =>
         json['source'],
       ),
       referralLabel: json['referralLabel'] as String?,
+      pendingVerification: json['pendingVerification'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$EmergencyFacilityToJson(_EmergencyFacility instance) =>
@@ -35,6 +36,7 @@ Map<String, dynamic> _$EmergencyFacilityToJson(_EmergencyFacility instance) =>
       'is24Hours': instance.is24Hours,
       'source': _$EmergencyFacilitySourceEnumMap[instance.source],
       'referralLabel': instance.referralLabel,
+      'pendingVerification': instance.pendingVerification,
     };
 
 const _$EmergencyFacilitySourceEnumMap = {

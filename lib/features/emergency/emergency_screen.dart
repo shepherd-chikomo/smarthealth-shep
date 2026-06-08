@@ -57,6 +57,9 @@ class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
   }
 
   String? _sourceBadge(EmergencyFacility facility) {
+    if (facility.pendingVerification) {
+      return AppLocalizations.of(context).emergencyPendingVerification;
+    }
     return switch (facility.source) {
       EmergencyFacilitySource.profileEmergency => 'Emergency dept',
       EmergencyFacilitySource.emergencyDirectory => null,
@@ -64,6 +67,9 @@ class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
       null => null,
     };
   }
+
+  bool _isPendingVerificationBadge(EmergencyFacility facility) =>
+      facility.pendingVerification;
 
   String _locationLabel(EmergencyHubState state) {
     final l10n = AppLocalizations.of(context);
@@ -300,7 +306,7 @@ class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
-                        childAspectRatio: 1.15,
+                        childAspectRatio: 0.82,
                       ),
                       itemCount: visibleServices.length.clamp(0, 8),
                       itemBuilder: (context, index) {
@@ -360,6 +366,7 @@ class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
                       name: facility.name,
                       type: facility.type,
                       sourceBadge: _sourceBadge(facility),
+                      pendingVerification: _isPendingVerificationBadge(facility),
                       distanceLabel: l10n.homeDistanceKm(facility.distanceKm),
                       callLabel: l10n.emergencyCall,
                       directionsLabel: l10n.emergencyDirections,

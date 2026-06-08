@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EmergencyFacility {
 
- String get id; String get name; String get type; double get distanceKm; String get phone; double? get latitude; double? get longitude; bool get is24Hours; EmergencyFacilitySource? get source; String? get referralLabel;
+ String get id; String get name; String get type; double get distanceKm; String get phone; double? get latitude; double? get longitude; bool get is24Hours; EmergencyFacilitySource? get source; String? get referralLabel; bool get pendingVerification;
 /// Create a copy of EmergencyFacility
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $EmergencyFacilityCopyWith<EmergencyFacility> get copyWith => _$EmergencyFacilit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmergencyFacility&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.is24Hours, is24Hours) || other.is24Hours == is24Hours)&&(identical(other.source, source) || other.source == source)&&(identical(other.referralLabel, referralLabel) || other.referralLabel == referralLabel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EmergencyFacility&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.is24Hours, is24Hours) || other.is24Hours == is24Hours)&&(identical(other.source, source) || other.source == source)&&(identical(other.referralLabel, referralLabel) || other.referralLabel == referralLabel)&&(identical(other.pendingVerification, pendingVerification) || other.pendingVerification == pendingVerification));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,distanceKm,phone,latitude,longitude,is24Hours,source,referralLabel);
+int get hashCode => Object.hash(runtimeType,id,name,type,distanceKm,phone,latitude,longitude,is24Hours,source,referralLabel,pendingVerification);
 
 @override
 String toString() {
-  return 'EmergencyFacility(id: $id, name: $name, type: $type, distanceKm: $distanceKm, phone: $phone, latitude: $latitude, longitude: $longitude, is24Hours: $is24Hours, source: $source, referralLabel: $referralLabel)';
+  return 'EmergencyFacility(id: $id, name: $name, type: $type, distanceKm: $distanceKm, phone: $phone, latitude: $latitude, longitude: $longitude, is24Hours: $is24Hours, source: $source, referralLabel: $referralLabel, pendingVerification: $pendingVerification)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $EmergencyFacilityCopyWith<$Res>  {
   factory $EmergencyFacilityCopyWith(EmergencyFacility value, $Res Function(EmergencyFacility) _then) = _$EmergencyFacilityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String type, double distanceKm, String phone, double? latitude, double? longitude, bool is24Hours, EmergencyFacilitySource? source, String? referralLabel
+ String id, String name, String type, double distanceKm, String phone, double? latitude, double? longitude, bool is24Hours, EmergencyFacilitySource? source, String? referralLabel, bool pendingVerification
 });
 
 
@@ -65,7 +65,7 @@ class _$EmergencyFacilityCopyWithImpl<$Res>
 
 /// Create a copy of EmergencyFacility
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? distanceKm = null,Object? phone = null,Object? latitude = freezed,Object? longitude = freezed,Object? is24Hours = null,Object? source = freezed,Object? referralLabel = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? distanceKm = null,Object? phone = null,Object? latitude = freezed,Object? longitude = freezed,Object? is24Hours = null,Object? source = freezed,Object? referralLabel = freezed,Object? pendingVerification = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -77,7 +77,8 @@ as double?,longitude: freezed == longitude ? _self.longitude : longitude // igno
 as double?,is24Hours: null == is24Hours ? _self.is24Hours : is24Hours // ignore: cast_nullable_to_non_nullable
 as bool,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as EmergencyFacilitySource?,referralLabel: freezed == referralLabel ? _self.referralLabel : referralLabel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,pendingVerification: null == pendingVerification ? _self.pendingVerification : pendingVerification // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -162,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel,  bool pendingVerification)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EmergencyFacility() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel);case _:
+return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel,_that.pendingVerification);case _:
   return orElse();
 
 }
@@ -183,10 +184,10 @@ return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel,  bool pendingVerification)  $default,) {final _that = this;
 switch (_that) {
 case _EmergencyFacility():
-return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel);case _:
+return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel,_that.pendingVerification);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +204,10 @@ return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String type,  double distanceKm,  String phone,  double? latitude,  double? longitude,  bool is24Hours,  EmergencyFacilitySource? source,  String? referralLabel,  bool pendingVerification)?  $default,) {final _that = this;
 switch (_that) {
 case _EmergencyFacility() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel);case _:
+return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_that.latitude,_that.longitude,_that.is24Hours,_that.source,_that.referralLabel,_that.pendingVerification);case _:
   return null;
 
 }
@@ -218,7 +219,7 @@ return $default(_that.id,_that.name,_that.type,_that.distanceKm,_that.phone,_tha
 @JsonSerializable()
 
 class _EmergencyFacility implements EmergencyFacility {
-  const _EmergencyFacility({required this.id, required this.name, required this.type, required this.distanceKm, required this.phone, this.latitude, this.longitude, this.is24Hours = true, this.source, this.referralLabel});
+  const _EmergencyFacility({required this.id, required this.name, required this.type, required this.distanceKm, required this.phone, this.latitude, this.longitude, this.is24Hours = true, this.source, this.referralLabel, this.pendingVerification = false});
   factory _EmergencyFacility.fromJson(Map<String, dynamic> json) => _$EmergencyFacilityFromJson(json);
 
 @override final  String id;
@@ -231,6 +232,7 @@ class _EmergencyFacility implements EmergencyFacility {
 @override@JsonKey() final  bool is24Hours;
 @override final  EmergencyFacilitySource? source;
 @override final  String? referralLabel;
+@override@JsonKey() final  bool pendingVerification;
 
 /// Create a copy of EmergencyFacility
 /// with the given fields replaced by the non-null parameter values.
@@ -245,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmergencyFacility&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.is24Hours, is24Hours) || other.is24Hours == is24Hours)&&(identical(other.source, source) || other.source == source)&&(identical(other.referralLabel, referralLabel) || other.referralLabel == referralLabel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EmergencyFacility&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.distanceKm, distanceKm) || other.distanceKm == distanceKm)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.latitude, latitude) || other.latitude == latitude)&&(identical(other.longitude, longitude) || other.longitude == longitude)&&(identical(other.is24Hours, is24Hours) || other.is24Hours == is24Hours)&&(identical(other.source, source) || other.source == source)&&(identical(other.referralLabel, referralLabel) || other.referralLabel == referralLabel)&&(identical(other.pendingVerification, pendingVerification) || other.pendingVerification == pendingVerification));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,distanceKm,phone,latitude,longitude,is24Hours,source,referralLabel);
+int get hashCode => Object.hash(runtimeType,id,name,type,distanceKm,phone,latitude,longitude,is24Hours,source,referralLabel,pendingVerification);
 
 @override
 String toString() {
-  return 'EmergencyFacility(id: $id, name: $name, type: $type, distanceKm: $distanceKm, phone: $phone, latitude: $latitude, longitude: $longitude, is24Hours: $is24Hours, source: $source, referralLabel: $referralLabel)';
+  return 'EmergencyFacility(id: $id, name: $name, type: $type, distanceKm: $distanceKm, phone: $phone, latitude: $latitude, longitude: $longitude, is24Hours: $is24Hours, source: $source, referralLabel: $referralLabel, pendingVerification: $pendingVerification)';
 }
 
 
@@ -265,7 +267,7 @@ abstract mixin class _$EmergencyFacilityCopyWith<$Res> implements $EmergencyFaci
   factory _$EmergencyFacilityCopyWith(_EmergencyFacility value, $Res Function(_EmergencyFacility) _then) = __$EmergencyFacilityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String type, double distanceKm, String phone, double? latitude, double? longitude, bool is24Hours, EmergencyFacilitySource? source, String? referralLabel
+ String id, String name, String type, double distanceKm, String phone, double? latitude, double? longitude, bool is24Hours, EmergencyFacilitySource? source, String? referralLabel, bool pendingVerification
 });
 
 
@@ -282,7 +284,7 @@ class __$EmergencyFacilityCopyWithImpl<$Res>
 
 /// Create a copy of EmergencyFacility
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? distanceKm = null,Object? phone = null,Object? latitude = freezed,Object? longitude = freezed,Object? is24Hours = null,Object? source = freezed,Object? referralLabel = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? distanceKm = null,Object? phone = null,Object? latitude = freezed,Object? longitude = freezed,Object? is24Hours = null,Object? source = freezed,Object? referralLabel = freezed,Object? pendingVerification = null,}) {
   return _then(_EmergencyFacility(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -294,7 +296,8 @@ as double?,longitude: freezed == longitude ? _self.longitude : longitude // igno
 as double?,is24Hours: null == is24Hours ? _self.is24Hours : is24Hours // ignore: cast_nullable_to_non_nullable
 as bool,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as EmergencyFacilitySource?,referralLabel: freezed == referralLabel ? _self.referralLabel : referralLabel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,pendingVerification: null == pendingVerification ? _self.pendingVerification : pendingVerification // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

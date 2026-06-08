@@ -25,6 +25,7 @@ abstract class EmergencyFacility with _$EmergencyFacility {
     @Default(true) bool is24Hours,
     EmergencyFacilitySource? source,
     String? referralLabel,
+    @Default(false) bool pendingVerification,
   }) = _EmergencyFacility;
 
   factory EmergencyFacility.fromJson(Map<String, dynamic> json) =>

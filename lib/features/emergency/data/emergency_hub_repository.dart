@@ -255,6 +255,7 @@ class EmergencyHubRepository {
           is24Hours: map['is24Hours'] as bool? ?? false,
           source: _parseSource(map['source'] as String?),
           referralLabel: referralLabel,
+          pendingVerification: map['pendingVerification'] as bool? ?? false,
         ),
       );
     }

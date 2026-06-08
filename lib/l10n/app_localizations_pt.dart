@@ -378,6 +378,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get emergencyUseCurrentLocation => 'Use current location';
 
   @override
+  String get emergencyPendingVerification => 'Pending Verification';
+
+  @override
   String get emergencyExpandedSearchHint =>
       'No facilities within 50 km — showing nearest 10.';
 

@@ -778,6 +778,12 @@ abstract class AppLocalizations {
   /// **'Use current location'**
   String get emergencyUseCurrentLocation;
 
+  /// No description provided for @emergencyPendingVerification.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Verification'**
+  String get emergencyPendingVerification;
+
   /// No description provided for @emergencyExpandedSearchHint.
   ///
   /// In en, this message translates to:

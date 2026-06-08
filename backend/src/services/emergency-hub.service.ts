@@ -36,6 +36,7 @@ export interface EmergencyHubFacility {
   is24Hours: boolean;
   source: EmergencyHubFacilitySource;
   referralLabel: string | null;
+  pendingVerification: boolean;
 }
 
 export interface EmergencyHubGridService {
@@ -146,6 +147,8 @@ type FacilityRow = {
   facility_category: string | null;
   distance_km: number;
   is_24_hour: boolean;
+  is_verified: boolean;
+  verification_status: string;
 };
 
 function mapClassifiedHospital(row: FacilityRow): EmergencyHubFacility {
@@ -164,6 +167,8 @@ function mapClassifiedHospital(row: FacilityRow): EmergencyHubFacility {
     is24Hours: row.is_24_hour,
     source: 'government_hospital' as const,
     referralLabel: row.facility_category,
+    pendingVerification:
+      row.verification_status !== 'verified' || row.is_verified !== true,
   };
 }
 
@@ -191,6 +196,8 @@ async function searchClassifiedEmergencyHospitals(options: {
   const result = await query<FacilityRow>(
     `SELECT f.id, f.name, f.phone, f.whatsapp_phone, f.address_line1 AS address, f.city, f.province,
             f.latitude, f.longitude, f.facility_category,
+            f.is_verified,
+            f.verification_status::text AS verification_status,
             COALESCE((f.settings->'profile'->'emergency'->>'is24Hour')::boolean, false) AS is_24_hour,
             ST_Distance(
               ST_SetSRID(ST_MakePoint(f.longitude, f.latitude), 4326)::geography,

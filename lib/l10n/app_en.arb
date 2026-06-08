@@ -188,6 +188,7 @@
   },
   "emergencyCurrentLocation": "Current location",
   "emergencyUseCurrentLocation": "Use current location",
+  "emergencyPendingVerification": "Pending Verification",
   "emergencyExpandedSearchHint": "No facilities within 50 km — showing nearest 10.",
   "emergencyNoServicesNearby": "No emergency service providers found nearby.",
   "emergencyNoFacilitiesNearby": "No hospitals or emergency departments found within 50 km.",
