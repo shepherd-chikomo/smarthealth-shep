@@ -80,6 +80,11 @@ export function ClaimWizard() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [skipDocuments, setSkipDocuments] = useState(false);
 
+  useEffect(() => {
+    const prefill = params.get('email')?.trim();
+    if (prefill) setEmail(prefill);
+  }, [params]);
+
   const applyRegistryMatch = useCallback(async () => {
     try {
       const match = await claimApi.registryEmailMatch();
