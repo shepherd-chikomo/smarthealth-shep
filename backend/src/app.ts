@@ -27,6 +27,8 @@ import { adminRoutes } from './routes/admin.routes.js';
 import { analyticsRoutes } from './routes/analytics.routes.js';
 import { searchRoutes } from './routes/search.routes.js';
 import { catalogRoutes } from './routes/catalog.routes.js';
+import { clinicalRoutes } from './routes/clinical.routes.js';
+import { syncRoutes } from './routes/sync.routes.js';
 import { facilityRoutes } from './routes/facility.routes.js';
 import { claimsRoutes } from './routes/claims.routes.js';
 import { z } from 'zod';
@@ -143,6 +145,8 @@ export async function buildApp() {
     await api.register(claimsRoutes);
     await api.register(searchRoutes);
     await api.register(catalogRoutes);
+    await api.register(clinicalRoutes);
+    await api.register(syncRoutes);
   }, { prefix: env.API_PREFIX });
 
   return app;

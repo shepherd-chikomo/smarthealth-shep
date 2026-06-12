@@ -158,3 +158,54 @@ export async function listMedicalAidCatalog() {
     })),
   };
 }
+
+const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
+  ENABLE_CLAIMS_MODULE: false,
+  ENABLE_VOICE_DICTATION: true,
+  ENABLE_EDLIZ: true,
+  ENABLE_ICD11: true,
+  ENABLE_PROVIDER_NETWORK: false,
+  ENABLE_CONNECT: false,
+  ENABLE_SWITCH: false,
+  ENABLE_INSIGHTS: false,
+  ENABLE_TELEMEDICINE: false,
+  ENABLE_AI_COPILOT: false,
+};
+
+export async function listPublicFeatureFlags() {
+  const result = await query<{ key: string; value: unknown }>(
+    `SELECT key, value FROM public.app_settings
+     WHERE scope = 'feature_flags' AND is_public = true`,
+  );
+
+  const flags = { ...DEFAULT_FEATURE_FLAGS };
+  for (const row of result.rows) {
+    const val = row.value;
+    if (typeof val === 'boolean') {
+      flags[row.key] = val;
+    } else if (val && typeof val === 'object' && 'enabled' in (val as object)) {
+      flags[row.key] = Boolean((val as { enabled: boolean }).enabled);
+    }
+  }
+
+  return { flags };
+}
+
+export async function searchMedications(q: string, limit: number) {
+  const result = await query<{ id: string; name: string; formulation: string | null; default_dosage: string | null }>(
+    `SELECT id, name, formulation, default_dosage
+     FROM public.medications_catalog
+     WHERE name ILIKE $1
+     ORDER BY name ASC LIMIT $2`,
+    [`%${q}%`, limit],
+  );
+
+  return {
+    items: result.rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      formulation: r.formulation,
+      defaultDosage: r.default_dosage,
+    })),
+  };
+}

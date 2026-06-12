@@ -1,0 +1,20 @@
+name: smarthealth_core
+description: Shared SmartHealth infrastructure — auth, network, theme, FHIR, security.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  connectivity_plus: ^7.1.1
+  dio: ^5.9.2
+  flutter_riverpod: ^3.3.1
+  flutter_secure_storage: ^9.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

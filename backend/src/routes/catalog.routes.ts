@@ -200,4 +200,102 @@ export const catalogRoutes: FastifyPluginAsyncZod = async (app) => {
     },
     async () => catalogService.listMedicalAidCatalog(),
   );
+
+  app.get(
+    '/catalog/feature-flags',
+    {
+      schema: {
+        tags: ['Catalog'],
+        summary: 'Public feature flags for mobile apps',
+        response: {
+          200: z.object({
+            flags: z.record(z.boolean()),
+          }),
+        },
+      },
+    },
+    async () => catalogService.listPublicFeatureFlags(),
+  );
+
+  app.get(
+    '/catalog/icd11/search',
+    {
+      schema: {
+        tags: ['Catalog'],
+        querystring: z.object({
+          q: z.string().default(''),
+          limit: z.coerce.number().int().min(1).max(50).default(20),
+        }),
+        response: {
+          200: z.object({
+            items: z.array(
+              z.object({ code: z.string(), description: z.string() }),
+            ),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const { searchIcd11 } = await import('../services/clinical.service.js');
+      return {
+        items: await searchIcd11(request.query.q, request.query.limit),
+      };
+    },
+  );
+
+  app.get(
+    '/catalog/edliz',
+    {
+      schema: {
+        tags: ['Catalog'],
+        querystring: z.object({ icd11Code: z.string().min(1) }),
+        response: {
+          200: z.object({
+            items: z.array(
+              z.object({
+                id: z.string().uuid(),
+                icd11_code: z.string(),
+                first_line: z.string(),
+                alternative: z.string().nullable(),
+                recommended_dosage: z.string().nullable(),
+                recommended_formulation: z.string().nullable(),
+              }),
+            ),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const { getEdlizForDiagnosis } = await import('../services/clinical.service.js');
+      const rows = await getEdlizForDiagnosis(request.query.icd11Code);
+      return {
+        items: rows.map((row) => ({
+          id: String(row.id),
+          icd11_code: String(row.icd11_code),
+          first_line: String(row.first_line),
+          alternative: row.alternative != null ? String(row.alternative) : null,
+          recommended_dosage:
+            row.recommended_dosage != null ? String(row.recommended_dosage) : null,
+          recommended_formulation:
+            row.recommended_formulation != null
+              ? String(row.recommended_formulation)
+              : null,
+        })),
+      };
+    },
+  );
+
+  app.get(
+    '/catalog/medications',
+    {
+      schema: {
+        tags: ['Catalog'],
+        querystring: z.object({
+          q: z.string().default(''),
+          limit: z.coerce.number().int().min(1).max(50).default(20),
+        }),
+      },
+    },
+    async (request) => catalogService.searchMedications(request.query.q, request.query.limit),
+  );
 };
