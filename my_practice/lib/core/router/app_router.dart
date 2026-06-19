@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
+import 'package:my_practice/design_system/screens/design_preview_screen.dart';
+import 'package:my_practice/design_system/screens/design_system_screen.dart';
+import 'package:my_practice/features/auth/facility_picker_screen.dart';
 import 'package:my_practice/features/auth/login_screen.dart';
 import 'package:my_practice/features/auth/otp_screen.dart';
 import 'package:my_practice/features/calendar/calendar_screen.dart';
@@ -27,11 +30,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/login') || loc.startsWith('/otp');
       final isSplash = loc == '/splash';
+      final isDesignRoute =
+          loc.startsWith('/design-preview') || loc.startsWith('/design-system');
+
+      if (isDesignRoute) return null;
 
       if (auth.status == AuthStatus.unknown || isSplash) return null;
 
       if (auth.status == AuthStatus.unauthenticated && !isAuthRoute) {
         return '/login';
+      }
+
+      if (auth.status == AuthStatus.needsFacility &&
+          loc != '/facility-picker') {
+        return '/facility-picker';
       }
 
       if (auth.status == AuthStatus.authenticated && isAuthRoute) {
@@ -41,9 +53,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/design-preview',
+        builder: (_, __) => const DesignPreviewScreen(),
+      ),
+      GoRoute(
+        path: '/design-system',
+        builder: (_, __) => const DesignSystemScreen(),
+      ),
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/otp', builder: (_, __) => const OtpScreen()),
+      GoRoute(
+        path: '/facility-picker',
+        builder: (_, __) => const FacilityPickerScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (_, __, navigationShell) =>
             PracticeShell(navigationShell: navigationShell),
@@ -97,6 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => EncounterScreen(
           patientId: state.pathParameters['patientId']!,
           consultationId: state.uri.queryParameters['consultationId'],
+          queueEntryId: state.uri.queryParameters['queueEntryId'],
         ),
       ),
       GoRoute(path: '/facility', builder: (_, __) => const FacilityScreen()),

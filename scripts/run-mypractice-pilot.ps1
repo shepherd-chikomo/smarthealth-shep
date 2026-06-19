@@ -22,16 +22,14 @@ if ($DeviceId) {
 }
 
 $apiUrl = if ($ServerUrl.EndsWith("/v1")) { $ServerUrl } else { "$ServerUrl/v1" }
-Write-Host "MyPractice -> $apiUrl [DEV_MODE + seed data]"
+Write-Host "MyPractice PILOT -> $apiUrl [real auth + sync, no seed bypass]"
 
 Set-Location (Join-Path $RepoRoot "my_practice")
 
 $runArgs = @(
   "run",
-  "--dart-define=DEV_MODE=true",
   "--dart-define=API_BASE_URL=$apiUrl",
-  "--dart-define=TRUST_DEV_CERTIFICATES=true",
-  "--dart-define=SKIP_AUTH=true"
+  "--dart-define=TRUST_DEV_CERTIFICATES=true"
 )
 
 if ($DeviceId) {

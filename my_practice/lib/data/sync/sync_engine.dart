@@ -27,6 +27,18 @@ class SyncEngine {
     return results.any((r) => r != ConnectivityResult.none);
   }
 
+  Future<int> pendingCount() async {
+    return (await _db.select(_db.syncQueue).get()).length;
+  }
+
+  Future<void> syncAll(String facilityId) async {
+    if (!await isOnline) return;
+    await flushQueue();
+    await bootstrap(facilityId);
+    await pullDelta(facilityId);
+    await flushQueue();
+  }
+
   Future<void> enqueue({
     required String entityType,
     required String entityId,
@@ -88,9 +100,21 @@ class SyncEngine {
           ))
         .getSingleOrNull();
 
-    final since = cursor?.lastSyncedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final since =
+        cursor?.lastSyncedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
     final delta = await _api.delta(since);
     final now = DateTime.now().toUtc();
+
+    await _applyAppointments(
+      delta['appointments'] as List<dynamic>? ?? [],
+      facilityId,
+      now,
+    );
+    await _applyQueue(
+      delta['queue'] as List<dynamic>? ?? [],
+      facilityId,
+      now,
+    );
 
     await _db.into(_db.syncCursors).insertOnConflictUpdate(
           SyncCursorsCompanion.insert(
@@ -99,26 +123,6 @@ class SyncEngine {
             lastSyncedAt: now,
           ),
         );
-
-    // Apply delta payloads — simplified merge for bootstrap entities.
-    final appointments = delta['appointments'] as List<dynamic>? ?? [];
-    for (final raw in appointments) {
-      final m = raw as Map<String, dynamic>;
-      await _db.into(_db.appointments).insertOnConflictUpdate(
-            AppointmentsCompanion.insert(
-              id: m['id'] as String,
-              serverId: Value(m['id'] as String),
-              facilityId: facilityId,
-              patientId: m['patientId'] as String? ?? 'unknown',
-              status: m['status'] as String? ?? 'pending',
-              scheduledAt: DateTime.parse(m['scheduledAt'] as String),
-              updatedAt: now,
-              providerId: Value(m['providerId'] as String?),
-              referenceNumber: Value(m['referenceNumber'] as String?),
-              appointmentType: Value(m['appointmentType'] as String?),
-            ),
-          );
-    }
   }
 
   Future<void> bootstrap(String facilityId) async {
@@ -126,8 +130,20 @@ class SyncEngine {
     final data = await _api.bootstrap();
     final now = DateTime.now().toUtc();
 
-    final queue = data['queue'] as List<dynamic>? ?? [];
-    for (final raw in queue) {
+    await _applyQueue(data['queue'] as List<dynamic>? ?? [], facilityId, now);
+    await _applyAppointments(
+      data['appointments'] as List<dynamic>? ?? [],
+      facilityId,
+      now,
+    );
+  }
+
+  Future<void> _applyQueue(
+    List<dynamic> items,
+    String facilityId,
+    DateTime now,
+  ) async {
+    for (final raw in items) {
       final m = raw as Map<String, dynamic>;
       await _db.into(_db.queueEntries).insertOnConflictUpdate(
             QueueEntriesCompanion.insert(
@@ -141,10 +157,34 @@ class SyncEngine {
               updatedAt: now,
               position: Value(m['position'] as int? ?? 0),
               triageStatus: Value(m['triageStatus'] as String?),
+              syncStatus: const Value('synced'),
             ),
           );
     }
+  }
 
-    await pullDelta(facilityId);
+  Future<void> _applyAppointments(
+    List<dynamic> items,
+    String facilityId,
+    DateTime now,
+  ) async {
+    for (final raw in items) {
+      final m = raw as Map<String, dynamic>;
+      await _db.into(_db.appointments).insertOnConflictUpdate(
+            AppointmentsCompanion.insert(
+              id: m['id'] as String,
+              serverId: Value(m['id'] as String),
+              facilityId: facilityId,
+              patientId: m['patientId'] as String? ?? 'unknown',
+              status: m['status'] as String? ?? 'pending',
+              scheduledAt: DateTime.parse(m['scheduledAt'] as String),
+              updatedAt: now,
+              providerId: Value(m['providerId'] as String?),
+              referenceNumber: Value(m['referenceNumber'] as String?),
+              appointmentType: Value(m['appointmentType'] as String?),
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
   }
 }

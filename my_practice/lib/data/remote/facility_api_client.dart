@@ -96,6 +96,27 @@ class FacilityApiClient {
     return res.data ?? {};
   }
 
+  Future<Map<String, dynamic>> createDiagnosis(
+    String consultationId, {
+    required String patientId,
+    required String providerId,
+    required String icd11Code,
+    required String description,
+    bool isPrimary = true,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/clinical/consultations/$consultationId/diagnoses'),
+      data: {
+        'patientId': patientId,
+        'providerId': providerId,
+        'icd11Code': icd11Code,
+        'description': description,
+        'isPrimary': isPrimary,
+      },
+    );
+    return res.data ?? {};
+  }
+
   Future<List<Map<String, dynamic>>> searchIcd11(String q) async {
     final res = await _dio.get<Map<String, dynamic>>(
       '/catalog/icd11/search?q=${Uri.encodeComponent(q)}',

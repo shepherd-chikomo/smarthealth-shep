@@ -2,6 +2,19 @@ import { query } from '../lib/db.js';
 import { assertFacilityAccess } from '../lib/facility-access.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
 
+const CONSULTATION_FIELDS = [
+  'chief_complaint',
+  'history_of_present_illness',
+  'past_medical_history',
+  'surgical_history',
+  'family_history',
+  'social_history',
+  'examination_notes',
+  'assessment',
+  'plan',
+  'follow_up_plan',
+] as const;
+
 export async function bootstrap(
   user: AuthenticatedUser,
   facilityId: string,
@@ -55,7 +68,7 @@ export async function delta(
   const queue = await query(
     `SELECT id, patient_id AS "patientId", queue_status AS status,
             ticket_number AS position, registered_at AS "arrivedAt",
-            updated_at AS "updatedAt"
+            priority AS "triageStatus", updated_at AS "updatedAt"
      FROM public.walk_in_sessions
      WHERE facility_id = $1 AND updated_at > $2 AND deleted_at IS NULL`,
     [facilityId, since.toISOString()],
@@ -83,19 +96,30 @@ export async function applyMutations(
   const applied: string[] = [];
 
   for (const m of mutations) {
+    if (m.entityType === 'consultation' && m.operation === 'create') {
+      const patientId = m.payload.patient_id as string;
+      const providerId = m.payload.provider_id as string;
+      const result = await query<{ id: string }>(
+        `INSERT INTO public.consultations (
+           facility_id, tenant_id, provider_id, patient_id,
+           appointment_id, walk_in_session_id, status, started_at
+         ) VALUES ($1, $1, $2, $3, $4, $5, 'in_progress', timezone('utc', now()))
+         RETURNING id`,
+        [
+          facilityId,
+          providerId,
+          patientId,
+          (m.payload.appointment_id as string | undefined) ?? null,
+          (m.payload.walk_in_session_id as string | undefined) ?? null,
+        ],
+      );
+      applied.push(result.rows[0]!.id);
+      continue;
+    }
+
     if (m.entityType === 'consultation' && m.operation === 'update') {
       const patch = m.payload;
-      const sets = Object.keys(patch)
-        .filter((k) =>
-          [
-            'chief_complaint',
-            'history_of_present_illness',
-            'past_medical_history',
-            'examination_notes',
-            'assessment',
-            'plan',
-          ].includes(k),
-        )
+      const sets = CONSULTATION_FIELDS.filter((k) => patch[k] !== undefined)
         .map((k, i) => `${k} = $${i + 3}`)
         .join(', ');
 
@@ -103,18 +127,9 @@ export async function applyMutations(
         const values = [
           m.entityId,
           facilityId,
-          ...Object.keys(patch)
-            .filter((k) =>
-              [
-                'chief_complaint',
-                'history_of_present_illness',
-                'past_medical_history',
-                'examination_notes',
-                'assessment',
-                'plan',
-              ].includes(k),
-            )
-            .map((k) => patch[k]),
+          ...CONSULTATION_FIELDS.filter((k) => patch[k] !== undefined).map(
+            (k) => patch[k],
+          ),
         ];
         await query(
           `UPDATE public.consultations SET ${sets}, updated_at = timezone('utc', now())
@@ -123,6 +138,19 @@ export async function applyMutations(
         );
         applied.push(m.entityId);
       }
+      continue;
+    }
+
+    if (m.entityType === 'consultation' && m.operation === 'complete') {
+      await query(
+        `UPDATE public.consultations
+         SET status = 'completed', completed_at = timezone('utc', now()),
+             updated_at = timezone('utc', now())
+         WHERE id = $1 AND tenant_id = $2`,
+        [m.entityId, facilityId],
+      );
+      applied.push(m.entityId);
+      continue;
     }
 
     if (m.entityType === 'queue' && m.operation === 'updateStatus') {

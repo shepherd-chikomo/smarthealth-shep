@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
+import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
-import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/data/seed/seed_data_loader.dart';
+import 'package:my_practice/data/sync/sync_notifier.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -23,6 +26,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _init() async {
     await SeedDataLoader(ref.read(appDatabaseProvider)).loadIfNeeded();
+    if (!MyPracticeConfig.skipAuthForTesting) {
+      unawaited(ref.read(syncNotifierProvider.notifier).syncNow());
+    }
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
     final auth = ref.read(authStateProvider);

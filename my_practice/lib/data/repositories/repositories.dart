@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
 import 'package:my_practice/data/local/app_database.dart';
-import 'package:my_practice/data/seed/seed_data_loader.dart';
 import 'package:my_practice/data/remote/facility_api_client.dart';
+import 'package:my_practice/data/seed/seed_data_loader.dart';
+import 'package:my_practice/data/sync/sync_engine.dart';
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
   return DashboardRepository(
     db: db,
-    api: MyPracticeConfig.devMode
+    api: MyPracticeConfig.skipAuthForTesting
         ? null
         : FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
     facilityId: facilityId,
@@ -64,7 +65,7 @@ class DashboardRepository {
       'encountersCompleted': completed.length,
       'revenueToday': 1250.0,
       'notifications': 3,
-      'syncStatus': MyPracticeConfig.devMode ? 'simulated' : 'online',
+      'syncStatus': MyPracticeConfig.skipAuthForTesting ? 'simulated' : 'online',
     };
   }
 }
@@ -74,9 +75,10 @@ final queueRepositoryProvider = Provider<QueueRepository>((ref) {
   final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
   return QueueRepository(
     db: db,
-    api: MyPracticeConfig.devMode
+    api: MyPracticeConfig.skipAuthForTesting
         ? null
         : FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
+    sync: ref.watch(syncEngineProvider),
     facilityId: facilityId,
   );
 });
@@ -85,11 +87,13 @@ class QueueRepository {
   QueueRepository({
     required this.db,
     required this.api,
+    required this.sync,
     required this.facilityId,
   });
 
   final AppDatabase db;
   final FacilityApiClient? api;
+  final SyncEngine? sync;
   final String facilityId;
 
   Stream<List<QueueEntry>> watchQueue() {
@@ -107,9 +111,25 @@ class QueueRepository {
             syncStatus: const Value('pending'),
           ),
         );
+
     if (api != null) {
-      await api!.updateQueueStatus(id, status);
+      try {
+        await api!.updateQueueStatus(id, status);
+        await (db.update(db.queueEntries)..where((t) => t.id.equals(id))).write(
+              const QueueEntriesCompanion(
+                syncStatus: Value('synced'),
+              ),
+            );
+        return;
+      } catch (_) {}
     }
+
+    await sync?.enqueue(
+      entityType: 'queue',
+      entityId: id,
+      operation: 'updateStatus',
+      payload: {'status': status},
+    );
   }
 }
 
@@ -118,7 +138,7 @@ final patientRepositoryProvider = Provider<PatientRepository>((ref) {
   final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
   return PatientRepository(
     db: db,
-    api: MyPracticeConfig.devMode
+    api: MyPracticeConfig.skipAuthForTesting
         ? null
         : FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
     facilityId: facilityId,
@@ -142,7 +162,11 @@ class PatientRepository {
     if (api != null) {
       try {
         final remote = await api!.searchPatients(query);
-        return remote.map(_patientFromApi).toList();
+        final patients = remote.map(_patientFromApi).toList();
+        for (final p in patients) {
+          await _cachePatient(p);
+        }
+        return patients;
       } catch (_) {}
     }
 
@@ -164,10 +188,17 @@ class PatientRepository {
   Future<Map<String, dynamic>> getChart(String patientId) async {
     if (api != null) {
       try {
-        return await api!.getPatientChart(patientId);
+        final remote = await api!.getPatientChart(patientId);
+        await _cacheChart(remote);
+        final local = await _localChart(patientId);
+        return _mergeCharts(remote, local);
       } catch (_) {}
     }
 
+    return _localChart(patientId);
+  }
+
+  Future<Map<String, dynamic>> _localChart(String patientId) async {
     final patient = await (db.select(db.patients)
           ..where((t) => t.id.equals(patientId)))
         .getSingleOrNull();
@@ -193,20 +224,140 @@ class PatientRepository {
     };
   }
 
+  Map<String, dynamic> _mergeCharts(
+    Map<String, dynamic> remote,
+    Map<String, dynamic> local,
+  ) {
+    final remoteTimeline = remote['timeline'] as List? ?? [];
+    final localTimeline = local['timeline'] as List? ?? [];
+    final pendingLocal = localTimeline.where((item) {
+      if (item is Consultation) {
+        return item.syncStatus == 'pending' || item.serverId == null;
+      }
+      return false;
+    });
+
+    return {
+      ...remote,
+      'timeline': [...remoteTimeline, ...pendingLocal],
+    };
+  }
+
+  Future<void> _cachePatient(Patient patient) async {
+    await db.into(db.patients).insertOnConflictUpdate(
+          PatientsCompanion.insert(
+            id: patient.id,
+            serverId: Value(patient.serverId ?? patient.id),
+            firstName: patient.firstName,
+            lastName: patient.lastName,
+            phone: Value(patient.phone),
+            email: Value(patient.email),
+            nationalId: Value(patient.nationalId),
+            smarthealthPatientId: Value(patient.smarthealthPatientId),
+            gender: Value(patient.gender),
+            dateOfBirth: Value(patient.dateOfBirth),
+            passport: Value(patient.passport),
+            insuranceInfo: Value(patient.insuranceInfo),
+            updatedAt: DateTime.now().toUtc(),
+            syncStatus: const Value('synced'),
+          ),
+        );
+  }
+
+  Future<void> _cacheChart(Map<String, dynamic> chart) async {
+    final patientRaw = chart['patient'];
+    if (patientRaw is Map<String, dynamic>) {
+      await _cachePatient(_patientFromApi(patientRaw));
+    }
+
+    final patientId = patientRaw is Map
+        ? patientRaw['id'] as String?
+        : (patientRaw as Patient?)?.id;
+    if (patientId == null) return;
+
+    final now = DateTime.now().toUtc();
+    for (final raw in chart['allergies'] as List? ?? []) {
+      if (raw is! Map<String, dynamic>) continue;
+      await db.into(db.patientAllergies).insertOnConflictUpdate(
+            PatientAllergiesCompanion.insert(
+              id: raw['id'] as String? ?? '${patientId}-${raw['allergen']}',
+              patientId: patientId,
+              allergen: raw['allergen'] as String? ?? 'Unknown',
+              severity: Value(raw['severity'] as String?),
+              updatedAt: now,
+            ),
+          );
+    }
+
+    for (final raw in chart['conditions'] as List? ?? []) {
+      if (raw is! Map<String, dynamic>) continue;
+      await db.into(db.patientConditions).insertOnConflictUpdate(
+            PatientConditionsCompanion.insert(
+              id: raw['id'] as String? ?? '${patientId}-${raw['condition_name']}',
+              patientId: patientId,
+              conditionName: raw['condition_name'] as String? ??
+                  raw['conditionName'] as String? ??
+                  'Condition',
+              icd11Code: Value(
+                raw['icd11_code'] as String? ?? raw['icd11Code'] as String?,
+              ),
+              updatedAt: now,
+            ),
+          );
+    }
+
+    for (final raw in chart['timeline'] as List? ?? []) {
+      if (raw is! Map<String, dynamic>) continue;
+      final id = raw['id'] as String?;
+      if (id == null) continue;
+      await db.into(db.consultations).insertOnConflictUpdate(
+            ConsultationsCompanion.insert(
+              id: id,
+              serverId: Value(id),
+              facilityId: facilityId,
+              providerId: raw['provider_id'] as String? ??
+                  raw['providerId'] as String? ??
+                  'unknown',
+              patientId: patientId,
+              status: Value(raw['status'] as String? ?? 'completed'),
+              chiefComplaint: Value(
+                raw['chief_complaint'] as String? ?? raw['chiefComplaint'] as String?,
+              ),
+              assessment: Value(raw['assessment'] as String?),
+              plan: Value(raw['plan'] as String?),
+              startedAt: Value(
+                DateTime.tryParse(raw['started_at'] as String? ?? '') ??
+                    DateTime.tryParse(raw['startedAt'] as String? ?? ''),
+              ),
+              completedAt: Value(
+                DateTime.tryParse(raw['completed_at'] as String? ?? '') ??
+                    DateTime.tryParse(raw['completedAt'] as String? ?? ''),
+              ),
+              updatedAt: now,
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
+  }
+
   Patient _patientFromApi(Map<String, dynamic> m) {
     return Patient(
       id: m['id'] as String,
-      firstName: m['firstName'] as String? ?? '',
-      lastName: m['lastName'] as String? ?? '',
+      firstName: m['firstName'] as String? ?? m['first_name'] as String? ?? '',
+      lastName: m['lastName'] as String? ?? m['last_name'] as String? ?? '',
       phone: m['phone'] as String?,
-      nationalId: m['nationalId'] as String?,
+      nationalId: m['nationalId'] as String? ?? m['national_id'] as String?,
       smarthealthPatientId: m['smarthealthPatientId'] as String?,
       email: m['email'] as String?,
       gender: m['gender'] as String?,
-      dateOfBirth: null,
+      dateOfBirth: m['dateOfBirth'] != null
+          ? DateTime.tryParse(m['dateOfBirth'] as String)
+          : m['date_of_birth'] != null
+              ? DateTime.tryParse(m['date_of_birth'] as String)
+              : null,
       passport: null,
       insuranceInfo: null,
-      serverId: null,
+      serverId: m['id'] as String?,
       syncStatus: 'synced',
       updatedAt: DateTime.now(),
       deletedAt: null,

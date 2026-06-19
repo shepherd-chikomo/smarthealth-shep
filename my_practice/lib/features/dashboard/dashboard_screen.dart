@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/data/repositories/repositories.dart';
+import 'package:my_practice/data/sync/sync_notifier.dart';
+import 'package:my_practice/data/sync/sync_state.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -10,15 +12,29 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsFuture = ref.watch(_dashboardStatsProvider);
+    final sync = ref.watch(syncNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync),
-            onPressed: () {},
-            tooltip: 'Sync status',
+            icon: sync.isSyncing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    _syncIcon(sync),
+                    color: sync.phase == SyncPhase.error
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                  ),
+            onPressed: sync.isSyncing
+                ? null
+                : () => ref.read(syncNotifierProvider.notifier).syncNow(),
+            tooltip: _syncTooltip(sync),
           ),
         ],
       ),
@@ -29,6 +45,17 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             _StatGrid(stats: stats),
+            if (sync.pendingMutations > 0 || sync.lastSyncedAt != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                sync.pendingMutations > 0
+                    ? '${sync.pendingMutations} change(s) waiting to sync'
+                    : 'Last synced ${_formatSyncTime(sync.lastSyncedAt!)}',
+                style: AppTextStyles.sm(
+                  color: context.appColors.mutedForeground,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Text('Quick Actions', style: AppTextStyles.lg(fontWeight: AppTextStyles.semibold)),
             const SizedBox(height: 8),
@@ -63,6 +90,30 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+IconData _syncIcon(SyncState sync) {
+  return switch (sync.phase) {
+    SyncPhase.offline => Icons.cloud_off,
+    SyncPhase.error => Icons.sync_problem,
+    _ => Icons.sync,
+  };
+}
+
+String _syncTooltip(SyncState sync) {
+  return switch (sync.phase) {
+    SyncPhase.syncing => 'Syncing…',
+    SyncPhase.offline => 'Offline — tap to retry',
+    SyncPhase.error => sync.errorMessage ?? 'Sync failed',
+    SyncPhase.idle when sync.pendingMutations > 0 =>
+      '${sync.pendingMutations} pending',
+    SyncPhase.idle => 'Synced',
+  };
+}
+
+String _formatSyncTime(DateTime at) {
+  final local = at.toLocal();
+  return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
 }
 
 final _dashboardStatsProvider = FutureProvider<Map<String, dynamic>>((ref) {

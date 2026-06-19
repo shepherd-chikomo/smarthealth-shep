@@ -67,7 +67,7 @@ class QueueScreen extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.play_arrow),
                       onPressed: () => context.push(
-                        '/encounter/${item.patientId}',
+                        '/encounter/${item.patientId}?queueEntryId=${item.id}',
                       ),
                     ),
                   ],

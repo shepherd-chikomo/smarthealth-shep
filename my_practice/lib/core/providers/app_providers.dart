@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/data/local/app_database.dart';
+import 'package:my_practice/data/remote/facility_api_client.dart';
+import 'package:my_practice/data/sync/sync_engine.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 /// Staff/practitioner OTP context for MyPractice.
@@ -47,4 +50,16 @@ final facilityDioProvider = Provider<Dio>((ref) {
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   throw UnimplementedError('Override in main.dart');
+});
+
+final syncEngineProvider = Provider<SyncEngine?>((ref) {
+  if (MyPracticeConfig.skipAuthForTesting) return null;
+
+  final facilityId = ref.watch(facilityIdProvider);
+  if (facilityId == null) return null;
+
+  return SyncEngine(
+    db: ref.watch(appDatabaseProvider),
+    api: SyncApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
+  );
 });

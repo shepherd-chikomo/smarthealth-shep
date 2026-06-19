@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
+import 'package:my_practice/data/sync/sync_notifier.dart';
 import 'package:my_practice/domain/models/portal_profile.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
@@ -42,7 +43,7 @@ final authStateProvider =
 class AuthStateNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    _bootstrap();
+    Future.microtask(_bootstrap);
     return const AuthState.unknown();
   }
 
@@ -92,24 +93,46 @@ class AuthStateNotifier extends Notifier<AuthState> {
         res.data?['profile'] as Map<String, dynamic>? ?? res.data ?? {},
       );
       final facilityId = ref.read(facilityIdProvider);
+      if (profile.facilities.isEmpty) {
+        state = AuthState(
+          status: AuthStatus.needsFacility,
+          profile: profile,
+          session: state.session,
+        );
+        return;
+      }
+
+      if (facilityId == null) {
+        if (profile.facilities.length == 1) {
+          await selectFacility(profile.facilities.first.id);
+          return;
+        }
+        state = AuthState(
+          status: AuthStatus.needsFacility,
+          profile: profile,
+          session: state.session,
+        );
+        return;
+      }
+
       state = AuthState(
-        status: profile.facilities.isEmpty || facilityId == null
-            ? AuthStatus.needsFacility
-            : AuthStatus.authenticated,
+        status: AuthStatus.authenticated,
         profile: profile,
         session: state.session,
       );
-      if (facilityId == null && profile.facilities.isNotEmpty) {
-        ref
-            .read(facilityIdProvider.notifier)
-            .select(profile.facilities.first.id);
-        state = state.copyWith(status: AuthStatus.authenticated);
-      }
     } catch (e) {
       state = AuthState(
         status: AuthStatus.unauthenticated,
         error: e.toString(),
       );
+    }
+  }
+
+  Future<void> selectFacility(String facilityId) async {
+    ref.read(facilityIdProvider.notifier).select(facilityId);
+    state = state.copyWith(status: AuthStatus.authenticated);
+    if (!MyPracticeConfig.skipAuthForTesting) {
+      await ref.read(syncNotifierProvider.notifier).syncNow();
     }
   }
 

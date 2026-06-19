@@ -39,7 +39,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       );
       await ref.read(authStateProvider.notifier).loadProfile();
       if (!mounted) return;
-      context.go('/dashboard');
+      final auth = ref.read(authStateProvider);
+      if (auth.status == AuthStatus.needsFacility) {
+        context.go('/facility-picker');
+      } else {
+        context.go('/dashboard');
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
