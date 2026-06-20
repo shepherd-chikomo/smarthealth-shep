@@ -166,6 +166,25 @@ export async function lookupProviderByEmail(email: string) {
   };
 }
 
+/** Blocks manual staff add when the email belongs to an MDPCZ practitioner record. */
+export async function assertCanAddStaffByEmail(email: string): Promise<void> {
+  const lookup = await lookupProviderByEmail(email);
+  if (!lookup.matched) return;
+
+  if ('ambiguous' in lookup && lookup.ambiguous) {
+    throw new ConflictError(
+      'This email matches multiple practitioners in the MDPCZ registry. Contact support.',
+    );
+  }
+
+  const provider = lookup.provider!;
+  const regHint = provider.registrationNumber ? ` (${provider.registrationNumber})` : '';
+  throw new ConflictError(
+    `This email is registered to ${provider.name}${regHint} in the MDPCZ registry. ` +
+      'Invite them using their registration number instead of adding staff manually.',
+  );
+}
+
 export async function claimProviderByVerifiedEmail(userId: string, email: string) {
   const normalizedEmail = email.trim().toLowerCase();
 

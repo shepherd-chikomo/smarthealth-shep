@@ -6,7 +6,7 @@ import {
   getUserFacilityMemberships,
   requireFacilityAdmin,
 } from '../lib/facility-access.js';
-import { AppError, NotFoundError, ValidationError } from '../lib/errors.js';
+import { AppError, ConflictError, NotFoundError, ValidationError } from '../lib/errors.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
 import { buildPaginationMeta } from '../lib/pagination.js';
 import { adminOffset, buildSearchClause, type AdminListQuery } from '../lib/admin-query.js';
@@ -35,6 +35,7 @@ import {
 import { normalizeFacilityClassification } from '../lib/facility-classification.js';
 import { logMedicalAccess } from '../lib/medical-access-log.js';
 import type { RequestContext } from '../lib/request-context.js';
+import { assertCanAddStaffByEmail } from './practitioner-claim.service.js';
 
 function mapFacility(row: Record<string, unknown>) {
   const facilityTypes = effectiveFacilityTypes({
@@ -1922,8 +1923,31 @@ export async function addStaffMember(
   const email = normalizeEmail(data.email);
   const phone = data.phone?.trim() ? normalizeZimbabwePhone(data.phone) : null;
 
+  await assertCanAddStaffByEmail(email);
+
   const targetUserId = await resolveStaffUserId({ firstName, lastName, email, phone });
   await ensureAuthUserEmail(targetUserId, email);
+
+  const existingMembership = await query<{ id: string }>(
+    `SELECT id FROM public.facility_memberships WHERE facility_id = $1 AND user_id = $2`,
+    [facilityId, targetUserId],
+  );
+  if (existingMembership.rows[0]) {
+    throw new ConflictError('This person is already on the facility team.');
+  }
+
+  const claimedProvider = await query<{ name: string }>(
+    `SELECT name FROM public.providers
+     WHERE owner_id = $1 AND is_claimed = true AND deleted_at IS NULL
+     LIMIT 1`,
+    [targetUserId],
+  );
+  if (claimedProvider.rows[0]) {
+    throw new ConflictError(
+      `This account is linked to practitioner ${claimedProvider.rows[0].name}. ` +
+        'Invite them using their MDPCZ registration number instead of adding staff manually.',
+    );
+  }
 
   await query(
     `UPDATE public.profiles SET
@@ -1939,7 +1963,6 @@ export async function addStaffMember(
   const result = await query(
     `INSERT INTO public.facility_memberships (facility_id, user_id, role, invited_by)
      VALUES ($1, $2, $3, $4)
-     ON CONFLICT (facility_id, user_id) DO UPDATE SET role = EXCLUDED.role
      RETURNING id`,
     [facilityId, targetUserId, data.role, user.id],
   );
