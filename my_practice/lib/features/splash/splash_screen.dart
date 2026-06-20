@@ -8,6 +8,7 @@ import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
 import 'package:my_practice/data/seed/seed_data_loader.dart';
 import 'package:my_practice/data/sync/sync_notifier.dart';
+import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -25,24 +26,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _init() async {
-    await SeedDataLoader(ref.read(appDatabaseProvider)).loadIfNeeded();
+    // Never block boot on seed generation — it can take minutes on device.
+    if (MyPracticeConfig.devMode) {
+      unawaited(SeedDataLoader(ref.read(appDatabaseProvider)).loadIfNeeded());
+    }
+
     if (!MyPracticeConfig.skipAuthForTesting) {
       unawaited(ref.read(syncNotifierProvider.notifier).syncNow());
     }
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    await _waitForAuthReady(const Duration(seconds: 5));
     if (!mounted) return;
-    final auth = ref.read(authStateProvider);
-    if (auth.status == AuthStatus.authenticated) {
-      context.go('/dashboard');
-    } else if (auth.status == AuthStatus.unauthenticated) {
-      context.go('/login');
-    } else {
-      await Future<void>.delayed(const Duration(seconds: 1));
+    _navigateFromAuth(ref.read(authStateProvider));
+  }
+
+  Future<void> _waitForAuthReady(Duration timeout) async {
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
       if (!mounted) return;
-      final updated = ref.read(authStateProvider);
-      context.go(
-        updated.status == AuthStatus.authenticated ? '/dashboard' : '/login',
-      );
+      final auth = ref.read(authStateProvider);
+      if (auth.status != AuthStatus.unknown) return;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  }
+
+  void _navigateFromAuth(AuthState auth) {
+    switch (auth.status) {
+      case AuthStatus.authenticated:
+        context.go('/dashboard');
+      case AuthStatus.needsFacility:
+        context.go('/facility-picker');
+      case AuthStatus.unauthenticated:
+      case AuthStatus.unknown:
+        context.go('/login');
     }
   }
 
@@ -53,6 +69,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const PracticeBrandMark(size: 72),
+            const SizedBox(height: 16),
             Text(
               'MyPractice',
               style: AppTextStyles.xxl(
@@ -68,6 +86,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
             const SizedBox(height: 32),
             const CircularProgressIndicator(),
+            if (MyPracticeConfig.devMode) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Preparing workspace…',
+                style: AppTextStyles.sm(color: context.appColors.mutedForeground),
+              ),
+            ],
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_practice/design_system/data/preview_seed_data.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
+import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 /// Shared chrome for all design previews — sidebar + top bar + content.
@@ -141,18 +142,7 @@ class _PreviewSidebar extends StatelessWidget {
             padding: EdgeInsets.all(expanded ? 20 : 12),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1976D2), Color(0xFF00897B)],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.monitor_heart_outlined,
-                      color: Colors.white, size: 22),
-                ),
+                const PracticeBrandMark(),
                 if (expanded) ...[
                   const SizedBox(width: 12),
                   Expanded(
@@ -305,7 +295,7 @@ class _NavTile extends StatelessWidget {
             child: Row(
               children: [
                 Icon(icon,
-                    size: 20,
+                    size: PracticeDesignTokens.iconMd,
                     color: selected ? primary : colors.mutedForeground),
                 if (expanded) ...[
                   const SizedBox(width: 12),
@@ -358,7 +348,7 @@ class _PreviewTopBar extends StatelessWidget {
       child: Row(
         children: [
           if (onMenuTap != null)
-            IconButton(icon: const Icon(Icons.menu), onPressed: onMenuTap),
+            PracticeToolbarIconButton(icon: Icons.menu, onPressed: onMenuTap),
           Expanded(
             child: title != null
                 ? Column(
@@ -373,7 +363,11 @@ class _PreviewTopBar extends StatelessWidget {
                 : TextField(
                     decoration: InputDecoration(
                       hintText: 'Search patients, claims, encounters…',
-                      prefixIcon: const Icon(Icons.search, size: 20),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        size: PracticeDesignTokens.iconMd,
+                        color: colors.mutedForeground,
+                      ),
                       filled: true,
                       fillColor: colors.muted.withValues(alpha: 0.6),
                       border: OutlineInputBorder(
@@ -391,26 +385,21 @@ class _PreviewTopBar extends StatelessWidget {
                 style: PracticeDesignTokens.metadata(context)),
           ],
           const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+          PracticeToolbarIconButton(
+            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             tooltip: 'Theme',
             onPressed: onThemeToggle,
           ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.sync),
-                tooltip: 'Synced 2 min ago',
-                onPressed: () {},
-              ),
-            ],
+          PracticeToolbarIconButton(
+            icon: Icons.sync,
+            tooltip: 'Synced 2 min ago',
+            onPressed: () {},
           ),
           Stack(
             clipBehavior: Clip.none,
             children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
+              PracticeToolbarIconButton(
+                icon: Icons.notifications_outlined,
                 onPressed: () {},
               ),
               Positioned(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_practice/design_system/data/preview_seed_data.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
+import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:my_practice/design_system/widgets/practice_preview_shell.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
@@ -18,14 +19,7 @@ class DashboardPreview extends StatelessWidget {
     'assignment': Icons.assignment_outlined,
   };
 
-  static const accentColors = [
-    Color(0xFF5BA3F5),
-    Color(0xFF5BA3F5),
-    Color(0xFF2E9D6E),
-    Color(0xFFE0A030),
-    Color(0xFF2E9D6E),
-    Color(0xFFF26565),
-  ];
+  static const accentColors = PracticeDesignTokens.kpiAccents;
 
   @override
   Widget build(BuildContext context) {
@@ -152,16 +146,11 @@ class _DashboardHeader extends StatelessWidget {
             ),
           ),
           if (MediaQuery.sizeOf(context).width > 600)
-            Container(
-              width: 120,
-              height: 100,
-              decoration: BoxDecoration(
-                color: context.appColors.primarySoft,
-                borderRadius: BorderRadius.circular(AppRadii.lg),
-              ),
-              child: Icon(Icons.local_hospital_outlined,
-                  size: 48,
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)),
+            PracticeIconBadge(
+              icon: Icons.local_hospital_outlined,
+              color: Theme.of(context).colorScheme.primary,
+              size: 56,
+              iconSize: 28,
             ),
         ],
       ),
@@ -190,9 +179,13 @@ class _QuickActionsCard extends StatelessWidget {
           for (final a in actions)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(a.$1, color: Theme.of(context).colorScheme.primary),
+              leading: PracticeActionIcon(icon: a.$1),
               title: Text(a.$2),
-              trailing: const Icon(Icons.open_in_new, size: 16),
+              trailing: Icon(
+                Icons.chevron_right,
+                size: PracticeDesignTokens.iconMd,
+                color: context.appColors.mutedForeground,
+              ),
             ),
         ],
       ),

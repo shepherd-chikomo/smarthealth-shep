@@ -17,6 +17,25 @@ abstract final class PracticeDesignTokens {
   static const sidebarCollapsedWidth = 72.0;
   static const topBarHeight = 64.0;
 
+  /// Icon sizes aligned with dashboard design spec.
+  static const iconXs = 14.0;
+  static const iconSm = 18.0;
+  static const iconMd = 20.0;
+  static const iconLg = 22.0;
+  static const iconBadgeSize = 36.0;
+  static const iconBadgeSizeLg = 48.0;
+  static const brandMarkSize = 40.0;
+
+  /// KPI / metric accent palette from design mockups.
+  static const kpiBlue = Color(0xFF5BA3F5);
+  static const kpiGreen = Color(0xFF2E9D6E);
+  static const kpiAmber = Color(0xFFE0A030);
+  static const kpiRed = Color(0xFFF26565);
+
+  static const kpiAccents = [kpiBlue, kpiBlue, kpiGreen, kpiAmber, kpiGreen, kpiRed];
+
+  static Color softAccentBg(Color accent) => accent.withValues(alpha: 0.12);
+
   static TextStyle inter({
     double? size,
     FontWeight weight = FontWeight.w400,
@@ -51,6 +70,20 @@ abstract final class PracticeDesignTokens {
         weight: FontWeight.w700,
         color: context.appColors.foreground,
         height: 1.1,
+      );
+
+  static TextStyle kpiValueCompact(BuildContext context) => inter(
+        size: 22,
+        weight: FontWeight.w700,
+        color: context.appColors.foreground,
+        height: 1.1,
+      );
+
+  static TextStyle mobilePageTitle(BuildContext context) => inter(
+        size: 22,
+        weight: FontWeight.w700,
+        color: context.appColors.foreground,
+        height: 1.2,
       );
 
   static TextStyle tableHeader(BuildContext context) => inter(

@@ -156,6 +156,11 @@ class PatientRepository {
   final FacilityApiClient? api;
   final String facilityId;
 
+  Future<Patient?> findById(String patientId) async {
+    return (db.select(db.patients)..where((t) => t.id.equals(patientId)))
+        .getSingleOrNull();
+  }
+
   Future<List<Patient>> search(String query) async {
     if (query.trim().isEmpty) return [];
 

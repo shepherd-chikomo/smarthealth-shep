@@ -166,6 +166,11 @@ class SeedDataLoader {
               ),
             );
       }
+
+      // Yield periodically so background seed does not freeze the UI.
+      if (i % 100 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
     }
 
     final now = DateTime.now();

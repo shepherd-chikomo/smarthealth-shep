@@ -34,9 +34,7 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Patient Search')),
-      body: Column(
+    return Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -75,7 +73,6 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }

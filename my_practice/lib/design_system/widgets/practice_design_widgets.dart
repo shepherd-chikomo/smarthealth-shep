@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
+import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
+
+enum PracticeKpiLayout { standard, compact }
 
 class PracticeKpiCard extends StatelessWidget {
   const PracticeKpiCard({
@@ -11,6 +14,7 @@ class PracticeKpiCard extends StatelessWidget {
     this.icon,
     this.accentColor,
     this.sparkline,
+    this.layout = PracticeKpiLayout.standard,
   });
 
   final String label;
@@ -19,11 +23,50 @@ class PracticeKpiCard extends StatelessWidget {
   final IconData? icon;
   final Color? accentColor;
   final List<double>? sparkline;
+  final PracticeKpiLayout layout;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final accent = accentColor ?? Theme.of(context).colorScheme.primary;
+
+    if (layout == PracticeKpiLayout.compact) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: PracticeDesignTokens.previewCardDecoration(context),
+        child: Row(
+          children: [
+            if (icon != null) PracticeIconBadge(icon: icon!, color: accent),
+            if (icon != null) const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(value, style: PracticeDesignTokens.kpiValueCompact(context)),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: PracticeDesignTokens.inter(
+                      size: 12,
+                      color: colors.mutedForeground,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (sparkline != null)
+              SizedBox(
+                width: 56,
+                height: 24,
+                child: CustomPaint(
+                  painter: _SparklinePainter(values: sparkline!, color: accent),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -34,14 +77,7 @@ class PracticeKpiCard extends StatelessWidget {
           Row(
             children: [
               if (icon != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadii.md),
-                  ),
-                  child: Icon(icon, size: 18, color: accent),
-                ),
+                PracticeIconBadge(icon: icon!, color: accent),
               const Spacer(),
               if (sparkline != null)
                 SizedBox(
@@ -72,7 +108,7 @@ class PracticeKpiCard extends StatelessWidget {
                   trend!.startsWith('+') || trend!.contains('priority')
                       ? Icons.trending_up
                       : Icons.trending_flat,
-                  size: 14,
+                  size: PracticeDesignTokens.iconXs,
                   color: trend!.contains('overdue')
                       ? colors.emergency
                       : colors.success,
@@ -158,14 +194,24 @@ class PracticeStatusChip extends StatelessWidget {
   }
 
   static PracticeStatusTone toneForClaimStatus(String status) {
-    return switch (status) {
+    return switch (status.toLowerCase()) {
       'paid' || 'approved' => PracticeStatusTone.success,
       'under review' || 'checked in' => PracticeStatusTone.warning,
       'rejected' => PracticeStatusTone.danger,
-      'in consult' => PracticeStatusTone.info,
-      'scheduled' => PracticeStatusTone.neutral,
+      'in consult' || 'in_progress' || 'in progress' => PracticeStatusTone.info,
+      'scheduled' || 'next' => PracticeStatusTone.warning,
       'waiting' => PracticeStatusTone.queue,
       _ => PracticeStatusTone.neutral,
+    };
+  }
+
+  static String labelForQueueStatus(String status) {
+    return switch (status.toLowerCase()) {
+      'in_progress' => 'In progress',
+      'waiting' => 'Waiting',
+      'investigations' => 'Investigations',
+      'completed' => 'Completed',
+      _ => status.replaceAll('_', ' '),
     };
   }
 }
@@ -228,7 +274,14 @@ class PracticeEmptyState extends StatelessWidget {
                 color: colors.primarySoft,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 36, color: Theme.of(context).colorScheme.primary),
+              child: Center(
+                child: PracticeIconBadge(
+                  icon: icon,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: PracticeDesignTokens.iconBadgeSizeLg,
+                  iconSize: 28,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             Text(title, style: PracticeDesignTokens.sectionTitle(context)),

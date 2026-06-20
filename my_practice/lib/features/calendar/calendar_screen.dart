@@ -21,9 +21,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final db = ref.watch(appDatabaseProvider);
     final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Calendar')),
-      body: Column(
+    return Column(
         children: [
           TableCalendar(
             firstDay: DateTime.utc(2020),
@@ -75,7 +73,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 }

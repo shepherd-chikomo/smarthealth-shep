@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/feature_flags/feature_flags_notifier.dart';
-import 'package:smarthealth_core/smarthealth_core.dart';
+import 'package:my_practice/core/theme/theme_mode_provider.dart';
+import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 
 class FacilityScreen extends ConsumerWidget {
   const FacilityScreen({super.key});
@@ -13,10 +14,11 @@ class FacilityScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(authStateProvider).profile;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('More')),
-      body: ListView(
-        children: [
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('More', style: PracticeDesignTokens.pageTitle(context)),
+        const SizedBox(height: 8),
           if (profile != null)
             ListTile(
               title: Text(profile.displayName),
@@ -53,6 +55,21 @@ class FacilityScreen extends ConsumerWidget {
             title: const Text('Internal Messaging'),
             onTap: () => context.push('/messages'),
           ),
+          ListTile(
+            leading: Icon(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+            ),
+            title: const Text('Appearance'),
+            subtitle: Text(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? 'Dark mode'
+                  : 'Light mode',
+            ),
+            onTap: () =>
+                ref.read(themeModeProvider.notifier).toggleLightDark(),
+          ),
           const Divider(),
           _FutureModuleTile(
             flag: FeatureFlagKeys.connect,
@@ -80,8 +97,7 @@ class FacilityScreen extends ConsumerWidget {
               subtitle: Text('Using seed data'),
             ),
         ],
-      ),
-    );
+      );
   }
 }
 

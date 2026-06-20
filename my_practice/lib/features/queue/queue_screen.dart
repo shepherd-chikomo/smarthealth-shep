@@ -12,9 +12,7 @@ class QueueScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final queueStream = ref.watch(queueRepositoryProvider).watchQueue();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Patient Queue')),
-      body: StreamBuilder<List<QueueEntry>>(
+    return StreamBuilder<List<QueueEntry>>(
         stream: queueStream,
         builder: (context, snapshot) {
           final items = snapshot.data ?? [];
@@ -76,7 +74,6 @@ class QueueScreen extends ConsumerWidget {
             },
           );
         },
-      ),
-    );
+      );
   }
 }

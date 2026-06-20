@@ -1,6 +1,6 @@
 {
-    "name": "my_practice",
-    "short_name": "my_practice",
+    "name": "MyPractice",
+    "short_name": "MyPractice",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

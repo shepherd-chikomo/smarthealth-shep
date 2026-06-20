@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
+import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 /// Living style guide for MyPractice — reference for Phase 2 global rollout.
@@ -226,8 +227,10 @@ class _DesignSystemScreenState extends State<DesignSystemScreen> {
                       _IconLabel(Icons.groups_outlined, 'Queue'),
                       _IconLabel(Icons.medical_services_outlined, 'Encounter'),
                       _IconLabel(Icons.medication_outlined, 'Rx'),
-                      _IconLabel(Icons.shield_outlined, 'Claims'),
-                      _IconLabel(Icons.account_balance_wallet_outlined, 'Finance'),
+                      _IconLabel(Icons.request_quote_outlined, 'Claims',
+                          color: PracticeDesignTokens.kpiAmber),
+                      _IconLabel(Icons.account_balance_wallet_outlined, 'Finance',
+                          color: PracticeDesignTokens.kpiGreen),
                       _IconLabel(Icons.bar_chart_outlined, 'Reports'),
                     ],
                   ),
@@ -290,20 +293,24 @@ class _Swatch extends StatelessWidget {
 }
 
 class _IconLabel extends StatelessWidget {
-  const _IconLabel(this.icon, this.label);
+  const _IconLabel(this.icon, this.label, {this.color});
 
   final IconData icon;
   final String label;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final accent = color ?? Theme.of(context).colorScheme.primary;
     return SizedBox(
-      width: 80,
+      width: 88,
       child: Column(
         children: [
-          Icon(icon, size: 24),
-          const SizedBox(height: 4),
-          Text(label, textAlign: TextAlign.center, style: PracticeDesignTokens.inter(size: 10)),
+          PracticeIconBadge(icon: icon, color: accent),
+          const SizedBox(height: 6),
+          Text(label,
+              textAlign: TextAlign.center,
+              style: PracticeDesignTokens.inter(size: 10)),
         ],
       ),
     );
