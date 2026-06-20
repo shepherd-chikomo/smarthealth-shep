@@ -796,6 +796,31 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
       ),
   );
 
+  app.patch(
+    '/facility/staff/:id',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({
+          fullName: z.string().min(1).optional(),
+          email: z.string().email().optional(),
+          phone: z.string().optional(),
+          role: z.enum(['doctor', 'receptionist', 'facility_admin']).optional(),
+        }),
+      },
+    },
+    async (request) =>
+      facility.updateStaffMember(
+        request.user!,
+        request.facilityId!,
+        request.params.id,
+        request.body,
+        getRequestContext(request),
+      ),
+  );
+
   // Analytics & reporting
   app.get(
     '/facility/analytics',

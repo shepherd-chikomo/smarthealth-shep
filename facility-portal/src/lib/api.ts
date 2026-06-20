@@ -346,6 +346,9 @@ export const api = {
   removeStaff: (fid: string, id: string) =>
     request(`/facility/staff/${id}`, fid, { method: 'DELETE' }),
 
+  updateStaff: (fid: string, id: string, body: Record<string, unknown>) =>
+    request(`/facility/staff/${id}`, fid, { method: 'PATCH', body: JSON.stringify(body) }),
+
   invitePractitioner: (fid: string, registrationNumber: string) =>
     request(`/facility/practitioners/invite`, fid, {
       method: 'POST',

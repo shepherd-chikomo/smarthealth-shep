@@ -1901,9 +1901,122 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
   );
 
   return {
-    staff: rows.rows,
+    staff: rows.rows.map((row) => ({
+      ...row,
+      membership_id: row.id,
+    })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
+}
+
+export async function updateStaffMember(
+  user: AuthenticatedUser,
+  facilityId: string,
+  membershipId: string,
+  data: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    role?: 'doctor' | 'receptionist' | 'facility_admin';
+  },
+  context?: RequestContext,
+) {
+  await requireFacilityAdmin(user, facilityId);
+
+  const membership = await query<{ user_id: string; role: string }>(
+    `SELECT user_id, role::text AS role
+     FROM public.facility_memberships
+     WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  if (!membership.rows[0]) throw new NotFoundError('Staff membership', membershipId);
+
+  const targetUserId = membership.rows[0].user_id;
+  const currentRole = membership.rows[0].role;
+
+  let firstName: string | undefined;
+  let lastName: string | null | undefined;
+  if (data.fullName !== undefined) {
+    ({ firstName, lastName } = splitFullName(data.fullName));
+  }
+
+  let email: string | undefined;
+  if (data.email !== undefined) {
+    email = normalizeEmail(data.email);
+    const current = await query<{ email: string | null }>(
+      `SELECT email FROM public.profiles WHERE id = $1`,
+      [targetUserId],
+    );
+    if ((current.rows[0]?.email ?? '').toLowerCase() !== email) {
+      await assertCanAddStaffByEmail(email);
+    }
+  }
+
+  let phone: string | null | undefined;
+  if (data.phone !== undefined) {
+    phone = data.phone.trim() ? normalizeZimbabwePhone(data.phone) : null;
+  }
+
+  if (data.role && data.role !== currentRole) {
+    if (currentRole === 'facility_admin' && data.role !== 'facility_admin') {
+      const admins = await query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count
+         FROM public.facility_memberships
+         WHERE facility_id = $1 AND role = 'facility_admin'::public.app_role`,
+        [facilityId],
+      );
+      if (Number(admins.rows[0]?.count ?? 0) <= 1) {
+        throw new ConflictError('Cannot change the role of the last facility administrator.');
+      }
+    }
+
+    await query(
+      `UPDATE public.facility_memberships SET role = $2::public.app_role WHERE id = $1`,
+      [membershipId, data.role],
+    );
+  }
+
+  if (
+    firstName !== undefined ||
+    lastName !== undefined ||
+    email !== undefined ||
+    phone !== undefined ||
+    data.role !== undefined
+  ) {
+    await query(
+      `UPDATE public.profiles SET
+         primary_role = COALESCE($2::public.app_role, primary_role),
+         first_name = COALESCE($3, first_name),
+         last_name = COALESCE($4, last_name),
+         email = COALESCE($5, email),
+         phone = COALESCE($6, phone)
+       WHERE id = $1`,
+      [
+        targetUserId,
+        data.role ?? null,
+        firstName ?? null,
+        lastName ?? null,
+        email ?? null,
+        phone ?? null,
+      ],
+    );
+
+    if (email) {
+      await ensureAuthUserEmail(targetUserId, email);
+    }
+  }
+
+  await logPermissionAudit(
+    user.id,
+    'permission.update',
+    'facility_membership',
+    membershipId,
+    facilityId,
+    context,
+    { targetUserId, role: data.role ?? currentRole },
+  );
+
+  return { id: membershipId, userId: targetUserId };
 }
 
 export async function addStaffMember(
@@ -2016,6 +2129,31 @@ export async function removeStaffMember(
   context?: RequestContext,
 ) {
   await requireFacilityAdmin(user, facilityId);
+
+  const target = await query<{ user_id: string; role: string }>(
+    `SELECT user_id, role::text AS role
+     FROM public.facility_memberships
+     WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  if (!target.rows[0]) throw new NotFoundError('Staff membership', membershipId);
+
+  if (target.rows[0].user_id === user.id) {
+    throw new ConflictError('You cannot remove yourself from the facility team.');
+  }
+
+  if (target.rows[0].role === 'facility_admin') {
+    const admins = await query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count
+       FROM public.facility_memberships
+       WHERE facility_id = $1 AND role = 'facility_admin'::public.app_role`,
+      [facilityId],
+    );
+    if (Number(admins.rows[0]?.count ?? 0) <= 1) {
+      throw new ConflictError('Cannot remove the last facility administrator.');
+    }
+  }
+
   const result = await query(
     `DELETE FROM public.facility_memberships WHERE id = $1 AND facility_id = $2 RETURNING id`,
     [membershipId, facilityId],
