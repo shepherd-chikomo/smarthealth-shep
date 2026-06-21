@@ -3,6 +3,7 @@ import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/core/network/dio_client.dart';
 import 'package:smarthealth_shep/features/family/data/family_repository.dart';
 import 'package:smarthealth_shep/core/health_vault/health_vault_provider.dart';
+import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
 import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/features/profile/utils/profile_completion_calculator.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
@@ -54,8 +55,15 @@ final familyMembersBootstrapProvider = FutureProvider<void>((ref) async {
 final familyMembersProvider =
     FutureProvider<List<FamilyMemberModel>>((ref) async {
   await ref.watch(familyMembersBootstrapProvider.future);
+  await ref.watch(healthVaultBootstrapProvider.future);
   final repository = ref.watch(familyRepositoryProvider);
   return repository.loadMembers(syncRemote: false);
+});
+
+final medicationRemindersBootstrapProvider = FutureProvider<void>((ref) async {
+  await ref.watch(healthVaultBootstrapProvider.future);
+  final members = await ref.watch(familyMembersProvider.future);
+  await MedicationReminderService.instance.resyncAllFromMembers(members);
 });
 
 void invalidateFamilyProfileProviders(

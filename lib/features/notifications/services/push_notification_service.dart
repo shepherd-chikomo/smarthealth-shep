@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smarthealth_shep/core/config/firebase_config.dart';
 import 'package:smarthealth_shep/core/notifications/background_message_handler.dart';
+import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
 import 'package:smarthealth_shep/features/notifications/data/notification_repository.dart';
 import 'package:smarthealth_shep/features/notifications/services/deep_link_handler.dart';
 
@@ -57,15 +58,22 @@ class PushNotificationService {
   }
 
   Future<void> _initLocalNotifications() async {
+    await MedicationReminderService.instance.ensureAndroidChannel();
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();
     await _localNotifications.initialize(
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
-        if (payload != null && _router != null) {
-          DeepLinkHandler.navigate(_router!, actionUrl: payload);
+        if (payload == null || _router == null) return;
+
+        if (MedicationReminderService.isMedicationPayload(payload)) {
+          MedicationReminderService.instance.handleNotificationResponse(response);
+          return;
         }
+
+        if (!DeepLinkHandler.isRoutable(payload)) return;
+        DeepLinkHandler.navigate(_router!, actionUrl: payload);
       },
     );
   }

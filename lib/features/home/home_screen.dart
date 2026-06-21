@@ -16,6 +16,7 @@ import 'package:smarthealth_shep/shared/data/category_repository.dart';
 import 'package:smarthealth_shep/shared/data/facility_repository.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
+import 'package:smarthealth_shep/features/home/widgets/home_backup_restore_banner.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_header_card.dart';
 import 'package:smarthealth_shep/features/home/widgets/home_provider_skeleton.dart';
 import 'package:smarthealth_shep/features/home/widgets/service_category_grid.dart';
@@ -53,6 +54,17 @@ class _HomeDashboardView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<SearchOriginChange>>(searchOriginChangesProvider,
+        (previous, next) {
+      next.whenData((change) {
+        if (change.kind != SearchOriginChangeKind.gps) return;
+        final bloc = context.read<HomeBloc>();
+        final state = bloc.state;
+        if (state is HomeLoaded && state.isRefreshing) return;
+        bloc.add(const RefreshHomeData());
+      });
+    });
+
     final l10n = AppLocalizations.of(context);
 
     ref.watch(homeMedicalSummaryProvider);
@@ -69,7 +81,9 @@ class _HomeDashboardView extends ConsumerWidget {
             return RefreshIndicator(
               color: HomeDashboardColors.of(context).primary,
               onRefresh: () async {
-                context.read<HomeBloc>().add(const RefreshHomeData());
+                context.read<HomeBloc>().add(
+                      const RefreshHomeData(refreshOrigin: true),
+                    );
                 await context.read<HomeBloc>().stream.firstWhere(
                       (s) =>
                           s is HomeLoaded && !s.isRefreshing ||
@@ -109,6 +123,7 @@ class _HomeDashboardView extends ConsumerWidget {
                             ),
                           ],
                           const SizedBox(height: 16),
+                          const HomeBackupRestoreBanner(),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: HomeUpcomingAppointmentBanner(),

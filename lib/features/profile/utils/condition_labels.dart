@@ -35,16 +35,38 @@ abstract final class ConditionLabels {
     for (final option in SearchFilterOptions.conditions) {
       if (option.id == id) return option.label;
     }
-    return id.replaceAll('_', ' ');
+    return id.replaceAll('_', ' ').replaceAll('-', ' ');
+  }
+
+  static String _titleCaseWords(String value) {
+    return value
+        .split(RegExp(r'[\s\-_]+'))
+        .where((part) => part.isNotEmpty)
+        .map((part) {
+          if (part.length <= 4 && part.toUpperCase() == part) return part;
+          return '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}';
+        })
+        .join(' ');
+  }
+
+  static String displayLabelFor(String id, {Map<String, String>? customLabels}) {
+    final custom = customLabels?[id];
+    if (custom != null && custom.isNotEmpty) return custom;
+
+    final resolved = labelFor(id);
+    if (resolved != id.replaceAll('_', ' ').replaceAll('-', ' ')) {
+      return resolved;
+    }
+    return _titleCaseWords(resolved);
   }
 
   static String joinLabels(Iterable<String> ids, {Map<String, String>? customLabels}) {
     if (customLabels != null && customLabels.isNotEmpty) {
       return ids
-          .map((id) => customLabels[id] ?? labelFor(id))
+          .map((id) => displayLabelFor(id, customLabels: customLabels))
           .join(' • ');
     }
-    return ids.map(labelFor).join(' • ');
+    return ids.map((id) => displayLabelFor(id)).join(' • ');
   }
 
   static List<SearchFilterOption> allOptions() {

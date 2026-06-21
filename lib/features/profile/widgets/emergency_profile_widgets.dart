@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/core/auth/patient_profile.dart';
@@ -199,6 +200,7 @@ class _TintedSectionCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.max,
         children: [
           Row(
             children: [
@@ -347,72 +349,109 @@ class CurrentMedicationsCard extends StatelessWidget {
 
   final List<MedicationEntry> medications;
 
+  static String _formatReminderTimes(List<String> times) {
+    return times.map((time) => time.trim()).where((t) => t.isNotEmpty).join(', ');
+  }
+
   @override
   Widget build(BuildContext context) {
     if (medications.isEmpty) return const SizedBox.shrink();
     final colors = HomeDashboardColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isMedicationsNone(medications)) {
-      return _TintedSectionCard(
+      return InkWell(
+        onTap: () => context.push('/profile/medications'),
+        borderRadius: BorderRadius.circular(14),
+        child: _TintedSectionCard(
+          title: 'CURRENT MEDICATIONS',
+          icon: Symbols.medication,
+          tint: isDark ? const Color(0xFF1A2A3D) : colors.primary.withValues(alpha: 0.08),
+          border: colors.primary.withValues(alpha: 0.35),
+          titleColor: colors.primary,
+          child: Text(
+            profileNoneDisplayLabel,
+            style: TextStyle(color: colors.textSecondary),
+          ),
+        ),
+      );
+    }
+    return InkWell(
+      onTap: () => context.push('/profile/medications'),
+      borderRadius: BorderRadius.circular(14),
+      child: _TintedSectionCard(
         title: 'CURRENT MEDICATIONS',
         icon: Symbols.medication,
         tint: isDark ? const Color(0xFF1A2A3D) : colors.primary.withValues(alpha: 0.08),
         border: colors.primary.withValues(alpha: 0.35),
         titleColor: colors.primary,
-        child: Text(
-          profileNoneDisplayLabel,
-          style: TextStyle(color: colors.textSecondary),
-        ),
-      );
-    }
-    return _TintedSectionCard(
-      title: 'CURRENT MEDICATIONS',
-      icon: Symbols.medication,
-      tint: isDark ? const Color(0xFF1A2A3D) : colors.primary.withValues(alpha: 0.08),
-      border: colors.primary.withValues(alpha: 0.35),
-      titleColor: colors.primary,
-      child: Column(
-        children: [
-          for (var i = 0; i < medications.length; i++) ...[
-            if (i > 0) Divider(color: colors.primary.withValues(alpha: 0.15)),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    decodeStoredText(medications[i].name),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (medications[i].frequency != null &&
-                    medications[i].frequency!.isNotEmpty) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+        child: Column(
+          children: [
+            for (var i = 0; i < medications.length; i++) ...[
+              if (i > 0) Divider(color: colors.primary.withValues(alpha: 0.15)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
                     child: Text(
-                      decodeStoredText(medications[i].frequency),
+                      decodeStoredText(medications[i].name),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: colors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: colors.textPrimary,
                       ),
                     ),
                   ),
+                  if (medications[i].frequency != null &&
+                      medications[i].frequency!.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        decodeStoredText(medications[i].frequency),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
+              ),
+              if (medications[i].reminderEnabled &&
+                  medications[i].reminderTimes.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Symbols.notifications_active,
+                      size: 16,
+                      color: colors.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _formatReminderTimes(medications[i].reminderTimes),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -582,7 +621,10 @@ class MedicalHistoryCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  customLabels[id] ?? ConditionLabels.labelFor(id),
+                  ConditionLabels.displayLabelFor(
+                    id,
+                    customLabels: customLabels,
+                  ),
                   style: TextStyle(
                     color: colors.primary,
                     fontWeight: FontWeight.w600,
@@ -724,20 +766,22 @@ class EmergencyContactMedicalAidRow extends StatelessWidget {
             ],
           );
         }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: EmergencyContactCard(
-                contact: displayContacts.first,
-                compact: true,
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: EmergencyContactCard(
+                  contact: displayContacts.first,
+                  compact: true,
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: MedicalAidCard(medicalAid: medicalAid, compact: true),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: MedicalAidCard(medicalAid: medicalAid, compact: true),
+              ),
+            ],
+          ),
         );
       },
     );

@@ -152,7 +152,10 @@ export default function StaffPage() {
 
       {!canManage && (
         <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Only facility administrators can add, edit, or remove staff members.
+          Your role at this facility is{' '}
+          <strong>{profile?.facilities.find((f) => f.id === facilityId)?.role ?? 'staff'}</strong>.
+          Only facility administrators can add, edit, or remove team members. Ask an existing
+          administrator to upgrade your role, or claim facility ownership from the Provider portal.
         </p>
       )}
 

@@ -82,18 +82,42 @@ abstract final class MedicationScheduleUtils {
   static int _dosesFromFrequency(String? frequency) {
     final value = frequency?.trim().toLowerCase() ?? '';
     if (value.isEmpty) return 1;
-    if (value.contains('qid') || value.contains('four')) return 4;
-    if (value.contains('tds') || value.contains('three')) return 3;
+
+    final bareNumber = RegExp(r'^(\d+)$').firstMatch(value);
+    if (bareNumber != null) {
+      final count = int.tryParse(bareNumber.group(1)!);
+      if (count != null && count > 0) {
+        return count.clamp(1, 6);
+      }
+    }
+
+    if (value.contains('qid') ||
+        value.contains('four') ||
+        RegExp(r'\b4\s*x\b').hasMatch(value)) {
+      return 4;
+    }
+    if (value.contains('tds') ||
+        value.contains('three') ||
+        RegExp(r'\b3\s*x\b').hasMatch(value)) {
+      return 3;
+    }
     if (value.contains('bd') ||
         value.contains('twice') ||
-        value.contains('2x')) {
+        RegExp(r'\b2\s*x\b').hasMatch(value)) {
       return 2;
     }
     if (value.contains('od') ||
         value.contains('once') ||
         value.contains('daily') ||
-        value.contains('1x')) {
+        RegExp(r'\b1\s*x\b').hasMatch(value)) {
       return 1;
+    }
+    final numericTimes = RegExp(r'(\d+)\s*(?:x|times?)').firstMatch(value);
+    if (numericTimes != null) {
+      final count = int.tryParse(numericTimes.group(1)!);
+      if (count != null && count > 0) {
+        return count.clamp(1, 6);
+      }
     }
     final everyHours = RegExp(r'every\s+(\d+)\s*h').firstMatch(value);
     if (everyHours != null) {

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smarthealth_shep/core/auth/auth_interceptor.dart';
 import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
@@ -17,9 +20,9 @@ import 'package:smarthealth_shep/features/profile/utils/profile_none_sentinel.da
 import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
 import 'package:smarthealth_shep/features/profile/models/selected_primary_provider.dart';
 import 'package:smarthealth_shep/features/profile/providers/medical_aid_catalog_provider.dart';
+import 'package:smarthealth_shep/features/medications/utils/medication_reminder_times.dart';
 import 'package:smarthealth_shep/features/medications/services/medication_reminder_service.dart';
 import 'package:smarthealth_shep/features/medications/services/prescription_scan_service.dart';
-import 'package:smarthealth_shep/features/medications/utils/prescription_label_parser.dart';
 import 'package:smarthealth_shep/features/medications/widgets/prescription_review_sheet.dart';
 import 'package:smarthealth_shep/features/profile/widgets/condition_selection_sheet.dart';
 import 'package:smarthealth_shep/features/profile/widgets/emergency_contacts_editor.dart';
@@ -32,10 +35,17 @@ import 'package:smarthealth_shep/shared/models/medical_aid_scheme.dart';
 const _bloodGroups = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 class EditEmergencyMedicalProfileScreen extends ConsumerStatefulWidget {
-  const EditEmergencyMedicalProfileScreen({super.key, this.focusSection});
+  const EditEmergencyMedicalProfileScreen({
+    super.key,
+    this.focusSection,
+    this.medicationsOnly = false,
+  });
 
   /// Checklist item id from [ProfileEditFocus] — scrolls to that section on open.
   final String? focusSection;
+
+  /// When true, shows only the medications editor (from profile medications card).
+  final bool medicationsOnly;
 
   @override
   ConsumerState<EditEmergencyMedicalProfileScreen> createState() =>
@@ -196,6 +206,9 @@ class _EditEmergencyMedicalProfileScreenState
       for (final med in metadata.medications) {
         _medications.add(_MedicationRow.fromEntry(med));
       }
+      for (final row in _medications) {
+        if (row.reminderEnabled) row.syncReminderSlots();
+      }
     }
   }
 
@@ -235,6 +248,54 @@ class _EditEmergencyMedicalProfileScreenState
       _medications[index].dispose();
       _medications.removeAt(index);
     });
+    unawaited(_syncMedicationReminders());
+  }
+
+  String _reminderSubjectId() {
+    final patient = ref.read(patientProfileProvider).value;
+    final members = ref.read(familyMembersProvider).value ?? [];
+    final selectedMemberId = ref.read(selectedProfileMemberIdProvider);
+    final active = resolveSelectedProfileMember(
+      members: members,
+      patient: patient,
+      selectedMemberId: selectedMemberId,
+    );
+    if (active.isPrimaryAccountHolder) {
+      final id = _existingMemberId ??
+          (active.id == profilePrimaryLocalId ? '' : active.id);
+      return id.isNotEmpty ? id : profilePrimaryLocalId;
+    }
+    return active.id.isNotEmpty ? active.id : profilePrimaryLocalId;
+  }
+
+  List<MedicationEntry> _medicationEntriesForReminders() {
+    if (_medicationsMarkedNone) return const [];
+    return _medications
+        .map((row) => row.toEntry())
+        .where((m) => m.name.isNotEmpty)
+        .toList();
+  }
+
+  Future<bool> _ensureReminderPermission() async {
+    final granted = await MedicationReminderService.instance.ensurePermission();
+    if (!granted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Allow notifications and alarms for medication reminders',
+          ),
+        ),
+      );
+    }
+    return granted;
+  }
+
+  Future<void> _syncMedicationReminders() async {
+    final entries = _medicationEntriesForReminders();
+    await MedicationReminderService.instance.syncMedications(
+      subjectId: _reminderSubjectId(),
+      medications: entries,
+    );
   }
 
   Future<void> _scanPrescription() async {
@@ -283,9 +344,9 @@ class _EditEmergencyMedicalProfileScreenState
       ),
     );
 
-    PrescriptionLabelFields? fields;
+    PrescriptionScanResult scanResult;
     try {
-      fields = source == ImageSource.camera
+      scanResult = source == ImageSource.camera
           ? await _prescriptionScanService.scanFromCamera()
           : await _prescriptionScanService.scanFromGallery();
     } finally {
@@ -293,14 +354,20 @@ class _EditEmergencyMedicalProfileScreenState
     }
 
     if (!mounted) return;
-    if (fields == null || !fields.hasAny) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not read prescription label')),
-      );
+    if (!scanResult.isSuccess) {
+      final message = scanResult.errorMessage ?? 'Could not read prescription label';
+      if (message != 'No image selected') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
       return;
     }
 
-    final result = await PrescriptionReviewSheet.show(context, fields: fields);
+    final result = await PrescriptionReviewSheet.show(
+      context,
+      fields: scanResult.fields!,
+    );
     if (result == null || !mounted) return;
 
     setState(() {
@@ -309,7 +376,10 @@ class _EditEmergencyMedicalProfileScreenState
     });
 
     if (result.reminderEnabled) {
-      await MedicationReminderService.instance.ensurePermission();
+      final granted = await _ensureReminderPermission();
+      if (granted) {
+        await _syncMedicationReminders();
+      }
     }
   }
 
@@ -336,6 +406,7 @@ class _EditEmergencyMedicalProfileScreenState
       context,
       selectedIds: _conditions,
       customLabels: _customConditionLabels,
+      apiService: ApiService(ref.read(dioProvider)),
     );
     if (result == null) return;
     setState(() {
@@ -445,24 +516,37 @@ class _EditEmergencyMedicalProfileScreenState
       }
       invalidateFamilyProfileProviders(ref);
       if (!_medicationsMarkedNone) {
-        await MedicationReminderService.instance.syncMedications(
-          subjectId: saved.id.isNotEmpty ? saved.id : profilePrimaryLocalId,
-          medications: medicationEntries,
+        await _syncMedicationReminders();
+      } else {
+        await MedicationReminderService.instance.cancelAllForSubject(
+          saved.id.isNotEmpty ? saved.id : profilePrimaryLocalId,
         );
       }
       if (!mounted) return;
+      final reminderCount = MedicationReminderService.instance
+          .countScheduledReminders(medicationEntries);
+      final hasSession = await ref.read(secureStorageProvider).hasSession();
+      final baseMessage = reminderCount > 0
+          ? 'Profile saved — $reminderCount medication reminders scheduled'
+          : 'Profile saved';
+      final message = hasSession
+          ? baseMessage
+          : '$baseMessage. Sign in again to sync to the cloud.';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Emergency profile saved')),
+        SnackBar(content: Text(message)),
       );
       context.pop();
     } on DioException catch (error) {
       if (mounted) {
         final message = error.response?.statusCode == 401
-            ? 'Session expired — please sign in again'
+            ? 'Could not sync to the cloud — profile saved on this device'
             : 'Failed to save profile (${error.response?.statusCode ?? 'network'})';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
+        if (error.response?.statusCode == 401) {
+          context.pop();
+        }
       }
     } catch (error) {
       if (mounted) {
@@ -533,7 +617,9 @@ class _EditEmergencyMedicalProfileScreenState
           backgroundColor: colors.background,
           appBar: AppBar(
             backgroundColor: colors.background,
-            title: const Text('Edit Emergency Profile'),
+            title: Text(
+              widget.medicationsOnly ? 'Medications' : 'Edit Emergency Profile',
+            ),
             actions: [
               TextButton(
                 onPressed: _saving ? null : _save,
@@ -553,6 +639,7 @@ class _EditEmergencyMedicalProfileScreenState
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               children: [
+                if (!widget.medicationsOnly) ...[
                 const ProfileMemberSwitcher(),
                 const SizedBox(height: 12),
                 _sectionTitle(context, 'Identity'),
@@ -677,6 +764,11 @@ class _EditEmergencyMedicalProfileScreenState
                   ),
                 ),
                 const SizedBox(height: 20),
+                ],
+                if (widget.medicationsOnly) ...[
+                  const ProfileMemberSwitcher(),
+                  const SizedBox(height: 12),
+                ],
                 KeyedSubtree(
                   key: _sectionKeys[ProfileEditFocus.medications],
                   child: Row(
@@ -729,7 +821,15 @@ class _EditEmergencyMedicalProfileScreenState
                       Expanded(
                         child: TextFormField(
                           controller: _medications[i].frequencyController,
-                          decoration: _decoration(context, 'Freq'),
+                          decoration: _decoration(context, 'Freq (TDS, BD, QID)'),
+                          onChanged: (_) {
+                            setState(() {
+                              _medications[i].syncReminderSlots();
+                            });
+                            if (_medications[i].reminderEnabled) {
+                              unawaited(_syncMedicationReminders());
+                            }
+                          },
                         ),
                       ),
                       IconButton(
@@ -741,36 +841,60 @@ class _EditEmergencyMedicalProfileScreenState
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Remind me'),
-                    subtitle: const Text('Local notifications for 7 days'),
+                    subtitle: Text(
+                      _medications[i].expectedReminderCount > 1
+                          ? '${_medications[i].expectedReminderCount} daily reminders (from frequency)'
+                          : 'Local alarm notifications',
+                    ),
                     value: _medications[i].reminderEnabled,
-                    onChanged: (value) {
-                      setState(() => _medications[i].reminderEnabled = value);
+                    onChanged: (value) async {
                       if (value) {
-                        MedicationReminderService.instance.ensurePermission();
+                        final granted = await _ensureReminderPermission();
+                        if (!granted || !mounted) return;
                       }
+                      setState(() {
+                        _medications[i].reminderEnabled = value;
+                        if (value) {
+                          _medications[i].syncReminderSlots();
+                        }
+                      });
+                      await _syncMedicationReminders();
                     },
                   ),
                   if (_medications[i].reminderEnabled)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Reminder time'),
-                      subtitle: Text(
-                        '${_medications[i].reminderTime.hour.toString().padLeft(2, '0')}:'
-                        '${_medications[i].reminderTime.minute.toString().padLeft(2, '0')}',
+                    for (
+                      var t = 0;
+                      t < _medications[i].reminderTimes.length;
+                      t++
+                    )
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          _medications[i].expectedReminderCount > 1
+                              ? 'Reminder ${t + 1} of ${_medications[i].expectedReminderCount}'
+                              : 'Reminder time',
+                        ),
+                        subtitle: Text(
+                          '${_medications[i].reminderTimes[t].hour.toString().padLeft(2, '0')}:'
+                          '${_medications[i].reminderTimes[t].minute.toString().padLeft(2, '0')}',
+                        ),
+                        trailing: const Icon(Icons.schedule),
+                        onTap: () async {
+                          final picked = await showTimePicker(
+                            context: context,
+                            initialTime: _medications[i].reminderTimes[t],
+                          );
+                          if (picked != null && mounted) {
+                            setState(
+                              () => _medications[i].reminderTimes[t] = picked,
+                            );
+                            await _syncMedicationReminders();
+                          }
+                        },
                       ),
-                      trailing: const Icon(Icons.schedule),
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: _medications[i].reminderTime,
-                        );
-                        if (picked != null && mounted) {
-                          setState(() => _medications[i].reminderTime = picked);
-                        }
-                      },
-                    ),
                   const SizedBox(height: 8),
                 ],
+                if (!widget.medicationsOnly) ...[
                 const SizedBox(height: 12),
                 _sectionTitle(context, 'Emergency contacts'),
                 KeyedSubtree(
@@ -837,6 +961,7 @@ class _EditEmergencyMedicalProfileScreenState
                   },
                   ),
                 ),
+                ],
                 const SizedBox(height: 32),
               ],
             ),
@@ -877,22 +1002,22 @@ class _MedicationRow {
     this.reminderEnabled = false,
     this.dosesPerDay,
     this.quantity,
-    TimeOfDay? reminderTime,
+    List<TimeOfDay>? reminderTimes,
   })  : nameController = TextEditingController(text: name),
         frequencyController = TextEditingController(text: frequency ?? ''),
-        reminderTime = reminderTime ?? const TimeOfDay(hour: 8, minute: 0);
+        reminderTimes = reminderTimes ??
+            const [TimeOfDay(hour: 8, minute: 0)] {
+    frequencyController.addListener(syncReminderSlots);
+  }
 
   factory _MedicationRow.fromEntry(MedicationEntry entry) {
-    TimeOfDay? time;
-    if (entry.reminderTimes.isNotEmpty) {
-      final parts = entry.reminderTimes.first.split(':');
-      if (parts.length == 2) {
-        time = TimeOfDay(
-          hour: int.tryParse(parts[0]) ?? 8,
-          minute: int.tryParse(parts[1]) ?? 0,
-        );
-      }
-    }
+    final storedTimes = MedicationReminderTimes.parseStoredTimes(
+      entry.reminderTimes,
+    );
+    final slots = MedicationReminderTimes.resolveSlots(
+      entry: entry,
+      existing: storedTimes,
+    );
     return _MedicationRow(
       name: entry.name,
       frequency: entry.frequency,
@@ -900,7 +1025,7 @@ class _MedicationRow {
       reminderEnabled: entry.reminderEnabled,
       dosesPerDay: entry.dosesPerDay,
       quantity: entry.quantity,
-      reminderTime: time,
+      reminderTimes: slots,
     );
   }
 
@@ -910,28 +1035,61 @@ class _MedicationRow {
   bool reminderEnabled;
   int? dosesPerDay;
   String? quantity;
-  TimeOfDay reminderTime;
+  List<TimeOfDay> reminderTimes;
 
-  String _formatTime(TimeOfDay time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  int get expectedReminderCount {
+    final frequency = frequencyController.text.trim();
+    return MedicationReminderTimes.dosesForFrequency(
+      frequency.isEmpty ? null : frequency,
+    );
+  }
+
+  void syncReminderSlots() {
+    if (!reminderEnabled) return;
+    final frequency = frequencyController.text.trim();
+    final doses = MedicationReminderTimes.dosesForFrequency(
+      frequency.isEmpty ? null : frequency,
+    );
+    final entry = MedicationEntry(
+      id: id,
+      name: nameController.text.trim(),
+      frequency: frequency.isEmpty ? null : frequency,
+      dosesPerDay: doses,
+      reminderEnabled: true,
+      reminderTimes: MedicationReminderTimes.toStorage(reminderTimes),
+    );
+    dosesPerDay = doses;
+    reminderTimes = MedicationReminderTimes.resolveSlots(
+      entry: entry,
+      existing: reminderTimes,
+    );
   }
 
   MedicationEntry toEntry() {
     final name = nameController.text.trim();
     final frequency = frequencyController.text.trim();
     id ??= 'med_${DateTime.now().microsecondsSinceEpoch}';
+    final doses = MedicationReminderTimes.dosesForFrequency(
+      frequency.isEmpty ? null : frequency,
+    );
+    if (reminderEnabled) {
+      syncReminderSlots();
+    }
     return MedicationEntry(
       id: id,
       name: name,
       frequency: frequency.isEmpty ? null : frequency,
       reminderEnabled: reminderEnabled,
-      reminderTimes: reminderEnabled ? [_formatTime(reminderTime)] : const [],
-      dosesPerDay: dosesPerDay,
+      reminderTimes: reminderEnabled
+          ? MedicationReminderTimes.toStorage(reminderTimes)
+          : const [],
+      dosesPerDay: doses,
       quantity: quantity,
     );
   }
 
   void dispose() {
+    frequencyController.removeListener(syncReminderSlots);
     nameController.dispose();
     frequencyController.dispose();
   }

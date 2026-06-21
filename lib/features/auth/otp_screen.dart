@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import 'package:smarthealth_shep/core/auth/auth_repository.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
+import 'package:smarthealth_shep/core/backup/post_auth_navigation.dart';
+import 'package:smarthealth_shep/core/router/app_router.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
 import 'package:smarthealth_shep/shared/widgets/otp_input.dart';
 
@@ -84,10 +86,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> with CodeAutoFill {
             email: widget.email,
             phone: widget.phone,
           );
+      // Resolve backup route before sign-in: auth redirect unmounts this screen.
+      await PostAuthNavigation.resolveRouteForOtpSignIn();
       await ref.read(authControllerProvider.notifier).completeSignIn(session);
       TextInput.finishAutofillContext(shouldSave: false);
-      if (!mounted) return;
-      context.go('/home');
+      ref.read(routerProvider).go(PostAuthNavigation.consumePendingRoute());
     } on DioException catch (e) {
       setState(() => _error = _extractError(e) ?? 'Invalid or expired code');
     } catch (e) {

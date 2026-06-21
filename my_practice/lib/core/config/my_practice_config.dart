@@ -19,6 +19,12 @@ abstract final class MyPracticeConfig {
 
   static bool get useSeedData => devMode || kDebugMode && devMode;
 
+  /// True when running local seed / dev bypass (debug builds with SKIP_AUTH, etc.).
+  static bool get useLocalDevSeed {
+    if (kReleaseMode) return devMode;
+    return devMode || skipAuthForTesting || kDebugMode;
+  }
+
   static bool get skipAuthForTesting {
     if (kReleaseMode) return false;
     const skip = bool.fromEnvironment('SKIP_AUTH', defaultValue: false);

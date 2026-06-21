@@ -140,9 +140,94 @@ class FacilityApiClient {
     return res.data ?? {};
   }
 
+  Future<Map<String, dynamic>> addStaff({
+    required String fullName,
+    required String email,
+    required String role,
+    String? phone,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/staff'),
+      data: {
+        'fullName': fullName,
+        'email': email,
+        'role': role,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      },
+    );
+    return res.data ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> getFacilityHours() async {
+    final res = await _dio.get<Map<String, dynamic>>(_path('/facility/hours'));
+    final hours = res.data?['hours'] as List<dynamic>? ?? [];
+    return hours.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> updateFacilityHours(
+    List<Map<String, dynamic>> hours,
+  ) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      _path('/facility/hours'),
+      data: {'hours': hours},
+    );
+    final updated = res.data?['hours'] as List<dynamic>? ?? hours;
+    return updated.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getProviderAvailability({
+    String? providerId,
+  }) async {
+    var path = '/facility/availability';
+    if (providerId != null) {
+      path = '$path?providerId=$providerId';
+    }
+    final res = await _dio.get<Map<String, dynamic>>(_path(path));
+    final items = res.data?['availability'] as List<dynamic>? ?? [];
+    return items.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> getClaims({String? status}) async {
+    var path = '/clinical/claims';
+    if (status != null) path = '$path?status=$status';
+    final res = await _dio.get<Map<String, dynamic>>(_path(path));
+    final items = res.data?['items'] as List<dynamic>? ?? [];
+    return items.cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> updateProviderAvailability(
+    String providerId,
+    List<Map<String, dynamic>> hours,
+  ) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      _path('/facility/availability/$providerId'),
+      data: {'hours': hours},
+    );
+    final items = res.data?['availability'] as List<dynamic>? ?? hours;
+    return items.cast<Map<String, dynamic>>();
+  }
+
   Future<Map<String, dynamic>> getProfile() async {
     final res =
         await _dio.get<Map<String, dynamic>>(_path('/facility/profile'));
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> body) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      _path('/facility/profile'),
+      data: body,
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> updateProfileSettings(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      _path('/facility/profile-settings'),
+      data: body,
+    );
     return res.data ?? {};
   }
 

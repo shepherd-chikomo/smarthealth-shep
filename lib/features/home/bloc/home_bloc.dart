@@ -70,7 +70,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       emit,
       isRefresh: true,
       categoryId: categoryId,
-      refreshOrigin: true,
+      refreshOrigin: event.refreshOrigin,
     );
   }
 

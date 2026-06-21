@@ -91,6 +91,7 @@ class _AddEditFamilyMemberScreenState extends ConsumerState<AddEditFamilyMemberS
       context,
       selectedIds: _conditions,
       customLabels: _customConditionLabels,
+      apiService: ApiService(ref.read(dioProvider)),
     );
     if (result == null) return;
     setState(() {

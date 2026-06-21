@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/core/auth/auth_repository.dart';
 import 'package:smarthealth_shep/core/auth/dev_auth_bypass.dart';
+import 'package:smarthealth_shep/core/backup/backup_discovery_service.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
+import 'package:smarthealth_shep/core/health_vault/health_vault_repository.dart';
 
 /// Notifies [GoRouter] when authentication state changes.
 final authRefreshListenableProvider = Provider<AuthRefreshListenable>((ref) {
@@ -86,6 +88,13 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> completeSignIn(AuthSession session) async {
+    if (!AppConfig.skipAuthForTesting) {
+      final needsRestore = await HealthVaultRepository().needsRestoreFromBackup();
+      if (needsRestore) {
+        await BackupDiscoveryService.markAwaitingRestore();
+      }
+    }
+
     state = AuthState(
       isAuthenticated: true,
       isLoading: false,

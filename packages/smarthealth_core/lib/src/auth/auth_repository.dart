@@ -44,11 +44,12 @@ class AuthRepository {
     required OtpChannel channel,
     String? email,
     String? phone,
+    String? context,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/auth/otp/send',
       data: {
-        'context': otpContext,
+        'context': context ?? otpContext,
         'channel': channel.name,
         if (email != null) 'email': email,
         if (phone != null) 'phone': phone,
@@ -62,16 +63,17 @@ class AuthRepository {
     );
   }
 
-  Future<AuthSession> verifyOtp({
+  Future<VerifyOtpResult> verifyOtp({
     required OtpChannel channel,
     required String otp,
     String? email,
     String? phone,
+    String? context,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/auth/otp/verify',
       data: {
-        'context': otpContext,
+        'context': context ?? otpContext,
         'channel': channel.name,
         'otp': otp,
         if (email != null) 'email': email,
@@ -91,11 +93,14 @@ class AuthRepository {
     );
 
     final user = data['user'] as Map<String, dynamic>? ?? const {};
-    return AuthSession(
-      userId: user['id'] as String? ?? '',
-      phone: user['phone'] as String? ?? phone ?? '',
-      email: user['email'] as String? ?? email,
-      role: user['role'] as String?,
+    return VerifyOtpResult(
+      session: AuthSession(
+        userId: user['id'] as String? ?? '',
+        phone: user['phone'] as String? ?? phone ?? '',
+        email: user['email'] as String? ?? email,
+        role: user['role'] as String?,
+      ),
+      practitionerClaim: data['practitionerClaim'] as Map<String, dynamic>?,
     );
   }
 
@@ -114,6 +119,16 @@ class AuthRepository {
   }
 
   Future<bool> hasSession() => _storage.hasSession();
+}
+
+class VerifyOtpResult {
+  const VerifyOtpResult({
+    required this.session,
+    this.practitionerClaim,
+  });
+
+  final AuthSession session;
+  final Map<String, dynamic>? practitionerClaim;
 }
 
 class AuthSession {

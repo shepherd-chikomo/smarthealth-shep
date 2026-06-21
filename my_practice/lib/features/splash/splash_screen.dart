@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
+import 'package:my_practice/data/seed/dev_team_seed.dart';
 import 'package:my_practice/data/seed/seed_data_loader.dart';
 import 'package:my_practice/data/sync/sync_notifier.dart';
 import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
@@ -27,8 +28,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _init() async {
     // Never block boot on seed generation — it can take minutes on device.
-    if (MyPracticeConfig.devMode) {
-      unawaited(SeedDataLoader(ref.read(appDatabaseProvider)).loadIfNeeded());
+    if (MyPracticeConfig.useLocalDevSeed) {
+      final db = ref.read(appDatabaseProvider);
+      await DevTeamSeed.ensure(db, DevTeamSeed.seedFacilityId);
+      unawaited(SeedDataLoader(db).loadIfNeeded());
     }
 
     if (!MyPracticeConfig.skipAuthForTesting) {

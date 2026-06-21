@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/data/local/app_database.dart';
+import 'package:my_practice/data/seed/dev_team_seed.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
@@ -44,10 +45,19 @@ class SeedDataLoader {
     if (!MyPracticeConfig.devMode) return;
 
     final existing = await _db.select(_db.patients).get();
-    if (existing.length >= 100) return;
+    if (existing.length < 100) {
+      await _db.wipeAll();
+      await _seedAll();
+    }
+    if (MyPracticeConfig.useLocalDevSeed) {
+      await ensureTeamData();
+    }
+    await _ensurePhase2Data();
+  }
 
-    await _db.wipeAll();
-    await _seedAll();
+  /// Public — safe to await on splash (fast, idempotent).
+  Future<void> ensureTeamData([String? facilityId]) async {
+    await DevTeamSeed.ensure(_db, facilityId ?? DevTeamSeed.seedFacilityId);
   }
 
   Future<void> _seedAll() async {
@@ -64,17 +74,7 @@ class SeedDataLoader {
           ),
         );
 
-    await _db.into(_db.practitioners).insert(
-          PractitionersCompanion.insert(
-            id: providerId,
-            facilityId: facilityId,
-            name: 'Dr. Seed Practitioner',
-            specialty: const Value('General Practice'),
-            registrationNumber: const Value('MDPCZ-SEED-001'),
-            role: const Value('doctor'),
-            updatedAt: DateTime.now().toUtc(),
-          ),
-        );
+    await ensureTeamData(facilityId);
 
     for (final flag in FeatureFlagKeys.all) {
       await _db.into(_db.featureFlags).insertOnConflictUpdate(
@@ -296,6 +296,85 @@ class SeedDataLoader {
             ),
           );
     }
+
+    await _ensurePhase2Data();
+  }
+
+  Future<void> _ensurePhase2Data() async {
+    const facilityId = 'seed-facility-001';
+    const providerId = 'seed-provider-001';
+    final now = DateTime.now().toUtc();
+
+    final taskCount = await _db.select(_db.clinicalTasks).get();
+    if (taskCount.isEmpty) {
+      const tasks = [
+        ('Review Hb results — Tatenda Gumbo', 'result_review', 'seed-patient-0000'),
+        ('Call back Nyasha Dube re: fever', 'callback', 'seed-patient-0001'),
+        ('Follow-up hypertension — Rumbidzai', 'follow_up', 'seed-patient-0002'),
+        ('Renew APC practising certificate', 'admin', null),
+        ('Sign off lab report batch', 'admin', null),
+      ];
+      for (final (title, type, patientId) in tasks) {
+        await _db.into(_db.clinicalTasks).insert(
+              ClinicalTasksCompanion.insert(
+                id: _uuid.v4(),
+                facilityId: facilityId,
+                assigneeId: const Value(providerId),
+                patientId: Value(patientId),
+                title: title,
+                taskType: type,
+                status: const Value('open'),
+                dueAt: Value(now.add(Duration(days: _rng.nextInt(7) + 1))),
+                createdAt: now.subtract(Duration(hours: _rng.nextInt(48))),
+              ),
+            );
+      }
+    }
+
+    final msgCount = await _db.select(_db.internalMessages).get();
+    if (msgCount.isEmpty) {
+      const threads = [
+        ('seed-nurse-001', 'Patient in Room 2 ready for vitals.'),
+        ('seed-reception-001', 'PSMAS pre-auth received for SH-100214.'),
+        ('seed-admin-001', 'Monthly claims batch exported for review.'),
+        ('seed-nurse-001', 'Dr, urgent walk-in — chest pain, triage complete.'),
+      ];
+      for (final (from, body) in threads) {
+        await _db.into(_db.internalMessages).insert(
+              InternalMessagesCompanion.insert(
+                id: _uuid.v4(),
+                facilityId: facilityId,
+                senderId: from,
+                recipientId: providerId,
+                body: body,
+                sentAt: now.subtract(Duration(minutes: _rng.nextInt(360))),
+                read: Value(_rng.nextBool()),
+              ),
+            );
+      }
+    }
+
+    final credCount = await _db.select(_db.practitionerCredentials).get();
+    if (credCount.isEmpty) {
+      const creds = [
+        ('APC Certificate', 'apc', 365),
+        ('Practising Licence', 'licence', 180),
+        ('MDPCZ Registration', 'registration', 730),
+        ('CPD Certificate 2025', 'cpd', 90),
+      ];
+      for (final (title, type, daysUntilExpiry) in creds) {
+        await _db.into(_db.practitionerCredentials).insert(
+              PractitionerCredentialsCompanion.insert(
+                id: _uuid.v4(),
+                providerId: providerId,
+                credentialType: type,
+                title: title,
+                issuedAt: Value(now.subtract(const Duration(days: 365))),
+                expiresAt: Value(now.add(Duration(days: daysUntilExpiry))),
+              ),
+            );
+      }
+    }
   }
 
   bool _defaultFlag(String key) {
@@ -303,6 +382,7 @@ class SeedDataLoader {
       FeatureFlagKeys.voiceDictation => true,
       FeatureFlagKeys.edliz => true,
       FeatureFlagKeys.icd11 => true,
+      FeatureFlagKeys.claimsModule => true,
       _ => false,
     };
   }

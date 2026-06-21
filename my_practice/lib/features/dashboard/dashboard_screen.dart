@@ -51,7 +51,15 @@ class DashboardScreen extends ConsumerWidget {
                   if (c.maxWidth < 800) {
                     return Column(
                       children: [
-                        _QuickActionsCard(onNavigate: (r) => context.go(r)),
+                        _QuickActionsCard(
+                          onNavigate: (r) {
+                            if (r == '/tasks') {
+                              context.push(r);
+                            } else {
+                              context.go(r);
+                            }
+                          },
+                        ),
                         const SizedBox(height: 16),
                         StreamBuilder<List<QueueEntry>>(
                           stream: queueStream,
@@ -68,7 +76,15 @@ class DashboardScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child:
-                            _QuickActionsCard(onNavigate: (r) => context.go(r)),
+                            _QuickActionsCard(
+                          onNavigate: (r) {
+                            if (r == '/tasks') {
+                              context.push(r);
+                            } else {
+                              context.go(r);
+                            }
+                          },
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -106,12 +122,8 @@ class _DashboardHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef _) {
     final facilityId = ref.watch(facilityIdProvider);
-    final facilityName = auth.profile?.facilities
-            .where((f) => f.id == facilityId)
-            .map((f) => f.name)
-            .firstOrNull ??
-        auth.profile?.facilities.firstOrNull?.name ??
-        'MyPractice Facility';
+    final facilityName =
+        auth.profile?.facilityNameFor(facilityId) ?? 'MyPractice Facility';
     final name = auth.profile?.displayName ?? 'Practitioner';
     final greeting = _greeting();
     final titleStyle = isMobile
@@ -268,6 +280,7 @@ class _QuickActionsCard extends StatelessWidget {
       (Icons.person_search_outlined, 'Search Patients', '/patients'),
       (Icons.calendar_month_outlined, 'Book Appointment', '/calendar'),
       (Icons.groups_outlined, 'Open Queue', '/queue'),
+      (Icons.task_alt_outlined, 'Clinical Tasks', '/tasks'),
     ];
 
     return Container(

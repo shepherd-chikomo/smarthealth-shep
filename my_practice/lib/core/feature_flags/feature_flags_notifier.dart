@@ -38,6 +38,7 @@ class FeatureFlagsNotifier extends AsyncNotifier<Map<String, bool>> {
       FeatureFlagKeys.voiceDictation => true,
       FeatureFlagKeys.edliz => true,
       FeatureFlagKeys.icd11 => true,
+      FeatureFlagKeys.claimsModule => MyPracticeConfig.devMode,
       _ => false,
     };
   }

@@ -16,7 +16,12 @@ final class LoadHomeData extends HomeEvent {
 }
 
 final class RefreshHomeData extends HomeEvent {
-  const RefreshHomeData();
+  const RefreshHomeData({this.refreshOrigin = false});
+
+  final bool refreshOrigin;
+
+  @override
+  List<Object?> get props => [refreshOrigin];
 }
 
 final class SelectHomeCategory extends HomeEvent {

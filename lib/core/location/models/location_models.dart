@@ -30,6 +30,23 @@ enum LocationSource {
   manual,
 }
 
+/// Why listeners should react to a search-origin update.
+enum SearchOriginChangeKind {
+  manualCity,
+  gps,
+}
+
+/// Broadcast when the shared search origin coordinates change.
+class SearchOriginChange {
+  const SearchOriginChange({
+    required this.position,
+    required this.kind,
+  });
+
+  final AppPosition position;
+  final SearchOriginChangeKind kind;
+}
+
 /// A Zimbabwe city available for manual location selection.
 class ZimbabweCity extends Equatable {
   const ZimbabweCity({

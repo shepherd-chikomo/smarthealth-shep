@@ -1,14 +1,18 @@
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/feature_flags/feature_flags_notifier.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
 import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/data/repositories/clinical_repository.dart';
 import 'package:my_practice/data/repositories/repositories.dart';
+import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
+import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
 import 'package:my_practice/features/clinical/pdf_service.dart';
 import 'package:my_practice/features/clinical/voice_dictation_service.dart';
+import 'package:my_practice/shared/utils/patient_formatters.dart';
 
 class EncounterScreen extends ConsumerStatefulWidget {
   const EncounterScreen({
@@ -32,6 +36,8 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
   String? _selectedIcd11;
   String? _selectedIcd11Description;
   List<EdlizRecommendation> _edliz = [];
+  String? _activeVoiceSection = 'historyOfPresentIllness';
+  Patient? _patient;
   bool _listening = false;
 
   @override
@@ -41,11 +47,16 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
       _sections[key] = TextEditingController();
     }
     _consultationId = widget.consultationId;
+    _loadPatient();
     _loadOrCreate();
   }
 
-  static const _sectionKeys = [
-    'chiefComplaint',
+  Future<void> _loadPatient() async {
+    final p = await ref.read(patientRepositoryProvider).findById(widget.patientId);
+    if (mounted) setState(() => _patient = p);
+  }
+
+  static const _sectionKeys = [    'chiefComplaint',
     'historyOfPresentIllness',
     'pastMedicalHistory',
     'surgicalHistory',
@@ -129,13 +140,11 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            complete
-                ? 'Encounter completed${clinical.api != null ? ' and synced' : ''}'
-                : 'Saved locally',
+            'Encounter completed${clinical.api != null ? ' and synced' : ''}',
           ),
         ),
       );
-      Navigator.of(context).pop();
+      context.go('/patients/${widget.patientId}/chart');
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Draft saved')),
@@ -277,65 +286,273 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final patientName = _patient != null
+        ? PatientFormatters.fullName(_patient!)
+        : 'Patient ${widget.patientId.split('-').last}';
+    final subtitle = _patient != null
+        ? '${_patient!.smarthealthPatientId ?? widget.patientId} · ${PatientFormatters.ageSex(_patient!)}'
+        : widget.patientId;
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Clinical Encounter'),
-        actions: [
-          if (ref.featureEnabled(FeatureFlagKeys.voiceDictation))
-            IconButton(
-              icon: Icon(_listening ? Icons.mic : Icons.mic_none),
-              onPressed: () => _toggleVoice('historyOfPresentIllness'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(patientName, style: const TextStyle(fontSize: 16)),
+            Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        actions: isWide
+            ? [
+                if (ref.featureEnabled(FeatureFlagKeys.voiceDictation))
+                  OutlinedButton.icon(
+                    onPressed: () => _toggleVoice(_activeVoiceSection!),
+                    icon: Icon(_listening ? Icons.mic : Icons.mic_none, size: 18),
+                    label: Text(_listening ? 'Listening…' : 'Voice'),
+                  ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  onPressed: _generatePdf,
+                  tooltip: 'PDF summary',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.save_outlined),
+                  onPressed: () => _save(),
+                  tooltip: 'Save draft',
+                ),
+                FilledButton.icon(
+                  onPressed:
+                      _consultationId == null ? null : () => _save(complete: true),
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Complete'),
+                ),
+                const SizedBox(width: 8),
+              ]
+            : [
+                PopupMenuButton<String>(
+                  onSelected: (action) {
+                    switch (action) {
+                      case 'save':
+                        _save();
+                      case 'pdf':
+                        _generatePdf();
+                      case 'voice':
+                        _toggleVoice(_activeVoiceSection!);
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'save', child: Text('Save draft')),
+                    const PopupMenuItem(value: 'pdf', child: Text('Export PDF')),
+                    if (ref.featureEnabled(FeatureFlagKeys.voiceDictation))
+                      PopupMenuItem(
+                        value: 'voice',
+                        child: Text(_listening ? 'Stop voice' : 'Voice dictation'),
+                      ),
+                  ],
+                ),
+              ],
+      ),
+      bottomNavigationBar: isWide
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _consultationId == null ? null : () => _save(),
+                        icon: const Icon(Icons.save_outlined, size: 18),
+                        label: const Text('Save'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        onPressed:
+                            _consultationId == null ? null : () => _save(complete: true),
+                        icon: const Icon(Icons.check, size: 18),
+                        label: const Text('Complete & Save'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          IconButton(icon: const Icon(Icons.picture_as_pdf), onPressed: _generatePdf),
-          IconButton(icon: const Icon(Icons.save), onPressed: () => _save()),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 900) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildPatientSummary(context, patientName),
+                  const SizedBox(height: 16),
+                  _buildWorkspace(context),
+                  const SizedBox(height: 16),
+                  _buildAssistPanel(context),
+                ],
+              ),
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 260, child: _buildPatientSummary(context, patientName)),
+              Expanded(child: _buildWorkspace(context)),
+              SizedBox(width: 280, child: _buildAssistPanel(context)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPatientSummary(BuildContext context, String patientName) {
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
+      decoration: PracticeDesignTokens.previewCardDecoration(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Patient Summary', style: PracticeDesignTokens.sectionTitle(context)),
+          const SizedBox(height: 12),
+          if (_patient != null)
+            PracticeAvatar(initials: PatientFormatters.initials(_patient!), size: 48),
+          const SizedBox(height: 8),
+          Text(patientName, style: PracticeDesignTokens.inter(weight: FontWeight.w600)),
+          if (_patient != null)
+            Text(
+              '${PatientFormatters.ageSex(_patient!)} · ${PatientFormatters.insurerLabel(_patient!.insuranceInfo)}',
+              style: PracticeDesignTokens.metadata(context),
+            ),
+          if (widget.queueEntryId != null) ...[
+            const Divider(height: 24),
+            PracticeStatusChip(
+              label: 'From queue',
+              tone: PracticeStatusTone.info,
+            ),
+          ],
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildWorkspace(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: _sectionKeys.map((key) {
+          return Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: PracticeDesignTokens.previewCardDecoration(context),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _labelFor(key),
+                        style: PracticeDesignTokens.sectionTitle(context),
+                      ),
+                    ),
+                    if (ref.featureEnabled(FeatureFlagKeys.voiceDictation))
+                      IconButton(
+                        icon: Icon(
+                          _listening && _activeVoiceSection == key
+                              ? Icons.mic
+                              : Icons.mic_none,
+                          size: 18,
+                        ),
+                        onPressed: () {
+                          _activeVoiceSection = key;
+                          _toggleVoice(key);
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _sections[key],
+                  maxLines: key.contains('History') || key.contains('Notes') ? 4 : 2,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  onTap: () => _activeVoiceSection = key,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildAssistPanel(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
+      child: Column(
         children: [
           if (ref.featureEnabled(FeatureFlagKeys.icd11))
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'ICD-11 search',
-                prefixIcon: Icon(Icons.search),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: PracticeDesignTokens.previewCardDecoration(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ICD-11', style: PracticeDesignTokens.sectionTitle(context)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search diagnosis…',
+                      prefixIcon: Icon(Icons.search),
+                      isDense: true,
+                    ),
+                    onSubmitted: _searchIcd11,
+                  ),
+                  if (_selectedIcd11 != null) ...[
+                    const SizedBox(height: 8),
+                    PracticeStatusChip(
+                      label: '$_selectedIcd11 — $_selectedIcd11Description',
+                      tone: PracticeStatusTone.info,
+                    ),
+                  ],
+                ],
               ),
-              onSubmitted: _searchIcd11,
-            ),
-          if (_selectedIcd11 != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Chip(label: Text('Diagnosis: $_selectedIcd11')),
             ),
           if (_edliz.isNotEmpty && ref.featureEnabled(FeatureFlagKeys.edliz)) ...[
-            const Text('EDLIZ Suggestions'),
-            ..._edliz.map(
-              (e) => ListTile(
-                title: Text(e.firstLine),
-                subtitle: Text(
-                  [e.alternative, e.dosage, e.formulation]
-                      .whereType<String>()
-                      .join(' · '),
-                ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: PracticeDesignTokens.previewCardDecoration(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('EDLIZ', style: PracticeDesignTokens.sectionTitle(context)),
+                  ..._edliz.map(
+                    (e) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.medication_outlined),
+                      title: Text(e.firstLine),
+                      subtitle: Text(
+                        [e.alternative, e.dosage, e.formulation]
+                            .whereType<String>()
+                            .join(' · '),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const Divider(),
           ],
-          ..._sectionKeys.map(
-            (key) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: TextField(
-                controller: _sections[key],
-                maxLines: key.contains('History') || key.contains('Notes') ? 4 : 2,
-                decoration: InputDecoration(
-                  labelText: _labelFor(key),
-                ),
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => _save(complete: true),
-            child: const Text('Complete Encounter'),
-          ),
         ],
       ),
     );

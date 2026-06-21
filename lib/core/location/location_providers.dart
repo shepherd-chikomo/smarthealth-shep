@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/core/location/location_exceptions.dart';
 import 'package:smarthealth_shep/core/location/location_permission_handler.dart';
 import 'package:smarthealth_shep/core/location/location_service.dart';
+import 'package:smarthealth_shep/core/location/models/location_models.dart';
 import 'package:smarthealth_shep/core/location/search_origin_resolver.dart';
 
 final locationServiceProvider = Provider<LocationService>((ref) {
@@ -12,9 +13,15 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 });
 
 final searchOriginResolverProvider = Provider<SearchOriginResolver>((ref) {
-  return SearchOriginResolver(
+  final resolver = SearchOriginResolver(
     locationService: ref.watch(locationServiceProvider),
   );
+  ref.onDispose(resolver.dispose);
+  return resolver;
+});
+
+final searchOriginChangesProvider = StreamProvider<SearchOriginChange>((ref) {
+  return ref.watch(searchOriginResolverProvider).changes;
 });
 
 final locationPermissionHandlerProvider =

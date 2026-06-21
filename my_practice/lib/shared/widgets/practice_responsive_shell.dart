@@ -88,17 +88,20 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
       ),
       bottomNavigationBar: isMobile
           ? NavigationBar(
-              selectedIndex: widget.navigationShell.currentIndex,
-              onDestinationSelected: widget.navigationShell.goBranch,
+              selectedIndex: widget.navigationShell.currentIndex.clamp(0, 3),
+              onDestinationSelected: (index) {
+                final tab = PracticeNavItems.mobileBottomTabs[index];
+                widget.navigationShell.goBranch(tab.shellIndex!);
+              },
               destinations: [
-                for (final tab in PracticeNavItems.shellTabs)
+                for (final tab in PracticeNavItems.mobileBottomTabs)
                   NavigationDestination(
                     icon: Icon(tab.icon, size: PracticeDesignTokens.iconLg),
                     selectedIcon: Icon(
                       _filledIcon(tab.icon),
                       size: PracticeDesignTokens.iconLg,
                     ),
-                    label: tab.label == 'More' ? 'More' : tab.label.split(' ').first,
+                    label: tab.label.split(' ').first,
                   ),
               ],
             )
@@ -140,7 +143,7 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
+        initialChildSize: 0.55,
         builder: (_, controller) => Material(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -148,6 +151,11 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
             controller: controller,
             padding: const EdgeInsets.all(16),
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text('Menu',
+                    style: PracticeDesignTokens.sectionTitle(context)),
+              ),
               for (final tab in PracticeNavItems.shellTabs)
                 ListTile(
                   leading: PracticeNavIcon(icon: tab.icon, selected: false),
@@ -155,16 +163,6 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
                   onTap: () {
                     Navigator.pop(context);
                     _go(tab.route);
-                  },
-                ),
-              const Divider(),
-              for (final extra in PracticeNavItems.desktopExtras)
-                ListTile(
-                  leading: PracticeNavIcon(icon: extra.icon, selected: false),
-                  title: Text(extra.label),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push(extra.route);
                   },
                 ),
             ],
@@ -250,21 +248,6 @@ class _DesktopSidebar extends StatelessWidget {
                     expanded: expanded,
                     onTap: () => onNavigate(PracticeNavItems.shellTabs[i].route),
                   ),
-                if (expanded) ...[
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Operations',
-                        style: PracticeDesignTokens.tableHeader(context)),
-                  ),
-                  for (final extra in PracticeNavItems.desktopExtras)
-                    _NavTile(
-                      item: extra,
-                      selected: false,
-                      expanded: expanded,
-                      onTap: () => onNavigate(extra.route),
-                    ),
-                ],
               ],
             ),
           ),
@@ -427,6 +410,7 @@ class _PracticeTopBar extends StatelessWidget {
           if (onMenuTap != null)
             PracticeToolbarIconButton(
               icon: Icons.menu,
+              tooltip: 'More',
               onPressed: onMenuTap,
             ),
           Expanded(

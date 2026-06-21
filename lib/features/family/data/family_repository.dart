@@ -116,6 +116,15 @@ class FamilyRepository {
         developer.log('Saved family member ${cloudMember.id} to API', name: _logName);
         return prepared;
       } on DioException catch (error, stackTrace) {
+        if (_shouldQueueAfterApiFailure(error)) {
+          developer.log(
+            'Family API save failed — saved locally and queued for sync',
+            name: _logName,
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return _persistLocallyAndQueue(prepared);
+        }
         developer.log(
           'Authenticated family save failed',
           name: _logName,
@@ -214,6 +223,32 @@ class FamilyRepository {
         payload: const {},
       );
     }
+  }
+
+  bool _shouldQueueAfterApiFailure(DioException error) {
+    final status = error.response?.statusCode;
+    if (status == 401 || status == 403) return true;
+    return error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.connectionError;
+  }
+
+  Future<FamilyMemberModel> _persistLocallyAndQueue(
+    FamilyMemberModel prepared,
+  ) async {
+    var member = prepared;
+    if (isServerFamilyMemberId(member.id)) {
+      await _dao.update(member);
+      await _enqueue(SyncMutationType.update, member);
+    } else {
+      member = member.copyWith(
+        id: member.id.isEmpty ? _newLocalId() : member.id,
+      );
+      await _dao.insert(member);
+      await _enqueue(SyncMutationType.create, member);
+    }
+    return member;
   }
 
   String _newLocalId() => 'fm_${DateTime.now().millisecondsSinceEpoch}';

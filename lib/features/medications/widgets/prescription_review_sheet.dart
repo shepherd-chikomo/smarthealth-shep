@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/core/utils/app_constants.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
+import 'package:smarthealth_shep/features/medications/utils/medication_reminder_times.dart';
 import 'package:smarthealth_shep/features/medications/utils/medication_schedule_utils.dart';
 import 'package:smarthealth_shep/features/medications/utils/prescription_label_parser.dart';
 import 'package:smarthealth_shep/shared/models/emergency_medical_metadata.dart';
@@ -53,7 +54,7 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
   late final TextEditingController _frequencyController;
   late final TextEditingController _quantityController;
   bool _reminderEnabled = false;
-  TimeOfDay _reminderTime = const TimeOfDay(hour: 8, minute: 0);
+  List<TimeOfDay> _reminderTimes = const [TimeOfDay(hour: 8, minute: 0)];
 
   @override
   void initState() {
@@ -63,10 +64,13 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
     _dosageController = TextEditingController(text: fields.dosage ?? '');
     _frequencyController = TextEditingController(text: fields.frequency ?? '');
     _quantityController = TextEditingController(text: fields.quantity ?? '');
+    _syncReminderSlots();
+    _frequencyController.addListener(_syncReminderSlots);
   }
 
   @override
   void dispose() {
+    _frequencyController.removeListener(_syncReminderSlots);
     _nameController.dispose();
     _dosageController.dispose();
     _frequencyController.dispose();
@@ -80,13 +84,34 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
     return '$hour:$minute';
   }
 
-  Future<void> _pickReminderTime() async {
+  void _syncReminderSlots() {
+    if (!_reminderEnabled) return;
+    final frequency = _frequencyController.text.trim();
+    final doses = MedicationScheduleUtils.dosesPerDayFromFrequency(
+      frequency.isEmpty ? null : frequency,
+    );
+    final entry = MedicationEntry(
+      name: _nameController.text.trim(),
+      frequency: frequency.isEmpty ? null : frequency,
+      dosesPerDay: doses,
+      reminderEnabled: true,
+      reminderTimes: MedicationReminderTimes.toStorage(_reminderTimes),
+    );
+    setState(() {
+      _reminderTimes = MedicationReminderTimes.resolveSlots(
+        entry: entry,
+        existing: _reminderTimes,
+      );
+    });
+  }
+
+  Future<void> _pickReminderTime(int index) async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: _reminderTime,
+      initialTime: _reminderTimes[index],
     );
     if (picked != null) {
-      setState(() => _reminderTime = picked);
+      setState(() => _reminderTimes[index] = picked);
     }
   }
 
@@ -111,7 +136,9 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
       quantity: quantity.isEmpty ? null : quantity,
       dosesPerDay: dosesPerDay,
       reminderEnabled: _reminderEnabled,
-      reminderTimes: _reminderEnabled ? [_formatTime(_reminderTime)] : const [],
+      reminderTimes: _reminderEnabled
+          ? MedicationReminderTimes.toStorage(_reminderTimes)
+          : const [],
     );
 
     Navigator.of(context).pop(
@@ -172,16 +199,22 @@ class _PrescriptionReviewSheetState extends State<PrescriptionReviewSheet> {
             title: const Text('Medication reminders'),
             subtitle: const Text('Local notifications for the next 7 days'),
             value: _reminderEnabled,
-            onChanged: (value) => setState(() => _reminderEnabled = value),
+            onChanged: (value) {
+              setState(() => _reminderEnabled = value);
+              if (value) _syncReminderSlots();
+            },
           ),
           if (_reminderEnabled)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Reminder time'),
-              subtitle: Text(_formatTime(_reminderTime)),
-              trailing: const Icon(Icons.schedule),
-              onTap: _pickReminderTime,
-            ),
+            for (var i = 0; i < _reminderTimes.length; i++)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _reminderTimes.length > 1 ? 'Reminder ${i + 1}' : 'Reminder time',
+                ),
+                subtitle: Text(_formatTime(_reminderTimes[i])),
+                trailing: const Icon(Icons.schedule),
+                onTap: () => _pickReminderTime(i),
+              ),
           const SizedBox(height: 8),
           FilledButton(
             onPressed: _confirm,

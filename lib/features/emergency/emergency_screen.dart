@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/core/location/models/location_models.dart';
+import 'package:smarthealth_shep/core/location/location_providers.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_bloc.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_event.dart';
 import 'package:smarthealth_shep/features/emergency/bloc/emergency_hub_state.dart';
@@ -158,6 +158,21 @@ class _EmergencyHubViewState extends ConsumerState<_EmergencyHubView> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<SearchOriginChange>>(searchOriginChangesProvider,
+        (previous, next) {
+      next.whenData((change) {
+        final bloc = context.read<EmergencyHubBloc>();
+        if (change.kind == SearchOriginChangeKind.manualCity) {
+          bloc.add(const RefreshEmergencyHub());
+          return;
+        }
+        if (change.kind == SearchOriginChangeKind.gps &&
+            bloc.state.status != EmergencyHubStatus.loading) {
+          bloc.add(const RefreshEmergencyHub());
+        }
+      });
+    });
+
     final l10n = AppLocalizations.of(context);
 
     return AppShellScaffold(

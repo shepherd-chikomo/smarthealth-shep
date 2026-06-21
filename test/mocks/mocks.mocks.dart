@@ -267,6 +267,67 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
           as _i7.Future<List<({String id, String label})>>);
 
   @override
+  _i7.Future<
+    ({
+      List<({String id, String label})> common,
+      List<({String id, String label})> other,
+    })
+  >
+  fetchProfileConditions() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchProfileConditions, []),
+            returnValue:
+                _i7.Future<
+                  ({
+                    List<({String id, String label})> common,
+                    List<({String id, String label})> other,
+                  })
+                >.value((
+                  common: <({String id, String label})>[],
+                  other: <({String id, String label})>[],
+                )),
+          )
+          as _i7.Future<
+            ({
+              List<({String id, String label})> common,
+              List<({String id, String label})> other,
+            })
+          >);
+
+  @override
+  _i7.Future<List<({String id, String label})>> suggestProfileConditions(
+    String? query, {
+    int? limit = 8,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #suggestProfileConditions,
+              [query],
+              {#limit: limit},
+            ),
+            returnValue: _i7.Future<List<({String id, String label})>>.value(
+              <({String id, String label})>[],
+            ),
+          )
+          as _i7.Future<List<({String id, String label})>>);
+
+  @override
+  _i7.Future<void> submitConditionProposal(
+    String? label, {
+    String? familyMemberId,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #submitConditionProposal,
+              [label],
+              {#familyMemberId: familyMemberId},
+            ),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
+
+  @override
   _i7.Future<List<({String id, String label})>> fetchCatalogAgeGroups() =>
       (super.noSuchMethod(
             Invocation.method(#fetchCatalogAgeGroups, []),

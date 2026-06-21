@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smarthealth_shep/core/auth/auth_repository.dart';
 import 'package:smarthealth_shep/core/auth/auth_state.dart';
+import 'package:smarthealth_shep/core/backup/post_auth_navigation.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/features/appointments/screens/appointment_detail_screen.dart';
 import 'package:smarthealth_shep/features/appointments/screens/appointments_screen.dart';
@@ -22,6 +23,7 @@ import 'package:smarthealth_shep/features/notifications/screens/notification_pre
 import 'package:smarthealth_shep/features/notifications/screens/notifications_screen.dart';
 import 'package:smarthealth_shep/features/onboarding/onboarding_screen.dart';
 import 'package:smarthealth_shep/features/profile/edit_emergency_medical_profile_screen.dart';
+import 'package:smarthealth_shep/features/profile/profile_edit_focus.dart';
 import 'package:smarthealth_shep/features/profile/emergency_medical_profile_screen.dart';
 import 'package:smarthealth_shep/features/profile/profile_completion_screen.dart';
 import 'package:smarthealth_shep/features/profile/backup_restore_screen.dart';
@@ -72,7 +74,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login?redirect=${Uri.encodeComponent(state.uri.toString())}';
       }
 
+      // OTP/login navigate explicitly after resolving backup discovery.
       if (auth.isAuthenticated && isAuthRoute) {
+        final pending = PostAuthNavigation.pendingRoute;
+        if (pending != null) {
+          return pending;
+        }
         return '/home';
       }
 
@@ -306,6 +313,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'backup',
                     builder: (context, state) => BackupRestoreScreen(
                       discovered: state.uri.queryParameters['discovered'] == 'true',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'medications',
+                    builder: (context, state) =>
+                        const EditEmergencyMedicalProfileScreen(
+                      medicationsOnly: true,
+                      focusSection: ProfileEditFocus.medications,
                     ),
                   ),
                   GoRoute(

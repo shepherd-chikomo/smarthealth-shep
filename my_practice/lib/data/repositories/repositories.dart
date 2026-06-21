@@ -4,8 +4,12 @@ import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
 import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/data/remote/facility_api_client.dart';
+import 'package:my_practice/data/seed/dev_provider_schedule.dart';
+import 'package:my_practice/data/seed/dev_team_seed.dart';
+import 'package:my_practice/domain/models/facility_hour.dart';
 import 'package:my_practice/data/seed/seed_data_loader.dart';
 import 'package:my_practice/data/sync/sync_engine.dart';
+import 'package:my_practice/shared/utils/patient_formatters.dart';
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
@@ -103,6 +107,22 @@ class QueueRepository {
         .watch();
   }
 
+  Stream<List<QueueEntryWithPatient>> watchEnrichedQueue() {
+    return watchQueue().asyncMap(_enrichQueue);
+  }
+
+  Future<List<QueueEntryWithPatient>> _enrichQueue(List<QueueEntry> entries) async {
+    if (entries.isEmpty) return [];
+    final patientIds = entries.map((e) => e.patientId).toSet();
+    final patients = await (db.select(db.patients)
+          ..where((t) => t.id.isIn(patientIds.toList())))
+        .get();
+    final byId = {for (final p in patients) p.id: p};
+    return entries
+        .map((e) => QueueEntryWithPatient(entry: e, patient: byId[e.patientId]))
+        .toList();
+  }
+
   Future<void> updateStatus(String id, String status) async {
     await (db.update(db.queueEntries)..where((t) => t.id.equals(id))).write(
           QueueEntriesCompanion(
@@ -161,8 +181,16 @@ class PatientRepository {
         .getSingleOrNull();
   }
 
+  Future<List<Patient>> listRecent({int limit = 50}) async {
+    return (db.select(db.patients)
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
+          ..limit(limit))
+        .get();
+  }
+
   Future<List<Patient>> search(String query) async {
-    if (query.trim().isEmpty) return [];
+    if (query.trim().isEmpty) return listRecent();
 
     if (api != null) {
       try {
@@ -373,3 +401,228 @@ class PatientRepository {
 final seedLoaderProvider = Provider<SeedDataLoader>((ref) {
   return SeedDataLoader(ref.watch(appDatabaseProvider));
 });
+
+final facilityRepositoryProvider = Provider<FacilityRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
+  return FacilityRepository(
+    db: db,
+    api: FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
+    facilityId: facilityId,
+  );
+});
+
+class FacilityRepository {
+  FacilityRepository({
+    required this.db,
+    required this.api,
+    required this.facilityId,
+  });
+
+  final AppDatabase db;
+  final FacilityApiClient? api;
+  final String facilityId;
+
+  Future<Facility?> getLocalFacility() {
+    return (db.select(db.facilities)..where((t) => t.id.equals(facilityId)))
+        .getSingleOrNull();
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    if (api != null) {
+      try {
+        return await api!.getProfile();
+      } catch (_) {}
+    }
+    final local = await getLocalFacility();
+    if (local == null) return {};
+    return {
+      'facility': {
+        'name': local.name,
+        'addressLine1': local.address,
+        'city': local.city,
+        'latitude': local.latitude,
+        'longitude': local.longitude,
+      },
+      'profileSettings': const <String, dynamic>{},
+    };
+  }
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> body) async {
+    if (api == null) {
+      throw StateError('Saving profile requires a signed-in facility session.');
+    }
+    return api!.updateProfile(body);
+  }
+
+  Future<Map<String, dynamic>> updateProfileSettings(
+    Map<String, dynamic> body,
+  ) async {
+    if (api == null) {
+      throw StateError('Saving settings requires a signed-in facility session.');
+    }
+    return api!.updateProfileSettings(body);
+  }
+
+  Future<List<Practitioner>> getTeam() async {
+    if (api != null) {
+      try {
+        final data = await api!.getStaff();
+        final items = data['staff'] as List? ?? data['items'] as List? ?? [];
+        final now = DateTime.now().toUtc();
+        final team = <Practitioner>[];
+        for (final raw in items) {
+          if (raw is! Map<String, dynamic>) continue;
+          final id = raw['user_id'] as String? ??
+              raw['userId'] as String? ??
+              raw['id'] as String? ??
+              '';
+          if (id.isEmpty) continue;
+          final first = raw['first_name'] as String? ?? '';
+          final last = raw['last_name'] as String? ?? '';
+          var name = '$first $last'.trim();
+          name = name.isNotEmpty
+              ? name
+              : (raw['name'] as String? ??
+                  raw['displayName'] as String? ??
+                  raw['email'] as String? ??
+                  'Staff member');
+          final p = Practitioner(
+            id: id,
+            facilityId: facilityId,
+            name: name,
+            specialty: raw['specialty'] as String?,
+            registrationNumber: raw['registrationNumber'] as String?,
+            role: raw['role'] as String? ?? 'staff',
+            serverId: id,
+            syncStatus: 'synced',
+            updatedAt: now,
+          );
+          team.add(p);
+          await db.into(db.practitioners).insertOnConflictUpdate(
+                PractitionersCompanion.insert(
+                  id: p.id,
+                  facilityId: facilityId,
+                  name: p.name,
+                  specialty: Value(p.specialty),
+                  registrationNumber: Value(p.registrationNumber),
+                  role: Value(p.role),
+                  updatedAt: now,
+                ),
+              );
+        }
+        if (team.isNotEmpty) return team;
+      } catch (_) {}
+    }
+
+    if (MyPracticeConfig.useLocalDevSeed) {
+      await DevTeamSeed.ensure(db, facilityId);
+    }
+
+    var local = await (db.select(db.practitioners)
+          ..where((t) => t.facilityId.equals(facilityId))
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
+
+    if (local.isEmpty && MyPracticeConfig.useLocalDevSeed) {
+      return DevTeamSeed.fallbackRows(facilityId);
+    }
+
+    return local;
+  }
+
+  Future<void> inviteStaffMember({
+    required String fullName,
+    required String email,
+    required String role,
+    String? phone,
+  }) async {
+    if (api == null) {
+      throw StateError('Staff invites require a signed-in facility session.');
+    }
+    await api!.addStaff(
+      fullName: fullName,
+      email: email,
+      role: role,
+      phone: phone,
+    );
+  }
+
+  Future<List<FacilityHour>> getFacilityHours() async {
+    if (api != null) {
+      try {
+        final rows = await api!.getFacilityHours();
+        if (rows.isNotEmpty) {
+          return FacilityHour.mergeWeek(
+            rows.map(FacilityHour.fromJson).toList(),
+          );
+        }
+      } catch (_) {}
+    }
+    if (MyPracticeConfig.useLocalDevSeed) {
+      return FacilityHour.devDefaults();
+    }
+    return FacilityHour.mergeWeek(const []);
+  }
+
+  Future<List<FacilityHour>> updateFacilityHours(List<FacilityHour> hours) async {
+    if (api != null) {
+      try {
+        final rows = await api!.updateFacilityHours(
+          hours.map((h) => h.toJson()).toList(),
+        );
+        return FacilityHour.mergeWeek(rows.map(FacilityHour.fromJson).toList());
+      } catch (_) {
+        rethrow;
+      }
+    }
+    if (MyPracticeConfig.useLocalDevSeed) {
+      return hours;
+    }
+    throw StateError('Saving hours requires a signed-in facility session.');
+  }
+
+  Future<List<FacilityHour>> getProviderSchedule(String providerId) async {
+    if (api != null) {
+      try {
+        final rows = await api!.getProviderAvailability(providerId: providerId);
+        if (rows.isNotEmpty) {
+          return FacilityHour.mergeWeek(rows.map(FacilityHour.fromJson).toList());
+        }
+      } catch (_) {}
+    }
+    if (MyPracticeConfig.useLocalDevSeed) {
+      return DevProviderSchedule.defaults();
+    }
+    return FacilityHour.mergeWeek(const []);
+  }
+
+  Future<List<FacilityHour>> updateProviderSchedule(
+    String providerId,
+    List<FacilityHour> hours,
+  ) async {
+    if (api != null) {
+      try {
+        final rows = await api!.updateProviderAvailability(
+          providerId,
+          hours.map((h) => h.toJson()).toList(),
+        );
+        return FacilityHour.mergeWeek(rows.map(FacilityHour.fromJson).toList());
+      } catch (_) {
+        rethrow;
+      }
+    }
+    if (MyPracticeConfig.useLocalDevSeed) {
+      return hours;
+    }
+    throw StateError('Saving schedule requires a signed-in facility session.');
+  }
+
+  Future<void> ensureTeamSeeded() async {
+    await DevTeamSeed.ensure(db, facilityId);
+  }
+
+  Future<void> _ensureDefaultTeam() async {
+    await DevTeamSeed.ensure(db, facilityId);
+  }
+}

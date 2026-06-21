@@ -23,9 +23,33 @@ class DeepLinkHandler {
 
   static void navigate(GoRouter router, {String? actionUrl, Map<String, dynamic>? data}) {
     final location = resolve(actionUrl: actionUrl, data: data);
-    if (location != null && location.isNotEmpty) {
-      router.go(location);
+    if (location == null || location.isEmpty || !isRoutable(location)) {
+      return;
     }
+    router.go(location);
+  }
+
+  /// Rejects notification payloads that are not valid app routes.
+  static bool isRoutable(String location) {
+    if (location.contains('|')) return false;
+    const roots = [
+      '/',
+      '/home',
+      '/search',
+      '/emergency',
+      '/bookings',
+      '/profile',
+      '/notifications',
+      '/login',
+      '/onboarding',
+      '/provider/',
+      '/facility/',
+      '/queue/',
+      '/booking/',
+    ];
+    return roots.any(
+      (root) => location == root || location.startsWith(root),
+    );
   }
 
   static String? _fromCategory(String? category, Map<String, dynamic>? data) {

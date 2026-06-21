@@ -30,6 +30,7 @@ class ConditionSelectionSheet extends StatefulWidget {
     Map<String, String> customLabels = const {},
     ApiService? apiService,
   }) {
+    final sheetHeight = MediaQuery.sizeOf(context).height * 0.88;
     return showModalBottomSheet<ConditionSelectionResult>(
       context: context,
       isScrollControlled: true,
@@ -38,10 +39,14 @@ class ConditionSelectionSheet extends StatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
-        child: ConditionSelectionSheet(
-          selectedIds: selectedIds,
-          customLabels: customLabels,
-          apiService: apiService,
+        child: SizedBox(
+          height: sheetHeight,
+          width: double.infinity,
+          child: ConditionSelectionSheet(
+            selectedIds: selectedIds,
+            customLabels: customLabels,
+            apiService: apiService,
+          ),
         ),
       ),
     );
@@ -65,7 +70,7 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
   List<SearchFilterOption> _searchResults = [];
   List<SearchFilterOption> _suggestions = [];
   int _visibleCount = _pageSize;
-  bool _loading = true;
+  bool _refreshingRemote = false;
   bool _searching = false;
   bool _suggestLoading = false;
 
@@ -74,7 +79,8 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     super.initState();
     _selected = Set<String>.from(widget.selectedIds);
     _customLabels = Map<String, String>.from(widget.customLabels);
-    _loadOptions();
+    _applyCatalog(List<SearchFilterOption>.from(SearchFilterOptions.conditions));
+    _loadRemoteCatalog();
     _searchController.addListener(_onSearchChanged);
     _otherController.addListener(_onOtherChanged);
   }
@@ -90,21 +96,27 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     super.dispose();
   }
 
-  Future<void> _loadOptions() async {
+  Future<void> _loadRemoteCatalog() async {
+    if (mounted) setState(() => _refreshingRemote = true);
     try {
       final api = widget.apiService ?? ApiService(createApiDio());
       final remote = await api.fetchProfileConditions();
       if (!mounted) return;
-      _applyCatalog([
-        ...remote.common.map((e) => SearchFilterOption(id: e.id, label: e.label)),
-        ...remote.other.map((e) => SearchFilterOption(id: e.id, label: e.label)),
-      ]);
-      return;
+      final merged = [
+        ...remote.common.map(
+          (e) => SearchFilterOption(id: e.id, label: e.label),
+        ),
+        ...remote.other.map(
+          (e) => SearchFilterOption(id: e.id, label: e.label),
+        ),
+      ];
+      if (merged.isNotEmpty) {
+        _applyCatalog(merged);
+      }
     } catch (_) {
-      // fall through to static list
-    }
-    if (mounted) {
-      _applyCatalog(SearchFilterOptions.conditions);
+      // Keep the static catalog loaded in initState.
+    } finally {
+      if (mounted) setState(() => _refreshingRemote = false);
     }
   }
 
@@ -114,7 +126,7 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     for (final option in options) {
       _catalogSlugs.add(option.id);
     }
-    setState(() => _loading = false);
+    setState(() => _visibleCount = _pageSize);
   }
 
   void _onSearchChanged() {
@@ -299,10 +311,9 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
     final isSearching = _searchController.text.trim().isNotEmpty;
     final visible = _visibleCatalog;
 
-    return FractionallySizedBox(
-      heightFactor: 0.88,
-      child: Column(
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
@@ -326,6 +337,8 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
               controller: _searchController,
+              autofocus: false,
+              textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: 'Search conditions…',
                 prefixIcon: const Icon(Icons.search),
@@ -338,11 +351,10 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
               ),
             ),
           ),
-          if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
-          else ...[
-            Expanded(
-              child: ListView.builder(
+          if (_refreshingRemote)
+            const LinearProgressIndicator(minHeight: 2),
+          Expanded(
+            child: ListView.builder(
                 itemCount: 1 +
                     visible.length +
                     (_customLabels.length) +
@@ -409,80 +421,82 @@ class _ConditionSelectionSheetState extends State<ConditionSelectionSheet> {
                 },
               ),
             ),
-            if (_searching)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: LinearProgressIndicator(minHeight: 2),
-              ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Other condition',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _otherController,
-                          decoration: InputDecoration(
-                            hintText: 'Type your condition',
-                            filled: true,
-                            fillColor: colors.surface,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
+          if (_searching)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Other condition',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _otherController,
+                        decoration: InputDecoration(
+                          hintText: 'Type your condition',
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                          textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _addCustomOther(),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: _addCustomOther,
-                        child: const Text('Add'),
-                      ),
-                    ],
-                  ),
-                  if (_suggestLoading)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 12),
-                      child: Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    )
-                  else if (_suggestions.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _suggestions.map((option) {
-                          return ActionChip(
-                            label: Text(option.label),
-                            onPressed: () => _selectSuggestion(option),
-                          );
-                        }).toList(),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _addCustomOther(),
                       ),
                     ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _addCustomOther,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
+                if (_suggestLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  )
+                else if (_suggestions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _suggestions.map((option) {
+                        return ActionChip(
+                          label: Text(option.label),
+                          onPressed: () => _selectSuggestion(option),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ],
-      ),
     );
   }
 }
