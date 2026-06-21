@@ -57,9 +57,7 @@ export default function LoginPage() {
     }
 
     if (lookup.alreadyClaimed) {
-      setError(
-        'This practitioner profile is already claimed. Sign in with your work email, or ask a facility administrator for access.',
-      );
+      await sendStaffOtp(false, { skipRegistryFallback: true });
       return true;
     }
 
@@ -82,7 +80,10 @@ export default function LoginPage() {
     return true;
   }
 
-  async function sendStaffOtp(usePhone = false) {
+  async function sendStaffOtp(
+    usePhone = false,
+    options?: { skipRegistryFallback?: boolean },
+  ) {
     setLoading(true);
     setLoadingMessage('Sending code…');
     setError('');
@@ -103,7 +104,7 @@ export default function LoginPage() {
         const err = await res.json().catch(() => ({}));
         const code = err?.error?.code as string | undefined;
 
-        if (!usePhone && code === 'FORBIDDEN') {
+        if (!usePhone && code === 'FORBIDDEN' && !options?.skipRegistryFallback) {
           await attemptRegistryLookup(trimmedEmail);
           return;
         }

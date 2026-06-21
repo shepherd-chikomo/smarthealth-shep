@@ -70,6 +70,53 @@ function assertStaffProfile(profile: ProfileRow | null): ProfileRow {
   return profile;
 }
 
+interface StaffLoginResolution {
+  profile: ProfileRow;
+  otpEmail: string;
+}
+
+/** Staff login by work email, including MDPCZ registry email on an already-claimed provider. */
+async function resolveStaffLoginByEmail(email: string): Promise<StaffLoginResolution | null> {
+  const normalized = normalizeEmail(email);
+
+  const direct = await findProfileByEmail(normalized);
+  if (direct && STAFF_ROLES.has(direct.primary_role)) {
+    return { profile: direct, otpEmail: direct.email ?? normalized };
+  }
+
+  const provider = await query<{
+    owner_id: string | null;
+    profile_id: string | null;
+    is_claimed: boolean;
+  }>(
+    `SELECT owner_id, profile_id, is_claimed
+     FROM public.providers
+     WHERE LOWER(email) = $1
+       AND deleted_at IS NULL
+       AND is_active = true
+       AND import_source = 'MDPCZ'
+     ORDER BY name
+     LIMIT 1`,
+    [normalized],
+  );
+  const row = provider.rows[0];
+  if (!row?.is_claimed) return null;
+
+  const userId = row.profile_id ?? row.owner_id;
+  if (!userId) return null;
+
+  const ownerResult = await query<ProfileRow>(
+    `SELECT id, email, phone, primary_role::text AS primary_role
+     FROM public.profiles
+     WHERE id = $1 AND is_active = true`,
+    [userId],
+  );
+  const owner = ownerResult.rows[0];
+  if (!owner) return null;
+
+  return { profile: owner, otpEmail: normalized };
+}
+
 function assertExistingProfile(profile: ProfileRow | null): ProfileRow {
   if (!profile) {
     throw new ForbiddenError('Unable to send verification code');
@@ -121,7 +168,8 @@ export async function resolveOtpSend(input: OtpSendInput): Promise<ResolvedOtpSe
       let profile: ProfileRow | null = null;
 
       if (email) {
-        profile = assertStaffProfile(await findProfileByEmail(email));
+        const resolved = await resolveStaffLoginByEmail(email);
+        const profile = resolved?.profile ?? assertStaffProfile(await findProfileByEmail(email));
         if (!profile.phone) {
           throw new ValidationError('No registered phone number is linked to this account');
         }
@@ -150,13 +198,16 @@ export async function resolveOtpSend(input: OtpSendInput): Promise<ResolvedOtpSe
       throw new ValidationError('Email is required');
     }
     const email = normalizeEmail(input.email);
-    const profile = assertStaffProfile(await findProfileByEmail(email));
+    const resolved = await resolveStaffLoginByEmail(email);
+    if (!resolved) {
+      throw new ForbiddenError('Unable to send verification code');
+    }
     return {
       channel: 'email',
-      identifier: email,
-      maskedDestination: maskEmail(email),
+      identifier: resolved.otpEmail,
+      maskedDestination: maskEmail(resolved.otpEmail),
       createUser: false,
-      authUserId: profile.id,
+      authUserId: resolved.profile.id,
     };
   }
 
@@ -244,7 +295,14 @@ export async function resolveOtpVerify(input: OtpVerifyInput): Promise<{
     if (!input.email) {
       throw new ValidationError('Email is required');
     }
-    return { channel: 'email', identifier: normalizeEmail(input.email) };
+    const email = normalizeEmail(input.email);
+    if (input.context === 'staff') {
+      const resolved = await resolveStaffLoginByEmail(email);
+      if (resolved) {
+        return { channel: 'email', identifier: resolved.otpEmail };
+      }
+    }
+    return { channel: 'email', identifier: email };
   }
 
   if (input.context === 'staff' || input.context === 'recovery') {
