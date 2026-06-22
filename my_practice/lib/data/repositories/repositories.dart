@@ -464,55 +464,171 @@ class FacilityRepository {
     return api!.updateProfileSettings(body);
   }
 
+  Future<Map<String, List<Map<String, dynamic>>>> getServicesCatalog() async {
+    if (api == null) {
+      return {'preset': [], 'other': []};
+    }
+    return api!.getServicesCatalog();
+  }
+
+  Future<Map<String, dynamic>> submitServiceProposal(String label) async {
+    if (api == null) {
+      throw StateError('Proposing a service requires a signed-in facility session.');
+    }
+    return api!.submitServiceProposal(label: label);
+  }
+
+  Future<List<Map<String, dynamic>>> getMedicalAidCatalog() async {
+    if (api == null) return [];
+    return api!.getMedicalAidCatalog();
+  }
+
+  Future<List<Map<String, dynamic>>> getMedicalAidSubmissions({
+    String status = 'pending',
+  }) async {
+    if (api == null) return [];
+    return api!.getMedicalAidSubmissions(status: status);
+  }
+
+  Future<Map<String, dynamic>> submitMedicalAidProposal(String name) async {
+    if (api == null) {
+      throw StateError('Proposing medical aid requires a signed-in facility session.');
+    }
+    return api!.submitMedicalAidProposal(name);
+  }
+
+  Future<Map<String, dynamic>> uploadLogo(String filePath, String fileName) async {
+    if (api == null) {
+      throw StateError('Uploading a logo requires a signed-in facility session.');
+    }
+    return api!.uploadLogo(filePath, fileName);
+  }
+
+  Future<void> removeLogo() async {
+    if (api == null) {
+      throw StateError('Removing a logo requires a signed-in facility session.');
+    }
+    return api!.removeLogo();
+  }
+
+  Future<Map<String, dynamic>> getSlots() async {
+    if (api == null) return {};
+    return api!.getSlots();
+  }
+
+  Future<Map<String, dynamic>> updateSlots(Map<String, dynamic> body) async {
+    if (api == null) {
+      throw StateError('Updating slots requires a signed-in facility session.');
+    }
+    return api!.updateSlots(body);
+  }
+
+  Future<List<Map<String, dynamic>>> getCredentials() async {
+    if (api == null) return [];
+    return api!.getCredentials();
+  }
+
+  Future<Map<String, dynamic>> createCredential({
+    required String credentialType,
+    required String title,
+    String? issuedAt,
+    String? expiresAt,
+  }) async {
+    if (api == null) {
+      throw StateError('Adding credentials requires a signed-in facility session.');
+    }
+    return api!.createCredential(
+      credentialType: credentialType,
+      title: title,
+      issuedAt: issuedAt,
+      expiresAt: expiresAt,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getMessages() async {
+    if (api == null) return [];
+    return api!.getMessages();
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required String recipientId,
+    required String body,
+  }) async {
+    if (api == null) {
+      throw StateError('Sending messages requires a signed-in facility session.');
+    }
+    return api!.sendMessage(recipientId: recipientId, body: body);
+  }
+
+  Future<void> markMessageRead(String messageId) async {
+    if (api == null) return;
+    return api!.markMessageRead(messageId);
+  }
+
+  Future<List<String>> getDoctorServiceIds(String providerId) async {
+    if (api == null) return [];
+    return api!.getDoctorServiceIds(providerId);
+  }
+
+  Future<List<String>> updateDoctorServiceIds(
+    String providerId,
+    List<String> serviceIds,
+  ) async {
+    if (api == null) {
+      throw StateError('Saving services requires a signed-in facility session.');
+    }
+    return api!.updateDoctorServiceIds(providerId, serviceIds);
+  }
+
   Future<List<Practitioner>> getTeam() async {
     if (api != null) {
-      try {
-        final data = await api!.getStaff();
-        final items = data['staff'] as List? ?? data['items'] as List? ?? [];
-        final now = DateTime.now().toUtc();
-        final team = <Practitioner>[];
-        for (final raw in items) {
-          if (raw is! Map<String, dynamic>) continue;
-          final id = raw['user_id'] as String? ??
-              raw['userId'] as String? ??
-              raw['id'] as String? ??
-              '';
-          if (id.isEmpty) continue;
-          final first = raw['first_name'] as String? ?? '';
-          final last = raw['last_name'] as String? ?? '';
-          var name = '$first $last'.trim();
-          name = name.isNotEmpty
-              ? name
-              : (raw['name'] as String? ??
-                  raw['displayName'] as String? ??
-                  raw['email'] as String? ??
-                  'Staff member');
-          final p = Practitioner(
-            id: id,
-            facilityId: facilityId,
-            name: name,
-            specialty: raw['specialty'] as String?,
-            registrationNumber: raw['registrationNumber'] as String?,
-            role: raw['role'] as String? ?? 'staff',
-            serverId: id,
-            syncStatus: 'synced',
-            updatedAt: now,
-          );
-          team.add(p);
-          await db.into(db.practitioners).insertOnConflictUpdate(
-                PractitionersCompanion.insert(
-                  id: p.id,
-                  facilityId: facilityId,
-                  name: p.name,
-                  specialty: Value(p.specialty),
-                  registrationNumber: Value(p.registrationNumber),
-                  role: Value(p.role),
-                  updatedAt: now,
-                ),
-              );
-        }
-        if (team.isNotEmpty) return team;
-      } catch (_) {}
+      final data = await api!.getStaff();
+      final items = data['staff'] as List? ?? data['items'] as List? ?? [];
+      final now = DateTime.now().toUtc();
+      final team = <Practitioner>[];
+      for (final raw in items) {
+        if (raw is! Map) continue;
+        final map = Map<String, dynamic>.from(raw);
+        final id = map['user_id'] as String? ??
+            map['userId'] as String? ??
+            map['user_id'] as String? ??
+            '';
+        if (id.isEmpty) continue;
+        final first = map['first_name'] as String? ?? map['firstName'] as String? ?? '';
+        final last = map['last_name'] as String? ?? map['lastName'] as String? ?? '';
+        var name = '$first $last'.trim();
+        name = name.isNotEmpty
+            ? name
+            : (map['name'] as String? ??
+                map['displayName'] as String? ??
+                map['email'] as String? ??
+                'Staff member');
+        final p = Practitioner(
+          id: id,
+          facilityId: facilityId,
+          name: name,
+          specialty: map['specialty'] as String?,
+          registrationNumber: map['registrationNumber'] as String? ??
+              map['mdpcz_number'] as String?,
+          role: map['role'] as String? ?? 'staff',
+          serverId: id,
+          syncStatus: 'synced',
+          updatedAt: now,
+        );
+        team.add(p);
+        await db.into(db.practitioners).insertOnConflictUpdate(
+              PractitionersCompanion.insert(
+                id: p.id,
+                facilityId: facilityId,
+                name: p.name,
+                specialty: Value(p.specialty),
+                registrationNumber: Value(p.registrationNumber),
+                role: Value(p.role),
+                updatedAt: now,
+              ),
+            );
+      }
+      if (team.isNotEmpty) return team;
     }
 
     if (MyPracticeConfig.useLocalDevSeed) {

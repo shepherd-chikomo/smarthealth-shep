@@ -4,6 +4,7 @@ import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/data/repositories/claims_repository.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
+import 'package:my_practice/shared/widgets/practice_more_app_bar.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 class ClaimsScreen extends ConsumerStatefulWidget {
@@ -44,7 +45,7 @@ class _ClaimsScreenState extends ConsumerState<ClaimsScreen> {
     final claimsRepo = ref.watch(claimsRepositoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Medical Aid Claims')),
+      appBar: practiceMoreAppBar(context, 'Medical Aid Claims'),
       floatingActionButton: StreamBuilder<List<InsuranceClaim>>(
         stream: claimsRepo.watchClaims(),
         builder: (context, snapshot) {

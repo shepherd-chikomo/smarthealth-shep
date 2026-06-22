@@ -231,6 +231,156 @@ class FacilityApiClient {
     return res.data ?? {};
   }
 
+  Future<Map<String, List<Map<String, dynamic>>>> getServicesCatalog() async {
+    final res =
+        await _dio.get<Map<String, dynamic>>(_path('/facility/services-catalog'));
+    final data = res.data ?? {};
+    List<Map<String, dynamic>> mapList(String key) {
+      final items = data[key] as List<dynamic>? ?? [];
+      return items
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
+    }
+
+    return {
+      'preset': mapList('preset'),
+      'other': mapList('other'),
+    };
+  }
+
+  Future<Map<String, dynamic>> submitServiceProposal({
+    required String label,
+    String? iconKey,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/service-submissions'),
+      data: {
+        'label': label,
+        if (iconKey != null) 'iconKey': iconKey,
+      },
+    );
+    return res.data ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> getMedicalAidCatalog() async {
+    final res =
+        await _dio.get<Map<String, dynamic>>(_path('/facility/medical-aid-catalog'));
+    final items = res.data?['schemes'] as List<dynamic>? ?? [];
+    return items.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getMedicalAidSubmissions({
+    String status = 'pending',
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      _path('/facility/medical-aid-submissions?status=$status'),
+    );
+    final items = res.data?['submissions'] as List<dynamic>? ?? [];
+    return items.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
+  Future<Map<String, dynamic>> submitMedicalAidProposal(String name) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/medical-aid-submissions'),
+      data: {'name': name},
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> uploadLogo(String filePath, String fileName) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+    });
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/logo'),
+      data: formData,
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> removeLogo() async {
+    await _dio.delete<void>(_path('/facility/logo'));
+  }
+
+  Future<Map<String, dynamic>> getSlots() async {
+    final res = await _dio.get<Map<String, dynamic>>(_path('/facility/slots'));
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> updateSlots(Map<String, dynamic> body) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      _path('/facility/slots'),
+      data: body,
+    );
+    return res.data ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> getCredentials() async {
+    final res = await _dio.get<Map<String, dynamic>>(_path('/facility/credentials'));
+    final items = res.data?['credentials'] as List<dynamic>? ?? [];
+    return items.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
+  Future<Map<String, dynamic>> createCredential({
+    required String credentialType,
+    required String title,
+    String? issuedAt,
+    String? expiresAt,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/credentials'),
+      data: {
+        'credentialType': credentialType,
+        'title': title,
+        if (issuedAt != null) 'issuedAt': issuedAt,
+        if (expiresAt != null) 'expiresAt': expiresAt,
+      },
+    );
+    return res.data ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> getMessages() async {
+    final res = await _dio.get<Map<String, dynamic>>(_path('/facility/messages'));
+    final items = res.data?['messages'] as List<dynamic>? ?? [];
+    return items.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required String recipientId,
+    required String body,
+  }) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/messages'),
+      data: {'recipientId': recipientId, 'body': body},
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> markMessageRead(String messageId) async {
+    await _dio.patch<void>(_path('/facility/messages/$messageId/read'));
+  }
+
+  Future<List<String>> getDoctorServiceIds(String providerId) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      _path('/facility/doctors/$providerId/services'),
+    );
+    final items = res.data?['serviceIds'] as List<dynamic>? ?? [];
+    return items.map((e) => e.toString()).toList();
+  }
+
+  Future<List<String>> updateDoctorServiceIds(
+    String providerId,
+    List<String> serviceIds,
+  ) async {
+    final res = await _dio.put<Map<String, dynamic>>(
+      _path('/facility/doctors/$providerId/services'),
+      data: {'serviceIds': serviceIds},
+    );
+    final items = res.data?['serviceIds'] as List<dynamic>? ?? serviceIds;
+    return items.map((e) => e.toString()).toList();
+  }
+
   Future<List<Map<String, dynamic>>> getClaimsSummary() async {
     final res = await _dio.get<Map<String, dynamic>>(
       _path('/clinical/claims/summary'),

@@ -22,6 +22,7 @@ enum MoreMenuActionType {
   signOut,
   signInPilot,
   futureModule,
+  switchFacility,
 }
 
 class MoreMenuEntry {
@@ -79,17 +80,13 @@ abstract final class PracticeNavItems {
       route: '/patients',
       shellIndex: 3,
     ),
-    PracticeNavItem(
-      label: 'More',
-      icon: Icons.more_horiz,
-      route: '/more',
-      shellIndex: 4,
-    ),
   ];
 
-  /// Bottom nav on mobile — More is reached via the top-left menu or More tab in drawer.
-  static List<PracticeNavItem> get mobileBottomTabs =>
-      shellTabs.where((t) => t.shellIndex != null && t.shellIndex! < 4).toList();
+  /// Primary shell destinations (bottom nav + desktop sidebar top).
+  static List<PracticeNavItem> get mainShellTabs => shellTabs;
+
+  /// Bottom nav on mobile — same as main shell tabs.
+  static List<PracticeNavItem> get mobileBottomTabs => mainShellTabs;
 
   /// Single source of truth for everything under the More page.
   static const moreSections = [
@@ -97,28 +94,33 @@ abstract final class PracticeNavItems {
       title: 'Operations',
       items: [
         MoreMenuEntry(
-          label: 'Facility Management',
+          label: 'Facility profile',
           icon: Icons.local_hospital_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/facility/manage',
+          route: '/more/facility/manage',
         ),
         MoreMenuEntry(
           label: 'Team Management',
           icon: Icons.group_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/facility/team',
+          route: '/more/facility/team',
         ),
         MoreMenuEntry(
-          label: 'Provider Schedule',
+          label: 'My Schedule',
           icon: Icons.schedule_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/calendar/availability',
+          route: '/more/calendar/availability',
         ),
         MoreMenuEntry(
-          label: 'Claim Facility',
+          label: 'Claim facilities',
           icon: Icons.verified_user_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/claim',
+          route: '/more/claim',
+        ),
+        MoreMenuEntry(
+          label: 'Switch facility',
+          icon: Icons.swap_horiz_outlined,
+          action: MoreMenuActionType.switchFacility,
         ),
       ],
     ),
@@ -129,25 +131,25 @@ abstract final class PracticeNavItems {
           label: 'Claims & Medical Aid',
           icon: Icons.shield_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/claims',
+          route: '/more/claims',
         ),
         MoreMenuEntry(
           label: 'Practitioner Earnings',
           icon: Icons.payments_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/earnings',
+          route: '/more/earnings',
         ),
         MoreMenuEntry(
           label: 'Accounts Receivable',
           icon: Icons.account_balance_wallet_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/receivables',
+          route: '/more/receivables',
         ),
         MoreMenuEntry(
           label: 'Reports & Analytics',
           icon: Icons.bar_chart_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/reports',
+          route: '/more/reports',
         ),
       ],
     ),
@@ -158,13 +160,13 @@ abstract final class PracticeNavItems {
           label: 'Clinical Tasks',
           icon: Icons.task_alt_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/tasks',
+          route: '/more/tasks',
         ),
         MoreMenuEntry(
           label: 'Credential Wallet',
           icon: Icons.badge_outlined,
           action: MoreMenuActionType.navigate,
-          route: '/credentials',
+          route: '/more/credentials',
         ),
       ],
     ),
@@ -175,7 +177,7 @@ abstract final class PracticeNavItems {
           label: 'Internal Messaging',
           icon: Icons.chat_bubble_outline,
           action: MoreMenuActionType.navigate,
-          route: '/messages',
+          route: '/more/messages',
         ),
       ],
     ),

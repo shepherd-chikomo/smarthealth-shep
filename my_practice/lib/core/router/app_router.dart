@@ -132,13 +132,43 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/more',
-                builder: (_, __) => const FacilityScreen(),
-              ),
-            ],
+        ],
+      ),
+      GoRoute(
+        path: '/more',
+        builder: (_, __) => const FacilityScreen(),
+        routes: [
+          GoRoute(
+            path: 'facility/manage',
+            builder: (_, __) => const FacilityManagementScreen(),
+          ),
+          GoRoute(
+            path: 'facility/team',
+            builder: (_, __) => const TeamManagementScreen(),
+          ),
+          GoRoute(
+            path: 'calendar/availability',
+            builder: (_, __) => const ProviderAvailabilityScreen(),
+          ),
+          GoRoute(
+            path: 'claim',
+            builder: (_, __) => const ClaimHubScreen(),
+          ),
+          GoRoute(path: 'claims', builder: (_, __) => const ClaimsScreen()),
+          GoRoute(path: 'earnings', builder: (_, __) => const EarningsScreen()),
+          GoRoute(
+            path: 'receivables',
+            builder: (_, __) => const ReceivablesScreen(),
+          ),
+          GoRoute(path: 'reports', builder: (_, __) => const ReportsScreen()),
+          GoRoute(path: 'tasks', builder: (_, __) => const TasksScreen()),
+          GoRoute(
+            path: 'credentials',
+            builder: (_, __) => const CredentialsScreen(),
+          ),
+          GoRoute(
+            path: 'messages',
+            builder: (_, __) => const MessagingScreen(),
           ),
         ],
       ),
@@ -155,26 +185,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           queueEntryId: state.uri.queryParameters['queueEntryId'],
         ),
       ),
-      GoRoute(path: '/facility', builder: (_, __) => const FacilityScreen()),
-      GoRoute(
-        path: '/facility/manage',
-        builder: (_, __) => const FacilityManagementScreen(),
-      ),
-      GoRoute(
-        path: '/facility/team',
-        builder: (_, __) => const TeamManagementScreen(),
-      ),
-      GoRoute(path: '/claims', builder: (_, __) => const ClaimsScreen()),
-      GoRoute(path: '/earnings', builder: (_, __) => const EarningsScreen()),
-      GoRoute(path: '/receivables', builder: (_, __) => const ReceivablesScreen()),
-      GoRoute(path: '/reports', builder: (_, __) => const ReportsScreen()),
-      GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
-      GoRoute(path: '/credentials', builder: (_, __) => const CredentialsScreen()),
-      GoRoute(path: '/messages', builder: (_, __) => const MessagingScreen()),
-      GoRoute(
-        path: '/calendar/availability',
-        builder: (_, __) => const ProviderAvailabilityScreen(),
-      ),
+      GoRoute(path: '/facility', redirect: (_, __) => '/more'),
       GoRoute(
         path: '/future/:module',
         builder: (_, state) => FutureModuleScreen(

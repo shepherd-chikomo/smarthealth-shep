@@ -5,6 +5,7 @@ import 'package:my_practice/core/providers/app_providers.dart';
 import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
+import 'package:my_practice/shared/widgets/practice_more_app_bar.dart';
 
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
@@ -22,7 +23,7 @@ class ReportsScreen extends ConsumerWidget {
     final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Reports & Analytics')),
+      appBar: practiceMoreAppBar(context, 'Reports & Analytics'),
       body: StreamBuilder<List<FinancialSummary>>(
         stream: (db.select(db.financialSummaries)
               ..where((t) => t.facilityId.equals(facilityId))

@@ -7,6 +7,7 @@ import 'package:my_practice/data/seed/dev_team_seed.dart';
 import 'package:my_practice/features/facility/team_provider.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
+import 'package:my_practice/shared/widgets/practice_more_app_bar.dart';
 
 class TeamManagementScreen extends ConsumerWidget {
   const TeamManagementScreen({super.key});
@@ -17,9 +18,7 @@ class TeamManagementScreen extends ConsumerWidget {
     final canSyncRemote = !MyPracticeConfig.skipAuthForTesting;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Team Management'),
-      ),
+      appBar: practiceMoreAppBar(context, 'Team Management'),
       body: teamAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _TeamError(

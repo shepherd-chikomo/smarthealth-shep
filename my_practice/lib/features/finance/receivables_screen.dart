@@ -6,6 +6,7 @@ import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
 import 'package:my_practice/shared/utils/patient_formatters.dart';
+import 'package:my_practice/shared/widgets/practice_more_app_bar.dart';
 
 class ReceivablesScreen extends ConsumerWidget {
   const ReceivablesScreen({super.key});
@@ -23,7 +24,7 @@ class ReceivablesScreen extends ConsumerWidget {
     final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts Receivable')),
+      appBar: practiceMoreAppBar(context, 'Accounts Receivable'),
       body: StreamBuilder<List<InsuranceClaim>>(
         stream: (db.select(db.insuranceClaims)
               ..where((t) => t.facilityId.equals(facilityId))

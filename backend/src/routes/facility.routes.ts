@@ -209,6 +209,30 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => facility.removeFacilityLogo(request.user!, request.facilityId!),
   );
 
+  app.post(
+    '/facility/credentials',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({
+          credentialType: z.enum(['registration', 'licence', 'certificate', 'cpd', 'other']),
+          title: z.string().min(1).max(200),
+          issuedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          expiresAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const result = await facility.createPractitionerCredential(
+        request.user!,
+        request.facilityId!,
+        request.body,
+      );
+      return reply.status(201).send(result);
+    },
+  );
+
   app.get(
     '/facility/credentials',
     { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },

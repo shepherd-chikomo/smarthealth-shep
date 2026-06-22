@@ -7,6 +7,7 @@ import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
 import 'package:my_practice/shared/utils/patient_formatters.dart';
+import 'package:my_practice/shared/widgets/practice_more_app_bar.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 class TasksScreen extends ConsumerWidget {
@@ -18,7 +19,7 @@ class TasksScreen extends ConsumerWidget {
     final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Clinical Tasks')),
+      appBar: practiceMoreAppBar(context, 'Clinical Tasks'),
       body: StreamBuilder<List<ClinicalTask>>(
         stream: (db.select(db.clinicalTasks)
               ..where((t) => t.facilityId.equals(facilityId))

@@ -2355,6 +2355,55 @@ export async function listMyCredentials(user: AuthenticatedUser, facilityId: str
   return { credentials };
 }
 
+export async function createPractitionerCredential(
+  user: AuthenticatedUser,
+  facilityId: string,
+  body: {
+    credentialType: string;
+    title: string;
+    issuedAt?: string;
+    expiresAt?: string;
+  },
+) {
+  await assertFacilityAccess(user, facilityId);
+  const provider = await resolveProviderForUser(user.id, facilityId);
+  if (!provider) {
+    throw new ValidationError('Link a practitioner profile before adding credentials');
+  }
+  await assertCanManageProvider(user, facilityId, provider.id);
+
+  const row = await query(
+    `INSERT INTO public.practitioner_credentials
+       (provider_id, credential_type, title, issued_at, expires_at)
+     VALUES ($1, $2, $3, $4::date, $5::date)
+     RETURNING id, credential_type, title, issued_at, expires_at, storage_path, created_at`,
+    [
+      provider.id,
+      body.credentialType,
+      body.title.trim(),
+      body.issuedAt ?? null,
+      body.expiresAt ?? null,
+    ],
+  );
+  const inserted = row.rows[0];
+  if (!inserted) throw new ValidationError('Could not save credential');
+
+  return {
+    credential: {
+      id: String(inserted.id),
+      credentialType: String(inserted.credential_type),
+      title: String(inserted.title),
+      issuedAt: inserted.issued_at
+        ? new Date(String(inserted.issued_at)).toISOString().slice(0, 10)
+        : null,
+      expiresAt: inserted.expires_at
+        ? new Date(String(inserted.expires_at)).toISOString().slice(0, 10)
+        : null,
+      storagePath: inserted.storage_path ? String(inserted.storage_path) : null,
+    },
+  };
+}
+
 export async function listInternalMessages(user: AuthenticatedUser, facilityId: string) {
   await assertFacilityAccess(user, facilityId);
   const rows = await query(
