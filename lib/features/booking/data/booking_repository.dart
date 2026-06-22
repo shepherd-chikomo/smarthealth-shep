@@ -75,6 +75,20 @@ class BookingRepository {
     final local = await _providerDao.getById(providerId);
     if (local != null) return local;
 
+    if (await isOnline()) {
+      try {
+        final remote = await _api.getProviderById(providerId);
+        if (remote != null) return remote;
+      } catch (error, stackTrace) {
+        developer.log(
+          'Remote provider fetch failed',
+          name: _logName,
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
     if (AppConfig.allowMockFallbacks) {
       for (final provider in MockData.providers) {
         if (provider.id == providerId) return provider;

@@ -140,8 +140,11 @@ export async function getPublicProfile(facilityId: string, distanceKm?: number) 
   });
 
   const openStatus = computeOpenStatus(hoursResult.rows);
+  // Opt-out model (matches facility portal): booking is on unless explicitly disabled,
+  // and onlineBooking must be enabled in SmartHealth features.
   const bookingRequested =
-    profile.booking.enabled === true && profile.smarthealthFeatures.onlineBooking === true;
+    profile.booking.enabled !== false &&
+    profile.smarthealthFeatures.onlineBooking === true;
   const hasAvailableSlots = bookingRequested
     ? await facilityHasBookableSlots(facilityId)
     : false;
