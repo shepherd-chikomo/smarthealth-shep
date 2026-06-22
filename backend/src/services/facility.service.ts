@@ -1891,7 +1891,7 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
   );
 
   const rows = await query(
-    `SELECT fm.id, fm.role, fm.joined_at, fm.suspended_at,
+    `SELECT fm.id, fm.role, fm.additional_roles, fm.joined_at, fm.suspended_at,
             p.id AS user_id, p.first_name, p.last_name, p.email, p.phone
      FROM public.facility_memberships fm
      JOIN public.profiles p ON p.id = fm.user_id
@@ -1906,6 +1906,7 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
       ...row,
       membership_id: row.id,
       suspended: row.suspended_at !== null,
+      additional_roles: row.additional_roles ?? [],
     })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
@@ -1920,6 +1921,7 @@ export async function updateStaffMember(
     email?: string;
     phone?: string;
     role?: 'doctor' | 'receptionist' | 'facility_admin';
+    additionalRoles?: string[];
   },
   context?: RequestContext,
 ) {
@@ -1975,6 +1977,15 @@ export async function updateStaffMember(
     await query(
       `UPDATE public.facility_memberships SET role = $2::public.app_role WHERE id = $1`,
       [membershipId, data.role],
+    );
+  }
+
+  if (data.additionalRoles !== undefined) {
+    const validRoles = ['doctor', 'receptionist', 'facility_admin'];
+    const filtered = data.additionalRoles.filter((r) => validRoles.includes(r));
+    await query(
+      `UPDATE public.facility_memberships SET additional_roles = $2 WHERE id = $1`,
+      [membershipId, filtered],
     );
   }
 

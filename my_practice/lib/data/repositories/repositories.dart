@@ -605,9 +605,13 @@ class FacilityRepository {
                   'Staff member');
           final role = _pickString(map, ['role']) ?? 'staff';
           final suspended = map['suspended'] == true;
-          // Encode suspended state in syncStatus so it survives local DB
-          // without needing a schema change: 'suspended' vs 'synced'.
           final syncStatus = suspended ? 'suspended' : 'synced';
+          // Parse additional_roles from API (stored as comma-separated string locally).
+          final rawAdditional = map['additional_roles'] ?? map['additionalRoles'];
+          String? additionalRoles;
+          if (rawAdditional is List && rawAdditional.isNotEmpty) {
+            additionalRoles = rawAdditional.join(',');
+          }
           final p = Practitioner(
             id: id,
             facilityId: facilityId,
@@ -618,6 +622,7 @@ class FacilityRepository {
               ['registrationNumber', 'mdpcz_number', 'registration_number'],
             ),
             role: role,
+            additionalRoles: additionalRoles,
             serverId: membershipId,
             syncStatus: syncStatus,
             updatedAt: now,
@@ -631,8 +636,9 @@ class FacilityRepository {
                   specialty: Value(p.specialty),
                   registrationNumber: Value(p.registrationNumber),
                   role: Value(p.role),
+                  additionalRoles: Value(p.additionalRoles),
                   serverId: Value(p.serverId),
-                  syncStatus: p.syncStatus,
+                  syncStatus: Value(p.syncStatus),
                   updatedAt: now,
                 ),
               );
@@ -703,6 +709,7 @@ class FacilityRepository {
     String? email,
     String? phone,
     String? role,
+    List<String>? additionalRoles,
   }) async {
     if (api == null) throw StateError('Editing staff requires a signed-in session.');
     await api!.updateStaff(
@@ -711,6 +718,7 @@ class FacilityRepository {
       email: email,
       phone: phone,
       role: role,
+      additionalRoles: additionalRoles,
     );
   }
 

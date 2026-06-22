@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
+import 'package:my_practice/core/security/app_lock_notifier.dart';
 import 'package:my_practice/design_system/screens/design_preview_screen.dart';
 import 'package:my_practice/design_system/screens/design_system_screen.dart';
 import 'package:my_practice/features/claim/claim_hub_screen.dart';
@@ -28,17 +29,22 @@ import 'package:my_practice/features/messaging/messaging_screen.dart';
 import 'package:my_practice/features/patients/patient_search_screen.dart';
 import 'package:my_practice/features/queue/queue_screen.dart';
 import 'package:my_practice/features/reports/reports_screen.dart';
+import 'package:my_practice/features/auth/biometric_lock_screen.dart';
 import 'package:my_practice/features/splash/splash_screen.dart';
 import 'package:my_practice/shared/widgets/practice_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authRefresh = ref.watch(authRefreshListenableProvider);
 
+  // Re-run router redirect whenever the lock state changes.
+  ref.listen(appLockProvider, (_, __) => authRefresh.notifyAuthChanged());
+
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: authRefresh,
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
+      final locked = ref.read(appLockProvider);
       final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/login') || loc.startsWith('/otp');
       final isClaimRoute = loc.startsWith('/claim');
@@ -66,6 +72,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/dashboard';
       }
 
+      // Biometric lock: redirect to unlock screen when session timed out.
+      if (locked &&
+          auth.status == AuthStatus.authenticated &&
+          loc != '/unlock') {
+        return '/unlock';
+      }
+
       return null;
     },
     routes: [
@@ -79,6 +92,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/unlock', builder: (_, __) => const BiometricLockScreen()),
       GoRoute(path: '/otp', builder: (_, __) => const OtpScreen()),
       GoRoute(
         path: '/facility-picker',

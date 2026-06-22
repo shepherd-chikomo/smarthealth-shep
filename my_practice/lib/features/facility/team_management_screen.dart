@@ -293,10 +293,7 @@ class _TeamMemberCard extends StatelessWidget {
                       style: PracticeDesignTokens.inter(weight: FontWeight.w600),
                     ),
                     Text(
-                      [
-                        member.role ?? 'staff',
-                        if (member.specialty != null) member.specialty,
-                      ].join(' · '),
+                      _allRoles(member),
                       style: PracticeDesignTokens.metadata(context),
                     ),
                     if (member.registrationNumber != null)
@@ -337,6 +334,16 @@ class _TeamMemberCard extends StatelessWidget {
     }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
+
+  String _allRoles(Practitioner m) {
+    final extras = (m.additionalRoles ?? '')
+        .split(',')
+        .where((r) => r.isNotEmpty && r != m.role)
+        .toList();
+    final parts = [m.role ?? 'staff', ...extras];
+    if (m.specialty != null) parts.add(m.specialty!);
+    return parts.join(' · ');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -366,6 +373,7 @@ class _ManageMemberSheet extends StatefulWidget {
 
 class _ManageMemberSheetState extends State<_ManageMemberSheet> {
   late String _role;
+  late Set<String> _additionalRoles;
   bool _busy = false;
   String? _error;
 
@@ -378,22 +386,38 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
   bool get _suspended => widget.member.syncStatus == 'suspended';
   String get _membershipId => widget.member.serverId ?? widget.member.id;
 
+  bool get _rolesChanged {
+    if (_role != (widget.member.role ?? 'doctor')) return true;
+    final original = (widget.member.additionalRoles ?? '')
+        .split(',')
+        .where((s) => s.isNotEmpty)
+        .toSet();
+    return !_additionalRoles.containsAll(original) ||
+        !original.containsAll(_additionalRoles);
+  }
+
   @override
   void initState() {
     super.initState();
     _role = widget.member.role ?? 'doctor';
+    _additionalRoles = (widget.member.additionalRoles ?? '')
+        .split(',')
+        .where((s) => s.isNotEmpty)
+        .toSet();
   }
 
   Future<void> _saveRole() async {
-    if (_role == (widget.member.role ?? 'doctor')) return;
+    if (!_rolesChanged) return;
     setState(() {
       _busy = true;
       _error = null;
     });
+    // Additional roles must not include the primary role (backend treats them separately).
+    final extras = _additionalRoles.where((r) => r != _role).toList();
     try {
       await widget.ref
           .read(facilityRepositoryProvider)
-          .updateStaffMember(_membershipId, role: _role);
+          .updateStaffMember(_membershipId, role: _role, additionalRoles: extras);
       widget.ref.invalidate(teamListProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -484,7 +508,6 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
     final primary = Theme.of(context).colorScheme.primary;
     final roleLabel =
         _roles.where((r) => r.$1 == _role).map((r) => r.$2).firstOrNull ?? _role;
-    final roleChanged = _role != (widget.member.role ?? 'doctor');
 
     return SafeArea(
       child: Padding(
@@ -550,10 +573,15 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
             ),
             const SizedBox(height: 24),
 
-            // Role picker
+            // Primary role (single select)
             Text(
-              'Role',
+              'Primary role',
               style: PracticeDesignTokens.tableHeader(context),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Governs access level and permissions.',
+              style: PracticeDesignTokens.metadata(context),
             ),
             const SizedBox(height: 8),
             Container(
@@ -582,7 +610,91 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
                               ),
                             ),
                             if (_role == _roles[i].$1)
-                              Icon(Icons.check_circle, color: primary, size: 20),
+                              Icon(Icons.check_circle, color: primary, size: 20)
+                            else
+                              Icon(Icons.radio_button_unchecked,
+                                  color: colors.mutedForeground, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Additional roles (multi-select)
+            Text(
+              'Additional roles',
+              style: PracticeDesignTokens.tableHeader(context),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'For members who hold more than one role (e.g. doctor & admin).',
+              style: PracticeDesignTokens.metadata(context),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: PracticeDesignTokens.previewCardDecoration(context),
+              child: Column(
+                children: [
+                  for (var i = 0; i < _roles.length; i++) ...[
+                    if (i > 0) Divider(height: 1, color: colors.border),
+                    InkWell(
+                      borderRadius: i == 0
+                          ? const BorderRadius.vertical(top: Radius.circular(12))
+                          : i == _roles.length - 1
+                              ? const BorderRadius.vertical(
+                                  bottom: Radius.circular(12))
+                              : BorderRadius.zero,
+                      onTap: _busy || _roles[i].$1 == _role
+                          ? null
+                          : () => setState(() {
+                                if (_additionalRoles.contains(_roles[i].$1)) {
+                                  _additionalRoles.remove(_roles[i].$1);
+                                } else {
+                                  _additionalRoles.add(_roles[i].$1);
+                                }
+                              }),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _roles[i].$2,
+                                style: PracticeDesignTokens.inter(
+                                  size: 14,
+                                  color: _roles[i].$1 == _role
+                                      ? colors.mutedForeground
+                                      : null,
+                                ),
+                              ),
+                            ),
+                            if (_roles[i].$1 == _role)
+                              Text(
+                                'primary',
+                                style: PracticeDesignTokens.metadata(context),
+                              )
+                            else
+                              Checkbox(
+                                value: _additionalRoles.contains(_roles[i].$1),
+                                onChanged: _busy
+                                    ? null
+                                    : (v) => setState(() {
+                                          if (v == true) {
+                                            _additionalRoles.add(_roles[i].$1);
+                                          } else {
+                                            _additionalRoles.remove(_roles[i].$1);
+                                          }
+                                        }),
+                                activeColor: primary,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
                           ],
                         ),
                       ),
@@ -592,7 +704,7 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
               ),
             ),
 
-            if (roleChanged) ...[
+            if (_rolesChanged) ...[
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -605,7 +717,7 @@ class _ManageMemberSheetState extends State<_ManageMemberSheet> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Save role'),
+                      : const Text('Save roles'),
                 ),
               ),
             ],

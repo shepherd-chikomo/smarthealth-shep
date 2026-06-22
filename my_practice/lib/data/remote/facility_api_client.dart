@@ -164,6 +164,7 @@ class FacilityApiClient {
     String? email,
     String? phone,
     String? role,
+    List<String>? additionalRoles,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       _path('/facility/staff/$membershipId'),
@@ -172,6 +173,7 @@ class FacilityApiClient {
         if (email != null) 'email': email,
         if (phone != null) 'phone': phone,
         if (role != null) 'role': role,
+        if (additionalRoles != null) 'additionalRoles': additionalRoles,
       },
     );
     return res.data ?? {};

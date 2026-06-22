@@ -883,6 +883,9 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
           email: z.string().email().optional(),
           phone: z.string().optional(),
           role: z.enum(['doctor', 'receptionist', 'facility_admin']).optional(),
+          additionalRoles: z
+            .array(z.enum(['doctor', 'receptionist', 'facility_admin']))
+            .optional(),
         }),
       },
     },

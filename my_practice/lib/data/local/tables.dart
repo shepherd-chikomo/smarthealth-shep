@@ -45,6 +45,8 @@ class Practitioners extends Table {
   TextColumn get specialty => text().nullable()();
   TextColumn get registrationNumber => text().nullable()();
   TextColumn get role => text().nullable()();
+  // Stores additional roles as comma-separated string (e.g. "doctor,facility_admin").
+  TextColumn get additionalRoles => text().nullable()();
   TextColumn get syncStatus =>
       text().withDefault(const Constant(SyncMetadata.synced))();
   DateTimeColumn get updatedAt => dateTime()();

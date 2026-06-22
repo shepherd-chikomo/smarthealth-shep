@@ -236,23 +236,84 @@ class _KpiGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth > 900 ? 4 : 2;
-        return GridView.count(
-          crossAxisCount: cols,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.55,
+        if (c.maxWidth > 900) {
+          // 4 equal columns — use Row so cards size to their natural height.
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < items.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 16),
+                  Expanded(
+                    child: PracticeKpiCard(
+                      label: items[i].$1,
+                      value: items[i].$2,
+                      icon: items[i].$3,
+                      accentColor: _accents[i],
+                      sparkline: _sparkline,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }
+        // 2-column layout: two rows of two cards.
+        return Column(
           children: [
-            for (var i = 0; i < items.length; i++)
-              PracticeKpiCard(
-                label: items[i].$1,
-                value: items[i].$2,
-                icon: items[i].$3,
-                accentColor: _accents[i],
-                sparkline: _sparkline,
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: PracticeKpiCard(
+                      label: items[0].$1,
+                      value: items[0].$2,
+                      icon: items[0].$3,
+                      accentColor: _accents[0],
+                      sparkline: _sparkline,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: PracticeKpiCard(
+                      label: items[1].$1,
+                      value: items[1].$2,
+                      icon: items[1].$3,
+                      accentColor: _accents[1],
+                      sparkline: _sparkline,
+                    ),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 16),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: PracticeKpiCard(
+                      label: items[2].$1,
+                      value: items[2].$2,
+                      icon: items[2].$3,
+                      accentColor: _accents[2],
+                      sparkline: _sparkline,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: PracticeKpiCard(
+                      label: items[3].$1,
+                      value: items[3].$2,
+                      icon: items[3].$3,
+                      accentColor: _accents[3],
+                      sparkline: _sparkline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
       },

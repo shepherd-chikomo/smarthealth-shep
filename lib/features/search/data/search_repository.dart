@@ -281,33 +281,9 @@ class SearchRepository {
       );
     }
 
-    if (query.trim().isNotEmpty) {
-      final local = await _directorySearch.searchLocal(query: query);
-      if (local.facilities.isNotEmpty || local.providers.isNotEmpty) {
-        final filteredProviders = SearchFilterEngine.apply(
-          providers: local.providers,
-          query: query,
-          specialties: specialties,
-          conditions: conditions,
-          ageGroups: ageGroups,
-          operational: operational,
-        );
-        final filteredFacilities = SearchFilterEngine.applyFacilities(
-          facilities: local.facilities,
-          query: query,
-          facilityType: facilityType,
-          medicalAidSchemeKeys: medicalAidKeys,
-        );
-        if (filteredProviders.isNotEmpty || filteredFacilities.isNotEmpty) {
-          return SearchQueryResult(
-            providers: filteredProviders,
-            facilities: filteredFacilities,
-            isOffline: false,
-          );
-        }
-      }
-    }
-
+    // Always try the live API first for text queries so that newly added or
+    // recently claimed facilities appear immediately (the local cache may lag).
+    // Fall back to the local directory only when the network is unavailable.
     try {
       final providerResult = await _providerRepository.searchProviders(filter);
       final facilities = await _client.searchFacilities(filter);
@@ -317,6 +293,34 @@ class SearchRepository {
         isOffline: providerResult.isOffline,
       );
     } catch (_) {
+      // Network unavailable — try local directory index, then discovery cache.
+      if (query.trim().isNotEmpty) {
+        final local = await _directorySearch.searchLocal(query: query);
+        if (local.facilities.isNotEmpty || local.providers.isNotEmpty) {
+          final filteredProviders = SearchFilterEngine.apply(
+            providers: local.providers,
+            query: query,
+            specialties: specialties,
+            conditions: conditions,
+            ageGroups: ageGroups,
+            operational: operational,
+          );
+          final filteredFacilities = SearchFilterEngine.applyFacilities(
+            facilities: local.facilities,
+            query: query,
+            facilityType: facilityType,
+            medicalAidSchemeKeys: medicalAidKeys,
+          );
+          if (filteredProviders.isNotEmpty || filteredFacilities.isNotEmpty) {
+            return SearchQueryResult(
+              providers: filteredProviders,
+              facilities: filteredFacilities,
+              isOffline: true,
+            );
+          }
+        }
+      }
+
       final cached = await loadDiscovery(refreshOrigin: false);
       final filteredProviders = SearchFilterEngine.apply(
         providers: cached.providers,

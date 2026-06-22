@@ -1152,6 +1152,17 @@ class $PractitionersTable extends Practitioners
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _additionalRolesMeta = const VerificationMeta(
+    'additionalRoles',
+  );
+  @override
+  late final GeneratedColumn<String> additionalRoles = GeneratedColumn<String>(
+    'additional_roles',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncStatusMeta = const VerificationMeta(
     'syncStatus',
   );
@@ -1184,6 +1195,7 @@ class $PractitionersTable extends Practitioners
     specialty,
     registrationNumber,
     role,
+    additionalRoles,
     syncStatus,
     updatedAt,
   ];
@@ -1247,6 +1259,15 @@ class $PractitionersTable extends Practitioners
         role.isAcceptableOrUnknown(data['role']!, _roleMeta),
       );
     }
+    if (data.containsKey('additional_roles')) {
+      context.handle(
+        _additionalRolesMeta,
+        additionalRoles.isAcceptableOrUnknown(
+          data['additional_roles']!,
+          _additionalRolesMeta,
+        ),
+      );
+    }
     if (data.containsKey('sync_status')) {
       context.handle(
         _syncStatusMeta,
@@ -1298,6 +1319,10 @@ class $PractitionersTable extends Practitioners
         DriftSqlType.string,
         data['${effectivePrefix}role'],
       ),
+      additionalRoles: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}additional_roles'],
+      ),
       syncStatus: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sync_status'],
@@ -1323,6 +1348,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
   final String? specialty;
   final String? registrationNumber;
   final String? role;
+  final String? additionalRoles;
   final String syncStatus;
   final DateTime updatedAt;
   const Practitioner({
@@ -1333,6 +1359,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
     this.specialty,
     this.registrationNumber,
     this.role,
+    this.additionalRoles,
     required this.syncStatus,
     required this.updatedAt,
   });
@@ -1354,6 +1381,9 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
     if (!nullToAbsent || role != null) {
       map['role'] = Variable<String>(role);
     }
+    if (!nullToAbsent || additionalRoles != null) {
+      map['additional_roles'] = Variable<String>(additionalRoles);
+    }
     map['sync_status'] = Variable<String>(syncStatus);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1374,6 +1404,9 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
           ? const Value.absent()
           : Value(registrationNumber),
       role: role == null && nullToAbsent ? const Value.absent() : Value(role),
+      additionalRoles: additionalRoles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(additionalRoles),
       syncStatus: Value(syncStatus),
       updatedAt: Value(updatedAt),
     );
@@ -1394,6 +1427,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
         json['registrationNumber'],
       ),
       role: serializer.fromJson<String?>(json['role']),
+      additionalRoles: serializer.fromJson<String?>(json['additionalRoles']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1409,6 +1443,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
       'specialty': serializer.toJson<String?>(specialty),
       'registrationNumber': serializer.toJson<String?>(registrationNumber),
       'role': serializer.toJson<String?>(role),
+      'additionalRoles': serializer.toJson<String?>(additionalRoles),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1422,6 +1457,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
     Value<String?> specialty = const Value.absent(),
     Value<String?> registrationNumber = const Value.absent(),
     Value<String?> role = const Value.absent(),
+    Value<String?> additionalRoles = const Value.absent(),
     String? syncStatus,
     DateTime? updatedAt,
   }) => Practitioner(
@@ -1434,6 +1470,9 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
         ? registrationNumber.value
         : this.registrationNumber,
     role: role.present ? role.value : this.role,
+    additionalRoles: additionalRoles.present
+        ? additionalRoles.value
+        : this.additionalRoles,
     syncStatus: syncStatus ?? this.syncStatus,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1450,6 +1489,9 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
           ? data.registrationNumber.value
           : this.registrationNumber,
       role: data.role.present ? data.role.value : this.role,
+      additionalRoles: data.additionalRoles.present
+          ? data.additionalRoles.value
+          : this.additionalRoles,
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
@@ -1467,6 +1509,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
           ..write('specialty: $specialty, ')
           ..write('registrationNumber: $registrationNumber, ')
           ..write('role: $role, ')
+          ..write('additionalRoles: $additionalRoles, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1482,6 +1525,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
     specialty,
     registrationNumber,
     role,
+    additionalRoles,
     syncStatus,
     updatedAt,
   );
@@ -1496,6 +1540,7 @@ class Practitioner extends DataClass implements Insertable<Practitioner> {
           other.specialty == this.specialty &&
           other.registrationNumber == this.registrationNumber &&
           other.role == this.role &&
+          other.additionalRoles == this.additionalRoles &&
           other.syncStatus == this.syncStatus &&
           other.updatedAt == this.updatedAt);
 }
@@ -1508,6 +1553,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
   final Value<String?> specialty;
   final Value<String?> registrationNumber;
   final Value<String?> role;
+  final Value<String?> additionalRoles;
   final Value<String> syncStatus;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1519,6 +1565,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
     this.specialty = const Value.absent(),
     this.registrationNumber = const Value.absent(),
     this.role = const Value.absent(),
+    this.additionalRoles = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1531,6 +1578,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
     this.specialty = const Value.absent(),
     this.registrationNumber = const Value.absent(),
     this.role = const Value.absent(),
+    this.additionalRoles = const Value.absent(),
     this.syncStatus = const Value.absent(),
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1546,6 +1594,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
     Expression<String>? specialty,
     Expression<String>? registrationNumber,
     Expression<String>? role,
+    Expression<String>? additionalRoles,
     Expression<String>? syncStatus,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1558,6 +1607,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
       if (specialty != null) 'specialty': specialty,
       if (registrationNumber != null) 'registration_number': registrationNumber,
       if (role != null) 'role': role,
+      if (additionalRoles != null) 'additional_roles': additionalRoles,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1572,6 +1622,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
     Value<String?>? specialty,
     Value<String?>? registrationNumber,
     Value<String?>? role,
+    Value<String?>? additionalRoles,
     Value<String>? syncStatus,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1584,6 +1635,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
       specialty: specialty ?? this.specialty,
       registrationNumber: registrationNumber ?? this.registrationNumber,
       role: role ?? this.role,
+      additionalRoles: additionalRoles ?? this.additionalRoles,
       syncStatus: syncStatus ?? this.syncStatus,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1614,6 +1666,9 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
     if (role.present) {
       map['role'] = Variable<String>(role.value);
     }
+    if (additionalRoles.present) {
+      map['additional_roles'] = Variable<String>(additionalRoles.value);
+    }
     if (syncStatus.present) {
       map['sync_status'] = Variable<String>(syncStatus.value);
     }
@@ -1636,6 +1691,7 @@ class PractitionersCompanion extends UpdateCompanion<Practitioner> {
           ..write('specialty: $specialty, ')
           ..write('registrationNumber: $registrationNumber, ')
           ..write('role: $role, ')
+          ..write('additionalRoles: $additionalRoles, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -15364,6 +15420,7 @@ typedef $$PractitionersTableCreateCompanionBuilder =
       Value<String?> specialty,
       Value<String?> registrationNumber,
       Value<String?> role,
+      Value<String?> additionalRoles,
       Value<String> syncStatus,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -15377,6 +15434,7 @@ typedef $$PractitionersTableUpdateCompanionBuilder =
       Value<String?> specialty,
       Value<String?> registrationNumber,
       Value<String?> role,
+      Value<String?> additionalRoles,
       Value<String> syncStatus,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -15444,6 +15502,11 @@ class $$PractitionersTableFilterComposer
 
   ColumnFilters<String> get role => $composableBuilder(
     column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get additionalRoles => $composableBuilder(
+    column: $table.additionalRoles,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15520,6 +15583,11 @@ class $$PractitionersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get additionalRoles => $composableBuilder(
+    column: $table.additionalRoles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnOrderings(column),
@@ -15582,6 +15650,11 @@ class $$PractitionersTableAnnotationComposer
 
   GeneratedColumn<String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get additionalRoles => $composableBuilder(
+    column: $table.additionalRoles,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get syncStatus => $composableBuilder(
     column: $table.syncStatus,
@@ -15650,6 +15723,7 @@ class $$PractitionersTableTableManager
                 Value<String?> specialty = const Value.absent(),
                 Value<String?> registrationNumber = const Value.absent(),
                 Value<String?> role = const Value.absent(),
+                Value<String?> additionalRoles = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -15661,6 +15735,7 @@ class $$PractitionersTableTableManager
                 specialty: specialty,
                 registrationNumber: registrationNumber,
                 role: role,
+                additionalRoles: additionalRoles,
                 syncStatus: syncStatus,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -15674,6 +15749,7 @@ class $$PractitionersTableTableManager
                 Value<String?> specialty = const Value.absent(),
                 Value<String?> registrationNumber = const Value.absent(),
                 Value<String?> role = const Value.absent(),
+                Value<String?> additionalRoles = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -15685,6 +15761,7 @@ class $$PractitionersTableTableManager
                 specialty: specialty,
                 registrationNumber: registrationNumber,
                 role: role,
+                additionalRoles: additionalRoles,
                 syncStatus: syncStatus,
                 updatedAt: updatedAt,
                 rowid: rowid,

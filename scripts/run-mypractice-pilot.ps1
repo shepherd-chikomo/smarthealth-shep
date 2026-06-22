@@ -1,6 +1,6 @@
 param(
-  [string]$DeviceId,
-  [string]$ServerUrl = "https://dev.smarthealth.co.zw"
+  [string]$ServerUrl = "https://dev.smarthealth.co.zw",
+  [string]$DeviceId
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,14 +22,15 @@ if ($DeviceId) {
 }
 
 $apiUrl = if ($ServerUrl.EndsWith("/v1")) { $ServerUrl } else { "$ServerUrl/v1" }
-Write-Host "MyPractice PILOT -> $apiUrl [real auth + sync, no seed bypass]"
+Write-Host "MyPractice (PILOT) -> $apiUrl [real auth, no seed data]"
 
 Set-Location (Join-Path $RepoRoot "my_practice")
 
+# No DEV_MODE, no SKIP_AUTH, no dev-cert trust — identical to production behaviour
+# in a debug build so you can iterate quickly without a release build.
 $runArgs = @(
   "run",
-  "--dart-define=API_BASE_URL=$apiUrl",
-  "--dart-define=TRUST_DEV_CERTIFICATES=true"
+  "--dart-define=API_BASE_URL=$apiUrl"
 )
 
 if ($DeviceId) {
