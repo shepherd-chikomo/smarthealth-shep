@@ -104,9 +104,9 @@ export async function createAppointment(
 
   const result = await query<AppointmentRow>(
     `INSERT INTO public.appointments (
-       reference_number, facility_id, provider_id, patient_id,
+       reference_number, facility_id, tenant_id, provider_id, patient_id,
        family_member_id, scheduled_at, duration_minutes, status, notes, booked_by, metadata
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $4, $9::jsonb)
+     ) VALUES ($1, $2, $2, $3, $4, $5, $6, $7, 'pending', $8, $4, $9::jsonb)
      RETURNING id, reference_number, facility_id, provider_id, patient_id,
                family_member_id, scheduled_at, duration_minutes, status,
                notes, cancellation_reason, created_at, updated_at,

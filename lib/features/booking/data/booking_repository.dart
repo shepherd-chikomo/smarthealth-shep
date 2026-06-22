@@ -215,19 +215,17 @@ class BookingRepository {
       notes: notes?.trim().isEmpty ?? true ? null : notes?.trim(),
     );
 
-    final payload = {
-      'id': localId,
-      'referenceNumber': reference,
+    final payload = <String, dynamic>{
       'facilityId': facilityId ?? provider.id,
       'providerId': provider.id,
-      if (serviceId != null) 'serviceId': serviceId,
-      'familyMemberId': patient.id == PatientOption.selfId ? null : patient.id,
       'scheduledAt': scheduledAt.toUtc().toIso8601String(),
       'durationMinutes': _defaultDurationMinutes,
-      'notes': confirmation.notes,
-      'status': 'pending',
-      'updatedAt': now.toIso8601String(),
     };
+    if (serviceId != null) payload['serviceId'] = serviceId;
+    if (patient.id != PatientOption.selfId) {
+      payload['familyMemberId'] = patient.id;
+    }
+    if (confirmation.notes != null) payload['notes'] = confirmation.notes;
 
     await _bookingDao.saveConfirmed(
       confirmation,
@@ -254,13 +252,25 @@ class BookingRepository {
           payload: payload,
           clientUpdatedAt: now,
         );
+        final syncResult = await _syncService.syncNow(
+          trigger: SyncTrigger.queueMutation,
+        );
+        final pending = syncResult.failed > 0 || syncResult.needsManualRetry > 0;
         return BookingResult(
           confirmation: confirmation,
-          isPendingSync: false,
+          isPendingSync: pending,
           localId: localId,
         );
       } on NetworkException {
         developer.log('Online submit failed — queued for retry', name: _logName);
+      } catch (error, stackTrace) {
+        developer.log(
+          'Booking sync failed',
+          name: _logName,
+          error: error,
+          stackTrace: stackTrace,
+        );
+        throw StateError('Could not confirm booking with the server. Please try again.');
       }
     }
 

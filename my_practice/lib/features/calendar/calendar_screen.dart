@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
+import 'package:my_practice/data/sync/sync_notifier.dart';
 import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/domain/models/facility_hour.dart';
 import 'package:my_practice/features/calendar/facility_hours_editor.dart';
@@ -23,6 +24,15 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focused = DateTime.now();
   DateTime? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pull latest appointments from the server when the calendar opens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(syncNotifierProvider.notifier).syncNow();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
