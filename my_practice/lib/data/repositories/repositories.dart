@@ -582,56 +582,71 @@ class FacilityRepository {
 
   Future<List<Practitioner>> getTeam() async {
     if (api != null) {
-      final data = await api!.getStaff();
-      final items = data['staff'] as List? ?? data['items'] as List? ?? [];
-      final now = DateTime.now().toUtc();
-      final team = <Practitioner>[];
-      for (final raw in items) {
-        if (raw is! Map) continue;
-        final map = Map<String, dynamic>.from(raw);
-        final id = map['user_id'] as String? ??
-            map['userId'] as String? ??
-            map['user_id'] as String? ??
-            '';
-        if (id.isEmpty) continue;
-        final first = map['first_name'] as String? ?? map['firstName'] as String? ?? '';
-        final last = map['last_name'] as String? ?? map['lastName'] as String? ?? '';
-        var name = '$first $last'.trim();
-        name = name.isNotEmpty
-            ? name
-            : (map['name'] as String? ??
-                map['displayName'] as String? ??
-                map['email'] as String? ??
-                'Staff member');
-        final p = Practitioner(
-          id: id,
-          facilityId: facilityId,
-          name: name,
-          specialty: map['specialty'] as String?,
-          registrationNumber: map['registrationNumber'] as String? ??
-              map['mdpcz_number'] as String?,
-          role: map['role'] as String? ?? 'staff',
-          serverId: id,
-          syncStatus: 'synced',
-          updatedAt: now,
-        );
-        team.add(p);
-        await db.into(db.practitioners).insertOnConflictUpdate(
-              PractitionersCompanion.insert(
-                id: p.id,
-                facilityId: facilityId,
-                name: p.name,
-                specialty: Value(p.specialty),
-                registrationNumber: Value(p.registrationNumber),
-                role: Value(p.role),
-                updatedAt: now,
-              ),
-            );
+      try {
+        final data = await api!.getStaff();
+        final items = data['staff'] as List? ?? data['items'] as List? ?? [];
+        final now = DateTime.now().toUtc();
+        final team = <Practitioner>[];
+        for (final raw in items) {
+          if (raw is! Map) continue;
+          final map = Map<String, dynamic>.from(raw);
+          // Use user_id as the stable practitioner ID; store the membership
+          // ID in serverId so the UI can call update/suspend/remove endpoints.
+          final userId = _pickString(map, ['user_id', 'userId']) ?? '';
+          final membershipId = _pickString(map, ['id', 'membership_id', 'membershipId']) ?? userId;
+          final id = userId.isNotEmpty ? userId : membershipId;
+          if (id.isEmpty) continue;
+          final first = _pickString(map, ['first_name', 'firstName']) ?? '';
+          final last = _pickString(map, ['last_name', 'lastName']) ?? '';
+          var name = '$first $last'.trim();
+          name = name.isNotEmpty
+              ? name
+              : (_pickString(map, ['name', 'displayName', 'email']) ??
+                  'Staff member');
+          final role = _pickString(map, ['role']) ?? 'staff';
+          final suspended = map['suspended'] == true;
+          // Encode suspended state in syncStatus so it survives local DB
+          // without needing a schema change: 'suspended' vs 'synced'.
+          final syncStatus = suspended ? 'suspended' : 'synced';
+          final p = Practitioner(
+            id: id,
+            facilityId: facilityId,
+            name: name,
+            specialty: _pickString(map, ['specialty']),
+            registrationNumber: _pickString(
+              map,
+              ['registrationNumber', 'mdpcz_number', 'registration_number'],
+            ),
+            role: role,
+            serverId: membershipId,
+            syncStatus: syncStatus,
+            updatedAt: now,
+          );
+          team.add(p);
+          await db.into(db.practitioners).insertOnConflictUpdate(
+                PractitionersCompanion.insert(
+                  id: p.id,
+                  facilityId: facilityId,
+                  name: p.name,
+                  specialty: Value(p.specialty),
+                  registrationNumber: Value(p.registrationNumber),
+                  role: Value(p.role),
+                  serverId: Value(p.serverId),
+                  syncStatus: p.syncStatus,
+                  updatedAt: now,
+                ),
+              );
+        }
+        if (team.isNotEmpty) return team;
+      } catch (_) {
+        // Fall through to local cache / seed below.
       }
-      if (team.isNotEmpty) return team;
     }
 
-    if (MyPracticeConfig.useLocalDevSeed) {
+    // Only write seed practitioners in full dev-bypass mode (SKIP_AUTH=true).
+    // When the user is authenticated against a real server we must not pollute
+    // the local DB with fake seed rows.
+    if (MyPracticeConfig.skipAuthForTesting) {
       await DevTeamSeed.ensure(db, facilityId);
     }
 
@@ -640,11 +655,29 @@ class FacilityRepository {
           ..orderBy([(t) => OrderingTerm.asc(t.name)]))
         .get();
 
-    if (local.isEmpty && MyPracticeConfig.useLocalDevSeed) {
+    if (local.isEmpty && MyPracticeConfig.skipAuthForTesting) {
       return DevTeamSeed.fallbackRows(facilityId);
     }
 
     return local;
+  }
+
+  static String? _pickString(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+    return null;
+  }
+
+  static String _pickStaffId(Map<String, dynamic> map) {
+    return _pickString(
+          map,
+          ['user_id', 'userId', 'id', 'membership_id', 'membershipId'],
+        ) ??
+        '';
   }
 
   Future<void> inviteStaffMember({
@@ -662,6 +695,38 @@ class FacilityRepository {
       role: role,
       phone: phone,
     );
+  }
+
+  Future<void> updateStaffMember(
+    String membershipId, {
+    String? fullName,
+    String? email,
+    String? phone,
+    String? role,
+  }) async {
+    if (api == null) throw StateError('Editing staff requires a signed-in session.');
+    await api!.updateStaff(
+      membershipId,
+      fullName: fullName,
+      email: email,
+      phone: phone,
+      role: role,
+    );
+  }
+
+  Future<void> removeStaffMember(String membershipId) async {
+    if (api == null) throw StateError('Removing staff requires a signed-in session.');
+    await api!.removeStaff(membershipId);
+  }
+
+  Future<void> suspendStaffMember(String membershipId) async {
+    if (api == null) throw StateError('Suspending staff requires a signed-in session.');
+    await api!.suspendStaff(membershipId);
+  }
+
+  Future<void> unsuspendStaffMember(String membershipId) async {
+    if (api == null) throw StateError('Restoring staff requires a signed-in session.');
+    await api!.unsuspendStaff(membershipId);
   }
 
   Future<List<FacilityHour>> getFacilityHours() async {

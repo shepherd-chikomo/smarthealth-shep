@@ -896,6 +896,42 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
       ),
   );
 
+  app.post(
+    '/facility/staff/:id/suspend',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      facility.suspendStaffMember(
+        request.user!,
+        request.facilityId!,
+        request.params.id,
+        getRequestContext(request),
+      ),
+  );
+
+  app.post(
+    '/facility/staff/:id/unsuspend',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      facility.unsuspendStaffMember(
+        request.user!,
+        request.facilityId!,
+        request.params.id,
+        getRequestContext(request),
+      ),
+  );
+
   // Analytics & reporting
   app.get(
     '/facility/analytics',

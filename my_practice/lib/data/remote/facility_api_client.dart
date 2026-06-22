@@ -158,6 +158,43 @@ class FacilityApiClient {
     return res.data ?? {};
   }
 
+  Future<Map<String, dynamic>> updateStaff(
+    String membershipId, {
+    String? fullName,
+    String? email,
+    String? phone,
+    String? role,
+  }) async {
+    final res = await _dio.patch<Map<String, dynamic>>(
+      _path('/facility/staff/$membershipId'),
+      data: {
+        if (fullName != null) 'fullName': fullName,
+        if (email != null) 'email': email,
+        if (phone != null) 'phone': phone,
+        if (role != null) 'role': role,
+      },
+    );
+    return res.data ?? {};
+  }
+
+  Future<void> removeStaff(String membershipId) async {
+    await _dio.delete<void>(_path('/facility/staff/$membershipId'));
+  }
+
+  Future<Map<String, dynamic>> suspendStaff(String membershipId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/staff/$membershipId/suspend'),
+    );
+    return res.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> unsuspendStaff(String membershipId) async {
+    final res = await _dio.post<Map<String, dynamic>>(
+      _path('/facility/staff/$membershipId/unsuspend'),
+    );
+    return res.data ?? {};
+  }
+
   Future<List<Map<String, dynamic>>> getFacilityHours() async {
     final res = await _dio.get<Map<String, dynamic>>(_path('/facility/hours'));
     final hours = res.data?['hours'] as List<dynamic>? ?? [];

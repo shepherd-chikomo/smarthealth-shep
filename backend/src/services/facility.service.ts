@@ -1891,7 +1891,7 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
   );
 
   const rows = await query(
-    `SELECT fm.id, fm.role, fm.joined_at,
+    `SELECT fm.id, fm.role, fm.joined_at, fm.suspended_at,
             p.id AS user_id, p.first_name, p.last_name, p.email, p.phone
      FROM public.facility_memberships fm
      JOIN public.profiles p ON p.id = fm.user_id
@@ -1905,6 +1905,7 @@ export async function listStaff(user: AuthenticatedUser, facilityId: string, opt
     staff: rows.rows.map((row) => ({
       ...row,
       membership_id: row.id,
+      suspended: row.suspended_at !== null,
     })),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
@@ -2169,6 +2170,53 @@ export async function removeStaffMember(
     context,
   );
   return { id: membershipId };
+}
+
+export async function suspendStaffMember(
+  user: AuthenticatedUser,
+  facilityId: string,
+  membershipId: string,
+  context?: RequestContext,
+) {
+  await requireFacilityAdmin(user, facilityId);
+
+  const target = await query<{ user_id: string }>(
+    `SELECT user_id FROM public.facility_memberships WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  if (!target.rows[0]) throw new NotFoundError('Staff membership', membershipId);
+  if (target.rows[0].user_id === user.id) {
+    throw new ConflictError('You cannot suspend yourself.');
+  }
+
+  await query(
+    `UPDATE public.facility_memberships SET suspended_at = NOW() WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  await logPermissionAudit(user.id, 'permission.suspend', 'facility_membership', membershipId, facilityId, context);
+  return { id: membershipId, suspended: true };
+}
+
+export async function unsuspendStaffMember(
+  user: AuthenticatedUser,
+  facilityId: string,
+  membershipId: string,
+  context?: RequestContext,
+) {
+  await requireFacilityAdmin(user, facilityId);
+
+  const target = await query<{ user_id: string }>(
+    `SELECT user_id FROM public.facility_memberships WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  if (!target.rows[0]) throw new NotFoundError('Staff membership', membershipId);
+
+  await query(
+    `UPDATE public.facility_memberships SET suspended_at = NULL WHERE id = $1 AND facility_id = $2`,
+    [membershipId, facilityId],
+  );
+  await logPermissionAudit(user.id, 'permission.unsuspend', 'facility_membership', membershipId, facilityId, context);
+  return { id: membershipId, suspended: false };
 }
 
 // --- Reporting ---

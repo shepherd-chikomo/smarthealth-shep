@@ -25,10 +25,13 @@ abstract final class MyPracticeConfig {
     return devMode || skipAuthForTesting || kDebugMode;
   }
 
+  /// True ONLY when the SKIP_AUTH dart-define is set.
+  /// Deliberately does NOT depend on devMode so that DEV_MODE=true can be
+  /// combined with real server auth (i.e. the remote dev run script).
   static bool get skipAuthForTesting {
     if (kReleaseMode) return false;
     const skip = bool.fromEnvironment('SKIP_AUTH', defaultValue: false);
-    return skip || devMode;
+    return skip;
   }
 }
 

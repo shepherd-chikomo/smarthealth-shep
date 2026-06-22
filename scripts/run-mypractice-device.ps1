@@ -1,6 +1,8 @@
 param(
   [string]$DeviceId,
-  [string]$ServerUrl = "https://dev.smarthealth.co.zw"
+  [string]$ServerUrl = "https://dev.smarthealth.co.zw",
+  # Set to $false when pointing at a real server so real login is required.
+  [bool]$SkipAuth = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +24,8 @@ if ($DeviceId) {
 }
 
 $apiUrl = if ($ServerUrl.EndsWith("/v1")) { $ServerUrl } else { "$ServerUrl/v1" }
-Write-Host "MyPractice -> $apiUrl [DEV_MODE + seed data]"
+$authLabel = if ($SkipAuth) { "seed data / skip auth" } else { "real auth required" }
+Write-Host "MyPractice -> $apiUrl [DEV_MODE + $authLabel]"
 
 Set-Location (Join-Path $RepoRoot "my_practice")
 
@@ -30,9 +33,12 @@ $runArgs = @(
   "run",
   "--dart-define=DEV_MODE=true",
   "--dart-define=API_BASE_URL=$apiUrl",
-  "--dart-define=TRUST_DEV_CERTIFICATES=true",
-  "--dart-define=SKIP_AUTH=true"
+  "--dart-define=TRUST_DEV_CERTIFICATES=true"
 )
+
+if ($SkipAuth) {
+  $runArgs += "--dart-define=SKIP_AUTH=true"
+}
 
 if ($DeviceId) {
   $runArgs += @("-d", $DeviceId)
