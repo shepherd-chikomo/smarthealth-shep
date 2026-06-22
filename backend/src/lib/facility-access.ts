@@ -72,6 +72,37 @@ export async function requireFacilityAdmin(
   await assertFacilityAccess(user, facilityId, ['facility_admin']);
 }
 
+/** Facility admin, or the provider record owner linked to this facility. */
+export async function assertCanManageProvider(
+  user: AuthenticatedUser,
+  facilityId: string,
+  providerId: string,
+): Promise<void> {
+  try {
+    await requireFacilityAdmin(user, facilityId);
+    return;
+  } catch {
+    // not admin — allow self-service for owned provider profile
+  }
+
+  const owned = await query<{ id: string }>(
+    `SELECT p.id
+     FROM public.providers p
+     WHERE p.id = $1 AND p.owner_id = $2 AND p.deleted_at IS NULL
+       AND (
+         p.facility_id = $3
+         OR EXISTS (
+           SELECT 1 FROM public.provider_facility_links pfl
+           WHERE pfl.provider_id = p.id AND pfl.facility_id = $3
+         )
+       )`,
+    [providerId, user.id, facilityId],
+  );
+  if (!owned.rows[0]) {
+    throw new ForbiddenError('You can only manage your own provider schedule at this facility');
+  }
+}
+
 export async function getFacilityOrThrow(facilityId: string) {
   const result = await query(
     `SELECT id, name, slug, facility_type, facility_types, description, address_line1, address_line2,

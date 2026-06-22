@@ -209,6 +209,57 @@ export const facilityRoutes: FastifyPluginAsyncZod = async (app) => {
     async (request) => facility.removeFacilityLogo(request.user!, request.facilityId!),
   );
 
+  app.get(
+    '/facility/credentials',
+    { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },
+    async (request) => facility.listMyCredentials(request.user!, request.facilityId!),
+  );
+
+  app.get(
+    '/facility/messages',
+    { schema: { tags: ['Facility Portal'], querystring: z.object({ facilityId: z.string().uuid() }) } },
+    async (request) => facility.listInternalMessages(request.user!, request.facilityId!),
+  );
+
+  app.post(
+    '/facility/messages',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        querystring: z.object({ facilityId: z.string().uuid() }),
+        body: z.object({
+          recipientId: z.string().uuid(),
+          body: z.string().min(1).max(4000),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const result = await facility.sendInternalMessage(
+        request.user!,
+        request.facilityId!,
+        request.body,
+      );
+      return reply.status(201).send(result);
+    },
+  );
+
+  app.patch(
+    '/facility/messages/:id/read',
+    {
+      schema: {
+        tags: ['Facility Portal'],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: z.object({ facilityId: z.string().uuid() }),
+      },
+    },
+    async (request) =>
+      facility.markInternalMessageRead(
+        request.user!,
+        request.facilityId!,
+        request.params.id,
+      ),
+  );
+
   // Doctors
   app.get(
     '/facility/doctors',

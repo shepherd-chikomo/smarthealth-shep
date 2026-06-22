@@ -1,6 +1,7 @@
 import { env } from '../config.js';
 import { query, withTransaction } from '../lib/db.js';
 import {
+  assertCanManageProvider,
   assertFacilityAccess,
   getFacilityOrThrow,
   getUserFacilityMemberships,
@@ -371,7 +372,7 @@ export async function updateDoctorServiceIds(
   doctorId: string,
   serviceIds: string[],
 ) {
-  await requireFacilityAdmin(user, facilityId);
+  await assertCanManageProvider(user, facilityId, doctorId);
 
   const assoc = await query<{ id: string }>(
     `SELECT p.id
@@ -924,7 +925,7 @@ export async function upsertProviderAvailability(
   providerId: string,
   hours: { dayOfWeek: number; opensAt?: string | null; closesAt?: string | null; isClosed?: boolean }[],
 ) {
-  await requireFacilityAdmin(user, facilityId);
+  await assertCanManageProvider(user, facilityId, providerId);
 
   const check = await query(
     `SELECT p.id FROM public.providers p
@@ -2293,4 +2294,147 @@ export async function getAnalytics(user: AuthenticatedUser, facilityId: string) 
     doctorPerformance: performance.doctors,
     usageMetrics: usage.rows,
   };
+}
+
+async function resolveProviderForUser(userId: string, facilityId: string) {
+  const row = await query<{
+    id: string;
+    name: string;
+    mdpcz_number: string | null;
+  }>(
+    `SELECT p.id, p.name, p.mdpcz_number
+     FROM public.providers p
+     WHERE p.owner_id = $1 AND p.deleted_at IS NULL
+       AND (
+         p.facility_id = $2
+         OR EXISTS (
+           SELECT 1 FROM public.provider_facility_links pfl
+           WHERE pfl.provider_id = p.id AND pfl.facility_id = $2
+         )
+       )
+     ORDER BY p.is_claimed DESC NULLS LAST, p.updated_at DESC
+     LIMIT 1`,
+    [userId, facilityId],
+  );
+  return row.rows[0] ?? null;
+}
+
+export async function listMyCredentials(user: AuthenticatedUser, facilityId: string) {
+  await assertFacilityAccess(user, facilityId);
+  const provider = await resolveProviderForUser(user.id, facilityId);
+  if (!provider) return { credentials: [] as Record<string, unknown>[] };
+
+  const rows = await query(
+    `SELECT id, credential_type, title, issued_at, expires_at, storage_path, created_at
+     FROM public.practitioner_credentials
+     WHERE provider_id = $1
+     ORDER BY expires_at ASC NULLS LAST, title ASC`,
+    [provider.id],
+  );
+
+  const credentials: Record<string, unknown>[] = rows.rows.map((row) => ({
+    id: String(row.id),
+    credentialType: String(row.credential_type),
+    title: String(row.title),
+    issuedAt: row.issued_at ? new Date(String(row.issued_at)).toISOString().slice(0, 10) : null,
+    expiresAt: row.expires_at ? new Date(String(row.expires_at)).toISOString().slice(0, 10) : null,
+    storagePath: row.storage_path ? String(row.storage_path) : null,
+  }));
+
+  if (provider.mdpcz_number) {
+    credentials.unshift({
+      id: `mdpcz-${provider.id}`,
+      credentialType: 'registration',
+      title: 'MDPCZ Registration',
+      issuedAt: null,
+      expiresAt: null,
+      registrationNumber: provider.mdpcz_number,
+    });
+  }
+
+  return { credentials };
+}
+
+export async function listInternalMessages(user: AuthenticatedUser, facilityId: string) {
+  await assertFacilityAccess(user, facilityId);
+  const rows = await query(
+    `SELECT m.id, m.sender_id, m.recipient_id, m.body, m.sent_at, m.read_at,
+            COALESCE(NULLIF(TRIM(CONCAT(sp.first_name, ' ', sp.last_name)), ''), sp.email) AS sender_name,
+            COALESCE(NULLIF(TRIM(CONCAT(rp.first_name, ' ', rp.last_name)), ''), rp.email) AS recipient_name
+     FROM public.internal_messages m
+     JOIN public.profiles sp ON sp.id = m.sender_id
+     JOIN public.profiles rp ON rp.id = m.recipient_id
+     WHERE m.facility_id = $1
+       AND (m.sender_id = $2 OR m.recipient_id = $2)
+     ORDER BY m.sent_at DESC
+     LIMIT 200`,
+    [facilityId, user.id],
+  );
+
+  return {
+    messages: rows.rows.map((row) => ({
+      id: String(row.id),
+      senderId: String(row.sender_id),
+      recipientId: String(row.recipient_id),
+      senderName: String(row.sender_name ?? 'Staff'),
+      recipientName: String(row.recipient_name ?? 'Staff'),
+      body: String(row.body),
+      sentAt: new Date(String(row.sent_at)).toISOString(),
+      read: row.read_at != null,
+    })),
+  };
+}
+
+export async function sendInternalMessage(
+  user: AuthenticatedUser,
+  facilityId: string,
+  data: { recipientId: string; body: string },
+) {
+  await assertFacilityAccess(user, facilityId);
+  const body = data.body.trim();
+  if (!body) throw new ValidationError('Message body is required');
+
+  const recipient = await query(
+    `SELECT fm.user_id
+     FROM public.facility_memberships fm
+     WHERE fm.facility_id = $1 AND fm.user_id = $2`,
+    [facilityId, data.recipientId],
+  );
+  if (!recipient.rows[0]) {
+    throw new ValidationError('Recipient must be a staff member at this facility');
+  }
+
+  const result = await query(
+    `INSERT INTO public.internal_messages (
+       tenant_id, facility_id, sender_id, recipient_id, body
+     ) VALUES ($1, $1, $2, $3, $4)
+     RETURNING id, sender_id, recipient_id, body, sent_at, read_at`,
+    [facilityId, user.id, data.recipientId, body],
+  );
+  const row = result.rows[0]!;
+  return {
+    message: {
+      id: String(row.id),
+      senderId: String(row.sender_id),
+      recipientId: String(row.recipient_id),
+      body: String(row.body),
+      sentAt: new Date(String(row.sent_at)).toISOString(),
+      read: row.read_at != null,
+    },
+  };
+}
+
+export async function markInternalMessageRead(
+  user: AuthenticatedUser,
+  facilityId: string,
+  messageId: string,
+) {
+  await assertFacilityAccess(user, facilityId);
+  await query(
+    `UPDATE public.internal_messages
+     SET read_at = timezone('utc', now())
+     WHERE id = $1 AND facility_id = $2 AND recipient_id = $3 AND read_at IS NULL`,
+    [messageId, facilityId, user.id],
+  );
+  return { id: messageId };
 }
