@@ -388,7 +388,6 @@ services:
       PORT: 3001
       HOSTNAME: 0.0.0.0
       API_URL: http://smarthealth-api:3000
-      NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-https://dev.smarthealth.co.zw}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
     depends_on:
@@ -398,6 +397,31 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MyPractice marketing site (standalone — mypractice.smarthealth.co.zw)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-mypractice-web:
+    build:
+      context: ./mypractice-web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-https://dev.smarthealth.co.zw}
+    container_name: smarthealth-mypractice-web
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3003/"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -429,6 +453,8 @@ services:
       smarthealth-admin:
         condition: service_healthy
       smarthealth-facility-portal:
+        condition: service_healthy
+      smarthealth-mypractice-web:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost/health"]
