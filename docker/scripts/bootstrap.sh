@@ -17,7 +17,7 @@ fi
 
 echo "Building and starting SmartHealth stack..."
 docker compose pull db redis kong auth rest storage meta studio prometheus grafana 2>/dev/null || true
-docker compose build smarthealth-api smarthealth-admin smarthealth-facility-portal smarthealth-mypractice-web
+docker compose build smarthealth-api smarthealth-admin smarthealth-facility-portal smarthealth-mypractice-web smarthealth-myhealth-web
 docker compose up -d
 
 echo ""

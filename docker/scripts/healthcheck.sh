@@ -42,7 +42,7 @@ check() {
 echo "=== SmartHealth Stack Health Check ==="
 echo ""
 
-for svc in db redis kong auth smarthealth-migrate smarthealth-api smarthealth-admin smarthealth-facility-portal smarthealth-mypractice-web nginx; do
+for svc in db redis kong auth smarthealth-migrate smarthealth-api smarthealth-admin smarthealth-facility-portal smarthealth-mypractice-web smarthealth-myhealth-web nginx; do
   check "$svc"
 done
 

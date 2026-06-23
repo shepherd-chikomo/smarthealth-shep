@@ -430,6 +430,31 @@ services:
       - smarthealth-internal
 
   # ═══════════════════════════════════════════════════════════════════════════
+  # MyHealth marketing site (standalone — myhealth.smarthealth.co.zw)
+  # ═══════════════════════════════════════════════════════════════════════════
+  smarthealth-myhealth-web:
+    build:
+      context: ./myhealth-web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://dev.smarthealth.co.zw}
+    container_name: smarthealth-myhealth-web
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      HOSTNAME: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3004/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - smarthealth-internal
+
+  # ═══════════════════════════════════════════════════════════════════════════
   # Nginx reverse proxy (public entrypoint)
   # ═══════════════════════════════════════════════════════════════════════════
   nginx:
@@ -456,6 +481,8 @@ services:
       smarthealth-facility-portal:
         condition: service_healthy
       smarthealth-mypractice-web:
+        condition: service_healthy
+      smarthealth-myhealth-web:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost/health"]
