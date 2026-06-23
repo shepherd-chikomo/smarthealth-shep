@@ -35,8 +35,8 @@ import {
 import { portalClaimUrl, portalLoginUrl } from '@/lib/site';
 import { ArrowLink, FeatureIconCard, SectionBadge } from '@/components/ui';
 import { HeroVisual } from '@/components/hero-visual';
+import { MarketingImage } from '@/components/marketing-image';
 import { StoreBadges } from '@/components/store-badges';
-import { PhoneMockup } from '@/components/phone-mockup';
 
 const certs = [
   'MBCHB VERIFIED',
@@ -162,7 +162,13 @@ export function EssentialsSection() {
         </div>
         <div className="mt-12 grid items-center gap-12 lg:grid-cols-2">
           <div className="flex justify-center">
-            <PhoneMockup />
+            <MarketingImage
+              src="/images/phone-mockup.png"
+              alt="MyPractice mobile dashboard showing appointments, patients and tasks"
+              width={369}
+              height={518}
+              className="h-auto w-full max-w-sm"
+            />
           </div>
           <div className="space-y-4">
             {essentialTitles.map((title, i) => (
@@ -215,16 +221,13 @@ export function GrowthSection() {
             <ArrowLink href={portalLoginUrl}>Create your profile</ArrowLink>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-xl">
-          <div className="aspect-[4/3] bg-[url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80')] bg-cover bg-center opacity-60" />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
-          <div className="absolute bottom-0 p-8 text-white">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-200">Featured</p>
-            <h3 className="mt-2 text-2xl font-bold leading-snug">
-              Discoverable across the MyHealth patient app
-            </h3>
-          </div>
-        </div>
+        <MarketingImage
+          src="/images/growth-team.png"
+          alt="Healthcare professionals discoverable across the MyHealth patient app"
+          width={461}
+          height={585}
+          className="h-auto w-full rounded-3xl shadow-xl"
+        />
       </div>
     </section>
   );
@@ -369,9 +372,15 @@ export function WhoSection() {
 
 export function AfricaSection() {
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1631217868264-e5b1bbbf1a27?w=1600&q=80')] bg-cover bg-center" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#1e40af]/95 via-[#2563eb]/85 to-teal-600/80" />
+    <section className="relative min-h-[320px] overflow-hidden sm:min-h-[380px]">
+      <div className="absolute inset-0">
+        <MarketingImage
+          src="/images/africa-hero.png"
+          alt=""
+          className="object-cover"
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1e40af]/95 via-[#2563eb]/80 to-teal-600/50" />
       <div className="section-pad relative text-center text-white">
         <div className="badge-pill !border-white/20 !bg-white/10 !text-white">
           <Globe size={14} /> Designed for Africa
@@ -551,7 +560,13 @@ export function DownloadSection() {
           </div>
         </div>
         <div className="flex justify-center">
-          <PhoneMockup />
+          <MarketingImage
+            src="/images/phone-mockup.png"
+            alt="MyPractice app on mobile"
+            width={369}
+            height={518}
+            className="h-auto w-full max-w-sm"
+          />
         </div>
       </div>
     </section>
