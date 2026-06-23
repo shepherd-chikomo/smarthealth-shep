@@ -44,6 +44,9 @@ class _PatientChartBody extends ConsumerWidget {
     final allergies = chart['allergies'] as List? ?? [];
     final conditions = chart['conditions'] as List? ?? [];
     final timeline = chart['timeline'] as List? ?? [];
+    final snapshot = chart['sharedProfileSnapshot'] as Map<String, dynamic>?;
+    final disclosure = chart['disclosure'] as Map<String, dynamic>?;
+    final disclosureActive = disclosure?['active'] == true;
     final name = _patientName(patient);
     final initials = _initials(patient);
     final shId = _patientField(patient, 'smarthealthPatientId') ?? patientId;
@@ -87,6 +90,8 @@ class _PatientChartBody extends ConsumerWidget {
               conditions: conditions,
               allergies: allergies,
               timeline: timeline,
+              sharedSnapshot: disclosureActive ? snapshot : null,
+              validUntil: disclosure?['validUntil'] as String?,
               onStartEncounter: () => context.push('/encounter/$patientId'),
             ),
             _MedicalHistoryTab(conditions: conditions, allergies: allergies),
@@ -269,6 +274,8 @@ class _OverviewTab extends StatelessWidget {
     required this.conditions,
     required this.timeline,
     required this.onStartEncounter,
+    this.sharedSnapshot,
+    this.validUntil,
   });
 
   final String name;
@@ -278,6 +285,8 @@ class _OverviewTab extends StatelessWidget {
   final List<dynamic> conditions;
   final List<dynamic> timeline;
   final VoidCallback onStartEncounter;
+  final Map<String, dynamic>? sharedSnapshot;
+  final String? validUntil;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +301,14 @@ class _OverviewTab extends StatelessWidget {
           allergies: allergies,
           onStartEncounter: onStartEncounter,
         ),
+        if (sharedSnapshot != null && sharedSnapshot!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: _PatientDisclosureCard(
+              snapshot: sharedSnapshot!,
+              validUntil: validUntil,
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: _SummaryCard(
@@ -410,6 +427,88 @@ class _EncountersTab extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _PatientDisclosureCard extends StatelessWidget {
+  const _PatientDisclosureCard({
+    required this.snapshot,
+    this.validUntil,
+  });
+
+  final Map<String, dynamic> snapshot;
+  final String? validUntil;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: PracticeDesignTokens.previewCardDecoration(context).copyWith(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.verified_user_outlined,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Shared by patient for this visit',
+                style: PracticeDesignTokens.sectionTitle(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ..._snapshotLines(snapshot).map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '• $line',
+                style: PracticeDesignTokens.clinicalNote(context),
+              ),
+            ),
+          ),
+          if (validUntil != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Consent valid until $validUntil',
+              style: PracticeDesignTokens.metadata(context),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<String> _snapshotLines(Map<String, dynamic> data) {
+    final lines = <String>[];
+    if (data['allergies'] != null) {
+      lines.add('Allergies: ${data['allergies']}');
+    }
+    if (data['conditions'] is List) {
+      lines.add('Conditions: ${(data['conditions'] as List).join(', ')}');
+    }
+    if (data['bloodGroup'] != null) {
+      lines.add('Blood group: ${data['bloodGroup']}');
+    }
+    if (data['medications'] is List && (data['medications'] as List).isNotEmpty) {
+      lines.add('Medications shared (${(data['medications'] as List).length})');
+    }
+    if (data['emergencyContact'] is Map) {
+      final c = data['emergencyContact'] as Map;
+      lines.add('Emergency contact: ${c['name'] ?? c['phone'] ?? 'On file'}');
+    }
+    if (data['medicalAid'] is Map) {
+      lines.add('Medical aid on file');
+    }
+    return lines.isEmpty ? ['Patient shared a health profile snapshot'] : lines;
   }
 }
 

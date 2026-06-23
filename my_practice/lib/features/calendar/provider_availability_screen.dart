@@ -103,6 +103,9 @@ class _ProviderAvailabilityScreenState
   bool _saving = false;
   String? _error;
   String? _success;
+  bool? _reminderEnabled;
+  int? _reminderDay;
+  int? _reminderHour;
 
   static const _dayNames = [
     'Sunday',
@@ -144,11 +147,15 @@ class _ProviderAvailabilityScreenState
     required int day,
     required int hour,
   }) async {
+    setState(() {
+      _reminderEnabled = enabled;
+      _reminderDay = day;
+      _reminderHour = hour;
+    });
     await _storage.write(
       key: 'schedule_reminder_$facilityId',
       value: '${enabled ? 1 : 0}:$day:$hour',
     );
-    ref.invalidate(myScheduleProvider);
     if (mounted) setState(() => _success = 'Reminder preference saved.');
   }
 
@@ -177,6 +184,9 @@ class _ProviderAvailabilityScreenState
           }
 
           final selected = Set<String>.from(data.selectedServiceIds);
+          final reminderEnabled = _reminderEnabled ?? data.reminderEnabled;
+          final reminderDay = _reminderDay ?? data.reminderDay;
+          final reminderHour = _reminderHour ?? data.reminderHour;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -306,23 +316,23 @@ class _ProviderAvailabilityScreenState
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Enable weekly reminder'),
                       subtitle: Text(
-                        data.reminderEnabled
+                        reminderEnabled
                             ? 'You will be reminded to review your schedule.'
                             : 'Reminders are turned off.',
                         style: PracticeDesignTokens.metadata(context),
                       ),
-                      value: data.reminderEnabled,
+                      value: reminderEnabled,
                       onChanged: facilityId == null
                           ? null
                           : (v) => _saveReminder(
                                 facilityId,
                                 enabled: v,
-                                day: data.reminderDay,
-                                hour: data.reminderHour,
+                                day: reminderDay,
+                                hour: reminderHour,
                               ),
                     ),
                     DropdownButtonFormField<int>(
-                      initialValue: data.reminderDay,
+                      initialValue: reminderDay,
                       decoration: const InputDecoration(
                         labelText: 'Reminder day',
                         border: OutlineInputBorder(),
@@ -331,22 +341,22 @@ class _ProviderAvailabilityScreenState
                         7,
                         (i) => DropdownMenuItem(value: i, child: Text(_dayNames[i])),
                       ),
-                      onChanged: facilityId == null || !data.reminderEnabled
+                      onChanged: facilityId == null || !reminderEnabled
                           ? null
                           : (v) {
                               if (v != null) {
                                 _saveReminder(
                                   facilityId,
-                                  enabled: data.reminderEnabled,
+                                  enabled: reminderEnabled,
                                   day: v,
-                                  hour: data.reminderHour,
+                                  hour: reminderHour,
                                 );
                               }
                             },
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      initialValue: data.reminderHour,
+                      initialValue: reminderHour,
                       decoration: const InputDecoration(
                         labelText: 'Reminder time',
                         border: OutlineInputBorder(),
@@ -358,14 +368,14 @@ class _ProviderAvailabilityScreenState
                             child: Text('${h.toString().padLeft(2, '0')}:00'),
                           ),
                       ],
-                      onChanged: facilityId == null || !data.reminderEnabled
+                      onChanged: facilityId == null || !reminderEnabled
                           ? null
                           : (v) {
                               if (v != null) {
                                 _saveReminder(
                                   facilityId,
-                                  enabled: data.reminderEnabled,
-                                  day: data.reminderDay,
+                                  enabled: reminderEnabled,
+                                  day: reminderDay,
                                   hour: v,
                                 );
                               }

@@ -14,22 +14,24 @@ PreferredSizeWidget practiceMoreAppBar(
     actions: actions,
     leading: IconButton(
       icon: const Icon(Icons.arrow_back),
-      onPressed: () => _popToMoreMenu(context),
+      onPressed: () => popToMoreMenu(context),
     ),
   );
 }
 
-void popToMoreMenu(BuildContext context) => _popToMoreMenu(context);
-
-void _popToMoreMenu(BuildContext context) {
+void popToMoreMenu(BuildContext context) {
+  final location = GoRouterState.of(context).matchedLocation;
+  if (location == '/more') {
+    context.go('/dashboard');
+    return;
+  }
+  if (location.startsWith('/more/')) {
+    context.go('/more');
+    return;
+  }
   if (context.canPop()) {
     context.pop();
     return;
   }
-  final location = GoRouterState.of(context).uri.toString();
-  if (location.startsWith('/more/')) {
-    context.go('/more');
-  } else {
-    context.go('/dashboard');
-  }
+  context.go('/dashboard');
 }

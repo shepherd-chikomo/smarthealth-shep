@@ -9,6 +9,8 @@ import 'package:my_practice/data/sync/sync_state.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_icon_widgets.dart';
 import 'package:my_practice/shared/navigation/practice_nav_items.dart';
+import 'package:my_practice/shared/widgets/facility_switcher_sheet.dart';
+import 'package:my_practice/shared/widgets/more_menu_content.dart';
 import 'package:smarthealth_core/smarthealth_core.dart';
 
 /// Responsive app chrome: sidebar (desktop), bottom nav (mobile), top bar, theme toggle.
@@ -59,6 +61,7 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
                     setState(() => _sidebarExpanded = !_sidebarExpanded),
                 auth: auth,
                 onNavigate: _go,
+                onMoreNavigate: _handleMoreEntry,
               ),
             Expanded(
               child: Column(
@@ -72,7 +75,8 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
                     isDark: isDark,
                     isMobile: isMobile,
                     onMenuTap:
-                        isMobile ? () => _openDrawer(context, auth) : null,
+                        isMobile ? () => _openDrawer(context) : null,
+                    onFacilityTap: () => showFacilitySwitcherSheet(context, ref),
                     onThemeToggle: () =>
                         ref.read(themeModeProvider.notifier).toggleLightDark(),
                     syncState: ref.watch(syncNotifierProvider),
@@ -88,7 +92,10 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
       ),
       bottomNavigationBar: isMobile
           ? NavigationBar(
-              selectedIndex: widget.navigationShell.currentIndex.clamp(0, 3),
+              selectedIndex: widget.navigationShell.currentIndex.clamp(
+                0,
+                PracticeNavItems.mobileBottomTabs.length - 1,
+              ),
               onDestinationSelected: (index) {
                 final tab = PracticeNavItems.mobileBottomTabs[index];
                 widget.navigationShell.goBranch(tab.shellIndex!);
@@ -110,7 +117,7 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
   }
 
   void _go(String route) {
-    final tab = PracticeNavItems.shellTabs
+    final tab = PracticeNavItems.mainShellTabs
         .where((t) => t.route == route)
         .cast<PracticeNavItem?>()
         .firstOrNull;
@@ -118,6 +125,32 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
       widget.navigationShell.goBranch(tab!.shellIndex!);
     } else {
       context.push(route);
+    }
+  }
+
+  void _handleMoreEntry(MoreMenuEntry entry) {
+    switch (entry.action) {
+      case MoreMenuActionType.navigate:
+        if (entry.route != null) context.push(entry.route!);
+      case MoreMenuActionType.snackbar:
+        if (entry.snackbar != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(entry.snackbar!)),
+          );
+        }
+      case MoreMenuActionType.appearance:
+        ref.read(themeModeProvider.notifier).toggleLightDark();
+      case MoreMenuActionType.signOut:
+        ref.read(authStateProvider.notifier).signOut();
+      case MoreMenuActionType.signInPilot:
+        ref.read(authStateProvider.notifier).signOut();
+        context.go('/login');
+      case MoreMenuActionType.futureModule:
+        if (entry.futureModule != null) {
+          context.push('/future/${entry.futureModule}');
+        }
+      case MoreMenuActionType.switchFacility:
+        showFacilitySwitcherSheet(context, ref);
     }
   }
 
@@ -137,15 +170,17 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
     return '$first$last'.toUpperCase();
   }
 
-  void _openDrawer(BuildContext context, AuthState auth) {
+  void _openDrawer(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.55,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.72,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
         builder: (_, controller) => Material(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(sheetContext).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           child: ListView(
             controller: controller,
@@ -154,17 +189,14 @@ class _PracticeResponsiveShellState extends ConsumerState<PracticeResponsiveShel
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text('Menu',
-                    style: PracticeDesignTokens.sectionTitle(context)),
+                    style: PracticeDesignTokens.sectionTitle(sheetContext)),
               ),
-              for (final tab in PracticeNavItems.shellTabs)
-                ListTile(
-                  leading: PracticeNavIcon(icon: tab.icon, selected: false),
-                  title: Text(tab.label),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _go(tab.route);
-                  },
+              Consumer(
+                builder: (context, ref, _) => PracticeMoreMenuSections(
+                  showDevPanels: false,
+                  onItemActivated: () => Navigator.pop(sheetContext),
                 ),
+              ),
             ],
           ),
         ),
@@ -180,6 +212,7 @@ class _DesktopSidebar extends StatelessWidget {
     required this.onToggle,
     required this.auth,
     required this.onNavigate,
+    required this.onMoreNavigate,
   });
 
   final bool expanded;
@@ -187,6 +220,7 @@ class _DesktopSidebar extends StatelessWidget {
   final VoidCallback onToggle;
   final AuthState auth;
   final void Function(String route) onNavigate;
+  final void Function(MoreMenuEntry entry) onMoreNavigate;
 
   @override
   Widget build(BuildContext context) {
@@ -204,12 +238,12 @@ class _DesktopSidebar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Padding(
-            padding: EdgeInsets.all(expanded ? 20 : 12),
-            child: Row(
-              children: [
-                const PracticeBrandMark(),
-                if (expanded) ...[
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const PracticeBrandMark(),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -227,27 +261,64 @@ class _DesktopSidebar extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(
-                      expanded ? Icons.chevron_left : Icons.chevron_right,
-                      size: 20,
-                    ),
+                    icon: const Icon(Icons.chevron_left, size: 20),
                     onPressed: onToggle,
                   ),
                 ],
-              ],
+              ),
+            )
+          else
+            // Collapsed: show only the expand button so it's always reachable.
+            SizedBox(
+              height: 72,
+              child: Center(
+                child: IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  onPressed: onToggle,
+                  tooltip: 'Expand sidebar',
+                ),
+              ),
             ),
-          ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-                for (var i = 0; i < PracticeNavItems.shellTabs.length; i++)
+                for (var i = 0; i < PracticeNavItems.mainShellTabs.length; i++)
                   _NavTile(
-                    item: PracticeNavItems.shellTabs[i],
+                    item: PracticeNavItems.mainShellTabs[i],
                     selected: i == selectedIndex,
                     expanded: expanded,
-                    onTap: () => onNavigate(PracticeNavItems.shellTabs[i].route),
+                    onTap: () =>
+                        onNavigate(PracticeNavItems.mainShellTabs[i].route),
                   ),
+                if (expanded) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Text(
+                      'More',
+                      style: PracticeDesignTokens.tableHeader(context),
+                    ),
+                  ),
+                ],
+                for (final section in PracticeNavItems.moreSections) ...[
+                  if (expanded && section.title != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
+                      child: Text(
+                        section.title!,
+                        style: PracticeDesignTokens.metadata(context),
+                      ),
+                    ),
+                  for (final entry in section.items)
+                    if (entry.action != MoreMenuActionType.futureModule ||
+                        entry.featureFlag == null)
+                      _MoreNavTile(
+                        entry: entry,
+                        expanded: expanded,
+                        onTap: () => onMoreNavigate(entry),
+                      ),
+                ],
               ],
             ),
           ),
@@ -307,6 +378,62 @@ class _NavTile extends StatelessWidget {
                           weight: selected ? FontWeight.w600 : FontWeight.w400,
                           color: selected ? primary : colors.foreground,
                         )),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreNavTile extends StatelessWidget {
+  const _MoreNavTile({
+    required this.entry,
+    required this.expanded,
+    required this.onTap,
+  });
+
+  final MoreMenuEntry entry;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: expanded ? 12 : 8,
+              vertical: 8,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  entry.icon,
+                  size: PracticeDesignTokens.iconMd,
+                  color: colors.mutedForeground,
+                ),
+                if (expanded) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      entry.label,
+                      style: PracticeDesignTokens.inter(
+                        size: 12,
+                        color: colors.foreground,
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -380,6 +507,7 @@ class _PracticeTopBar extends StatelessWidget {
     required this.onThemeToggle,
     required this.syncState,
     required this.onSync,
+    required this.onFacilityTap,
     this.onMenuTap,
   });
 
@@ -392,6 +520,7 @@ class _PracticeTopBar extends StatelessWidget {
   final VoidCallback onThemeToggle;
   final SyncState syncState;
   final VoidCallback onSync;
+  final VoidCallback onFacilityTap;
   final VoidCallback? onMenuTap;
 
   @override
@@ -413,46 +542,101 @@ class _PracticeTopBar extends StatelessWidget {
               tooltip: 'More',
               onPressed: onMenuTap,
             ),
-          Expanded(
-            child: isMobile
-                ? Column(
+          if (isMobile)
+            Expanded(
+              child: InkWell(
+                onTap: onFacilityTap,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(facilityName,
-                          style: PracticeDesignTokens.inter(
-                            size: 13,
-                            weight: FontWeight.w600,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              facilityName,
+                              style: PracticeDesignTokens.inter(
+                                size: 13,
+                                weight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis),
-                      Text(practitionerName,
-                          style: PracticeDesignTokens.metadata(context),
-                          overflow: TextOverflow.ellipsis),
+                          Icon(
+                            Icons.unfold_more,
+                            size: 16,
+                            color: colors.mutedForeground,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        practitionerName,
+                        style: PracticeDesignTokens.metadata(context),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  )
-                : TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search patients, claims, encounters…',
-                      prefixIcon: Icon(
-                        Icons.search,
-                        size: PracticeDesignTokens.iconMd,
-                        color: colors.mutedForeground,
-                      ),
-                      filled: true,
-                      fillColor: colors.muted.withValues(alpha: 0.55),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      isDense: true,
-                    ),
-                    onSubmitted: (q) {
-                      if (q.trim().isNotEmpty) context.go('/patients');
-                    },
                   ),
-          ),
+                ),
+              ),
+            )
+          else
+            InkWell(
+              onTap: onFacilityTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 220),
+                      child: Text(
+                        facilityName,
+                        style: PracticeDesignTokens.inter(
+                          size: 14,
+                          weight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.unfold_more,
+                      size: 18,
+                      color: colors.mutedForeground,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!isMobile)
+            Expanded(
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search patients, claims, encounters…',
+                  prefixIcon: Icon(
+                    Icons.search,
+                    size: PracticeDesignTokens.iconMd,
+                    color: colors.mutedForeground,
+                  ),
+                  filled: true,
+                  fillColor: colors.muted.withValues(alpha: 0.55),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadii.xl),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  isDense: true,
+                ),
+                onSubmitted: (q) {
+                  if (q.trim().isNotEmpty) context.go('/patients');
+                },
+              ),
+            ),
           PracticeToolbarIconButton(
             icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             tooltip: 'Toggle theme',

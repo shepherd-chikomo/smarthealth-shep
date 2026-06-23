@@ -168,11 +168,15 @@ abstract final class AppTheme {
         border: Border.all(color: tokens.border.withValues(alpha: 0.4)),
         boxShadow: AppShadows.card,
       ),
-      child: Padding(
-        padding: padding ?? const EdgeInsets.all(16),
-        child: DefaultTextStyle(
-          style: AppTextStyles.base(color: tokens.cardForeground),
-          child: child,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(16),
+          child: DefaultTextStyle(
+            style: AppTextStyles.base(color: tokens.cardForeground),
+            child: child,
+          ),
         ),
       ),
     );

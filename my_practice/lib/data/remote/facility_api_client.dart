@@ -53,11 +53,22 @@ class FacilityApiClient {
     return items.cast<Map<String, dynamic>>();
   }
 
+  Future<List<Map<String, dynamic>>> listPatients({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final res = await _dio.get<Map<String, dynamic>>(
+      _path('/facility/patients?page=$page&limit=$limit'),
+    );
+    final items = res.data?['patients'] as List<dynamic>? ?? [];
+    return items.cast<Map<String, dynamic>>();
+  }
+
   Future<List<Map<String, dynamic>>> searchPatients(String query) async {
     final res = await _dio.get<Map<String, dynamic>>(
       _path('/facility/patients?q=${Uri.encodeComponent(query)}'),
     );
-    final items = res.data?['items'] as List<dynamic>? ?? [];
+    final items = res.data?['patients'] as List<dynamic>? ?? [];
     return items.cast<Map<String, dynamic>>();
   }
 

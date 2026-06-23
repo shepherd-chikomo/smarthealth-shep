@@ -190,12 +190,15 @@ class PatientRepository {
   }
 
   Future<List<Patient>> search(String query) async {
-    if (query.trim().isEmpty) return listRecent();
-
     if (api != null) {
       try {
-        final remote = await api!.searchPatients(query);
+        final remote = query.trim().isEmpty
+            ? await api!.listPatients()
+            : await api!.searchPatients(query);
         final patients = remote.map(_patientFromApi).toList();
+        if (!MyPracticeConfig.useLocalDevSeed) {
+          await _purgeSeedPatients();
+        }
         for (final p in patients) {
           await _cachePatient(p);
         }
@@ -203,19 +206,42 @@ class PatientRepository {
       } catch (_) {}
     }
 
+    if (query.trim().isEmpty) {
+      if (MyPracticeConfig.useLocalDevSeed) {
+        return listRecent();
+      }
+      return const [];
+    }
+
     final q = query.toLowerCase();
     final all = await db.select(db.patients).get();
     return all
         .where(
           (p) =>
-              p.firstName.toLowerCase().contains(q) ||
+              !_isSeedPatient(p) &&
+              (p.firstName.toLowerCase().contains(q) ||
               p.lastName.toLowerCase().contains(q) ||
               (p.phone?.contains(q) ?? false) ||
               (p.nationalId?.toLowerCase().contains(q) ?? false) ||
-              (p.smarthealthPatientId?.toLowerCase().contains(q) ?? false),
+              (p.smarthealthPatientId?.toLowerCase().contains(q) ?? false)),
         )
         .take(50)
         .toList();
+  }
+
+  Future<void> purgeSeedPatients() => _purgeSeedPatients();
+
+  bool _isSeedPatient(Patient p) =>
+      p.id.startsWith('seed-patient-') ||
+      (p.smarthealthPatientId?.startsWith('SH-1009') ?? false);
+
+  Future<void> _purgeSeedPatients() async {
+    final seedRows = await db.select(db.patients).get();
+    for (final p in seedRows) {
+      if (_isSeedPatient(p)) {
+        await (db.delete(db.patients)..where((t) => t.id.equals(p.id))).go();
+      }
+    }
   }
 
   Future<Map<String, dynamic>> getChart(String patientId) async {
@@ -374,13 +400,17 @@ class PatientRepository {
   }
 
   Patient _patientFromApi(Map<String, dynamic> m) {
+    final metadata = m['metadata'];
+    final metaMap = metadata is Map<String, dynamic> ? metadata : null;
+    final insuranceRaw = m['insuranceInfo'] ?? m['insurance_info'] ?? metaMap?['medicalAid'];
     return Patient(
       id: m['id'] as String,
       firstName: m['firstName'] as String? ?? m['first_name'] as String? ?? '',
       lastName: m['lastName'] as String? ?? m['last_name'] as String? ?? '',
       phone: m['phone'] as String?,
       nationalId: m['nationalId'] as String? ?? m['national_id'] as String?,
-      smarthealthPatientId: m['smarthealthPatientId'] as String?,
+      smarthealthPatientId: m['smarthealthPatientId'] as String? ??
+          metaMap?['smarthealthPatientId'] as String?,
       email: m['email'] as String?,
       gender: m['gender'] as String?,
       dateOfBirth: m['dateOfBirth'] != null
@@ -389,7 +419,7 @@ class PatientRepository {
               ? DateTime.tryParse(m['date_of_birth'] as String)
               : null,
       passport: null,
-      insuranceInfo: null,
+      insuranceInfo: insuranceRaw?.toString(),
       serverId: m['id'] as String?,
       syncStatus: 'synced',
       updatedAt: DateTime.now(),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:my_practice/core/auth/auth_state.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
+import 'package:my_practice/data/repositories/repositories.dart';
 import 'package:my_practice/data/seed/dev_team_seed.dart';
 import 'package:my_practice/data/seed/seed_data_loader.dart';
 import 'package:my_practice/data/sync/sync_notifier.dart';
@@ -36,6 +37,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     if (!MyPracticeConfig.skipAuthForTesting) {
       unawaited(ref.read(syncNotifierProvider.notifier).syncNow());
+      unawaited(ref.read(patientRepositoryProvider).purgeSeedPatients());
     }
 
     await _waitForAuthReady(const Duration(seconds: 5));
