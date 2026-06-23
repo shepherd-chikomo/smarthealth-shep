@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import { portalClaimUrl, portalLoginUrl, site } from '@/lib/site';
+import { Menu, Stethoscope, X } from 'lucide-react';
+import { portalLoginUrl, site } from '@/lib/site';
 
 const nav = [
   { href: '#features', label: 'Features' },
@@ -16,15 +16,17 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-600 text-sm font-bold text-white">
-            MP
+        <Link href="/" className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-md shadow-blue-500/30">
+            <Stethoscope size={20} />
           </span>
           <div className="leading-tight">
-            <div className="text-sm font-bold text-slate-900">{site.name}</div>
-            <div className="text-xs text-slate-500">by SmartHealth</div>
+            <div className="text-base font-bold text-slate-900">{site.name}</div>
+            <div className="text-[10px] font-semibold tracking-widest text-slate-500">
+              BY SMARTHEALTH
+            </div>
           </div>
         </Link>
 
@@ -33,19 +35,22 @@ export function SiteHeader() {
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-slate-600 hover:text-teal-700"
+              className="text-sm font-medium text-slate-600 transition hover:text-[#2563eb]"
             >
               {item.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <a href={portalLoginUrl} className="btn-secondary">
+        <div className="hidden items-center gap-4 md:flex">
+          <a
+            href={portalLoginUrl}
+            className="text-sm font-semibold text-slate-700 hover:text-[#2563eb]"
+          >
             Join
           </a>
           <a href="#download" className="btn-primary">
-            Download
+            Download <span aria-hidden>→</span>
           </a>
         </div>
 
@@ -76,7 +81,7 @@ export function SiteHeader() {
               Join
             </a>
             <a href="#download" className="btn-primary w-full" onClick={() => setOpen(false)}>
-              Download
+              Download →
             </a>
           </div>
         </div>
