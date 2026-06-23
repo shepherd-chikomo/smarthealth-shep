@@ -9,7 +9,10 @@ export type ConsentType =
   | 'marketing'
   | 'research'
   | 'third_party_sharing'
-  | 'emergency_contact';
+  | 'emergency_contact'
+  | 'facility_phi_share'
+  | 'encounter_summary_receive'
+  | 'facility_ongoing_care';
 
 export interface ConsentRecord {
   id: string;
@@ -63,11 +66,17 @@ export async function grantConsent(
   context?: RequestContext,
   metadata: Record<string, unknown> = {},
 ): Promise<ConsentRecord> {
+  const facilityId = metadata.facilityId as string | undefined;
+
   await query(
     `UPDATE public.patient_consents
      SET withdrawn_at = timezone('utc', now()), updated_at = timezone('utc', now())
-     WHERE patient_id = $1 AND consent_type = $2 AND withdrawn_at IS NULL`,
-    [patientId, consentType],
+     WHERE patient_id = $1 AND consent_type = $2 AND withdrawn_at IS NULL
+       AND (
+         ($3::text IS NULL AND metadata->>'facilityId' IS NULL)
+         OR metadata->>'facilityId' = $3
+       )`,
+    [patientId, consentType, facilityId ?? null],
   );
 
   const result = await query<{
@@ -110,6 +119,7 @@ export async function withdrawConsent(
   patientId: string,
   consentType: ConsentType,
   context?: RequestContext,
+  facilityId?: string,
 ): Promise<ConsentRecord> {
   const result = await query<{
     id: string;
@@ -122,8 +132,12 @@ export async function withdrawConsent(
     `UPDATE public.patient_consents
      SET withdrawn_at = timezone('utc', now()), updated_at = timezone('utc', now())
      WHERE patient_id = $1 AND consent_type = $2 AND withdrawn_at IS NULL
+       AND (
+         ($3::text IS NULL AND metadata->>'facilityId' IS NULL)
+         OR metadata->>'facilityId' = $3
+       )
      RETURNING id, consent_type, version, granted_at, withdrawn_at, metadata`,
-    [patientId, consentType],
+    [patientId, consentType, facilityId ?? null],
   );
 
   if (!result.rows[0]) {
@@ -147,13 +161,18 @@ export async function withdrawConsent(
 export async function hasActiveConsent(
   patientId: string,
   consentType: ConsentType,
+  facilityId?: string,
 ): Promise<boolean> {
   const result = await query<{ exists: boolean }>(
     `SELECT EXISTS (
        SELECT 1 FROM public.patient_consents
        WHERE patient_id = $1 AND consent_type = $2 AND withdrawn_at IS NULL
+         AND (
+           ($3::text IS NULL AND metadata->>'facilityId' IS NULL)
+           OR metadata->>'facilityId' = $3
+         )
      ) AS exists`,
-    [patientId, consentType],
+    [patientId, consentType, facilityId ?? null],
   );
   return result.rows[0]?.exists ?? false;
 }

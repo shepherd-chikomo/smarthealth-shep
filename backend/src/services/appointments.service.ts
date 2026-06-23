@@ -1,6 +1,10 @@
 import { query } from '../lib/db.js';
+import { CONSENT_VERSION, computeValidUntil } from '../lib/care-disclosure.js';
+import type { RequestContext } from '../lib/request-context.js';
 import { ConflictError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { buildPaginationMeta, paginationOffset } from '../lib/pagination.js';
+import * as consentService from './consent.service.js';
+import { syncOngoingCareFromSnapshot } from './ongoing-care.service.js';
 
 interface AppointmentRow {
   id: string;
@@ -20,7 +24,15 @@ interface AppointmentRow {
   updated_at: Date;
 }
 
-function mapAppointment(row: AppointmentRow) {
+function mapAppointment(row: AppointmentRow, metadata?: Record<string, unknown>) {
+  const meta = metadata ?? {};
+  const shareProfile = meta.shareProfile as Record<string, boolean> | undefined;
+  const sharedFields = shareProfile
+    ? Object.entries(shareProfile)
+        .filter(([, v]) => v === true)
+        .map(([k]) => k)
+    : [];
+
   return {
     id: row.id,
     referenceNumber: row.reference_number,
@@ -37,7 +49,20 @@ function mapAppointment(row: AppointmentRow) {
     facilityName: row.facility_name,
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
+    shareProfile: shareProfile ?? null,
+    sharedFields,
+    validUntil: (meta.validUntil as string) ?? null,
+    receiveEncounterSummary: meta.receiveEncounterSummary === true,
+    paymentMethod: (meta.paymentMethod as string) ?? null,
   };
+}
+
+async function fetchAppointmentMetadata(appointmentId: string): Promise<Record<string, unknown>> {
+  const result = await query<{ metadata: Record<string, unknown> }>(
+    `SELECT metadata FROM public.appointments WHERE id = $1`,
+    [appointmentId],
+  );
+  return result.rows[0]?.metadata ?? {};
 }
 
 const APPOINTMENT_SELECT = `
@@ -69,7 +94,13 @@ export async function createAppointment(
     scheduledAt: string;
     durationMinutes: number;
     notes?: string;
+    paymentMethod?: string;
+    shareProfile?: Record<string, boolean>;
+    sharedProfileSnapshot?: Record<string, unknown>;
+    receiveEncounterSummary?: boolean;
+    enableOngoingCare?: boolean;
   },
+  context?: RequestContext,
 ) {
   if (data.familyMemberId) {
     const familyCheck = await query(
@@ -99,8 +130,24 @@ export async function createAppointment(
   }
 
   const referenceNumber = generateReferenceNumber();
+  const validUntil = computeValidUntil(data.scheduledAt);
+  const hasSharedSnapshot =
+    data.sharedProfileSnapshot != null &&
+    Object.keys(data.sharedProfileSnapshot).length > 0;
 
-  const metadata = data.serviceId ? JSON.stringify({ serviceId: data.serviceId }) : '{}';
+  const metadata = JSON.stringify({
+    ...(data.serviceId ? { serviceId: data.serviceId } : {}),
+    ...(data.paymentMethod ? { paymentMethod: data.paymentMethod } : {}),
+    ...(data.shareProfile ? { shareProfile: data.shareProfile } : {}),
+    ...(hasSharedSnapshot
+      ? { sharedProfileSnapshot: data.sharedProfileSnapshot }
+      : {}),
+    ...(data.receiveEncounterSummary != null
+      ? { receiveEncounterSummary: data.receiveEncounterSummary }
+      : {}),
+    purpose: 'pre_visit_booking',
+    validUntil,
+  });
 
   const result = await query<AppointmentRow>(
     `INSERT INTO public.appointments (
@@ -124,7 +171,61 @@ export async function createAppointment(
     ],
   );
 
-  return getAppointmentById(userId, result.rows[0].id);
+  const appointmentId = result.rows[0].id;
+
+  if (hasSharedSnapshot) {
+    await consentService.grantConsent(
+      userId,
+      'facility_phi_share',
+      CONSENT_VERSION,
+      context,
+      {
+        facilityId: data.facilityId,
+        appointmentId,
+        providerId: data.providerId,
+        purpose: 'pre_visit_booking',
+        shareProfile: data.shareProfile ?? {},
+        validUntil,
+      },
+    );
+  }
+
+  if (data.receiveEncounterSummary === true) {
+    await consentService.grantConsent(
+      userId,
+      'encounter_summary_receive',
+      CONSENT_VERSION,
+      context,
+      {
+        facilityId: data.facilityId,
+        appointmentId,
+        providerId: data.providerId,
+        purpose: 'encounter_summary',
+        validUntil,
+      },
+    );
+  }
+
+  if (data.enableOngoingCare === true && hasSharedSnapshot) {
+    await consentService.grantConsent(
+      userId,
+      'facility_ongoing_care',
+      CONSENT_VERSION,
+      context,
+      {
+        facilityId: data.facilityId,
+        shareProfile: data.shareProfile ?? {},
+        purpose: 'ongoing_treatment',
+      },
+    );
+    await syncOngoingCareFromSnapshot(
+      userId,
+      data.facilityId,
+      data.sharedProfileSnapshot!,
+    );
+  }
+
+  return getAppointmentById(userId, appointmentId);
 }
 
 export async function listAppointments(
@@ -183,7 +284,7 @@ export async function listAppointments(
   );
 
   return {
-    appointments: result.rows.map(mapAppointment),
+    appointments: result.rows.map((row) => mapAppointment(row)),
     pagination: buildPaginationMeta(options.page, options.limit, total),
   };
 }
@@ -197,7 +298,8 @@ export async function getAppointmentById(userId: string, appointmentId: string) 
   );
 
   if (!result.rows[0]) throw new NotFoundError('Appointment', appointmentId);
-  return mapAppointment(result.rows[0]);
+  const meta = await fetchAppointmentMetadata(appointmentId);
+  return mapAppointment(result.rows[0], meta);
 }
 
 export async function updateAppointment(

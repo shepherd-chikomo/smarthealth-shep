@@ -1016,7 +1016,7 @@ export async function listPatients(user: AuthenticatedUser, facilityId: string, 
 
   const rows = await query(
     `SELECT DISTINCT pr.id, pr.first_name, pr.last_name, pr.phone, pr.email,
-            pr.date_of_birth, pr.created_at,
+            pr.date_of_birth, pr.gender, pr.national_id, pr.metadata, pr.created_at,
             (SELECT MAX(a.scheduled_at) FROM public.appointments a
              WHERE a.patient_id = pr.id AND a.tenant_id = $1) AS last_visit
      FROM public.profiles pr
@@ -1027,16 +1027,24 @@ export async function listPatients(user: AuthenticatedUser, facilityId: string, 
   );
 
   return {
-    patients: rows.rows.map((r) => ({
+    patients: rows.rows.map((r) => {
+      const meta = (r.metadata ?? {}) as Record<string, unknown>;
+      const medicalAid = meta.medicalAid as Record<string, unknown> | undefined;
+      return {
       id: r.id,
       firstName: r.first_name,
       lastName: r.last_name,
       phone: r.phone,
       email: r.email,
       dateOfBirth: r.date_of_birth,
+      gender: r.gender,
+      nationalId: r.national_id,
+      smarthealthPatientId: meta.smarthealthPatientId ?? null,
+      insuranceInfo: medicalAid?.provider ?? medicalAid?.scheme ?? null,
       lastVisit: r.last_visit ? (r.last_visit as Date).toISOString() : null,
       createdAt: (r.created_at as Date).toISOString(),
-    })),
+    };
+    }),
     pagination: buildPaginationMeta(opts.page, opts.limit, Number(count.rows[0]?.count ?? 0)),
   };
 }

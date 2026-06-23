@@ -1,15 +1,18 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '../plugins/auth-guard.js';
+import { getRequestContext } from '../lib/request-context.js';
 import {
   appointmentFilterSchema,
   appointmentSchema,
   createAppointmentSchema,
+  encounterSummarySchema,
   paginationMetaSchema,
   paginationQuerySchema,
   updateAppointmentSchema,
 } from '../schemas/common.js';
 import * as appointmentsService from '../services/appointments.service.js';
+import * as encounterSummaryService from '../services/encounter-summary.service.js';
 
 export const appointmentsRoutes: FastifyPluginAsyncZod = async (app) => {
   app.addHook('preHandler', requireAuth);
@@ -29,6 +32,7 @@ export const appointmentsRoutes: FastifyPluginAsyncZod = async (app) => {
       const appointment = await appointmentsService.createAppointment(
         request.user!.id,
         request.body,
+        getRequestContext(request),
       );
       return reply.status(201).send({ appointment });
     },
@@ -103,6 +107,26 @@ export const appointmentsRoutes: FastifyPluginAsyncZod = async (app) => {
         request.body,
       );
       return { appointment };
+    },
+  );
+
+  app.get(
+    '/appointments/:id/encounter-summary',
+    {
+      schema: {
+        tags: ['Appointments'],
+        summary: 'Get visit summary for an appointment',
+        security: [{ bearerAuth: [] }],
+        params: z.object({ id: z.string().uuid() }),
+        response: { 200: z.object({ summary: encounterSummarySchema }) },
+      },
+    },
+    async (request) => {
+      const summary = await encounterSummaryService.getEncounterSummaryForAppointment(
+        request.user!.id,
+        request.params.id,
+      );
+      return { summary };
     },
   );
 

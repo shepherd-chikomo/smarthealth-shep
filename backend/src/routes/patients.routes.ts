@@ -204,6 +204,7 @@ export const patientsRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Withdraw patient consent',
         security: [{ bearerAuth: [] }],
         params: z.object({ consentType: consentTypeSchema }),
+        querystring: z.object({ facilityId: z.string().uuid().optional() }),
         response: { 200: z.object({ consent: consentRecordSchema }) },
       },
     },
@@ -212,6 +213,7 @@ export const patientsRoutes: FastifyPluginAsyncZod = async (app) => {
         request.user!.id,
         request.params.consentType,
         getRequestContext(request),
+        request.query.facilityId,
       ),
     }),
   );

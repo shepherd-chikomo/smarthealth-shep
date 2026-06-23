@@ -300,6 +300,31 @@ export const appointmentSchema = z.object({
   facilityName: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  shareProfile: z.record(z.boolean()).nullable().optional(),
+  sharedFields: z.array(z.string()).optional(),
+  validUntil: z.string().nullable().optional(),
+  receiveEncounterSummary: z.boolean().optional(),
+  paymentMethod: z.string().nullable().optional(),
+});
+
+export const encounterSummarySchema = z.object({
+  id: z.string().uuid(),
+  appointmentId: z.string().uuid().nullable(),
+  consultationId: z.string().uuid(),
+  providerId: z.string().uuid().nullable(),
+  chiefComplaint: z.string().nullable(),
+  assessment: z.string().nullable(),
+  plan: z.string().nullable(),
+  prescriptionsSummary: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const bookingProfileShareSchema = z.object({
+  allergies: z.boolean().optional(),
+  conditions: z.boolean().optional(),
+  medications: z.boolean().optional(),
+  bloodGroup: z.boolean().optional(),
+  emergencyContact: z.boolean().optional(),
 });
 
 export const createAppointmentSchema = z.object({
@@ -310,6 +335,13 @@ export const createAppointmentSchema = z.object({
   scheduledAt: z.string().datetime(),
   durationMinutes: z.number().int().min(15).max(240).default(30),
   notes: z.string().max(1000).optional(),
+  paymentMethod: z
+    .enum(['cash', 'mobile_money', 'card', 'bank_transfer', 'insurance', 'other'])
+    .optional(),
+  shareProfile: bookingProfileShareSchema.optional(),
+  sharedProfileSnapshot: z.record(z.unknown()).optional(),
+  receiveEncounterSummary: z.boolean().optional(),
+  enableOngoingCare: z.boolean().optional(),
 });
 
 export const updateAppointmentSchema = z.object({
@@ -473,6 +505,9 @@ export const consentTypeSchema = z.enum([
   'research',
   'third_party_sharing',
   'emergency_contact',
+  'facility_phi_share',
+  'encounter_summary_receive',
+  'facility_ongoing_care',
 ]);
 
 export const grantConsentSchema = z.object({

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { getRequestContext } from '../lib/request-context.js';
 import { requireFacilityStaffAuth, facilityIdQuerySchema } from '../plugins/facility-guard.js';
 import * as clinical from '../services/clinical.service.js';
 
@@ -21,6 +22,7 @@ export const clinicalRoutes: FastifyPluginAsyncZod = async (app) => {
         request.user!,
         request.facilityId!,
         request.params.patientId,
+        getRequestContext(request),
       ),
   );
 

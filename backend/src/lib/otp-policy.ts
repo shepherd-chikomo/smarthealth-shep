@@ -165,7 +165,6 @@ export async function resolveOtpSend(input: OtpSendInput): Promise<ResolvedOtpSe
   if (input.context === 'staff') {
     if (requestedChannel === 'phone') {
       const email = input.email ? normalizeEmail(input.email) : null;
-      let profile: ProfileRow | null = null;
 
       if (email) {
         const resolved = await resolveStaffLoginByEmail(email);
@@ -185,7 +184,7 @@ export async function resolveOtpSend(input: OtpSendInput): Promise<ResolvedOtpSe
         throw new ValidationError('Email or phone is required');
       }
       const phone = normalizeZimbabwePhone(input.phone);
-      profile = assertStaffProfile(await findProfileByPhone(phone));
+      assertStaffProfile(await findProfileByPhone(phone));
       return {
         channel: 'sms',
         identifier: phone,
