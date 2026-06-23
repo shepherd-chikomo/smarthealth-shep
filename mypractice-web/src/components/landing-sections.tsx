@@ -34,7 +34,9 @@ import {
 } from 'lucide-react';
 import { portalClaimUrl, portalLoginUrl } from '@/lib/site';
 import { ArrowLink, FeatureIconCard, SectionBadge } from '@/components/ui';
-import { FloatingStatCard, PhoneMockup } from '@/components/phone-mockup';
+import { HeroVisual } from '@/components/hero-visual';
+import { StoreBadges } from '@/components/store-badges';
+import { PhoneMockup } from '@/components/phone-mockup';
 
 const certs = [
   'MBCHB VERIFIED',
@@ -76,45 +78,23 @@ export function HeroSection() {
               Claim your facility
             </a>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <span className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white">
-              Download on the App Store
-            </span>
-            <span className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-xs font-medium text-white">
-              GET IT ON Google Play
-            </span>
+          <div className="mt-6">
+            <StoreBadges />
           </div>
           <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
             <span className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-[#2563eb]" /> Verified providers
+              <ShieldCheck size={16} className="text-emerald-500" /> Verified providers
             </span>
             <span className="flex items-center gap-2">
               <Lock size={16} className="text-[#2563eb]" /> Secure by design
             </span>
             <span className="flex items-center gap-2">
-              <MapPin size={16} className="text-[#2563eb]" /> Zimbabwe &amp; Africa
+              <MapPin size={16} className="text-emerald-500" /> Zimbabwe &amp; Africa
             </span>
           </div>
         </div>
 
-        <div className="relative mx-auto min-h-[420px] w-full max-w-md lg:max-w-none">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-100/80 to-cyan-100/60" />
-          <div className="relative flex items-center justify-center pt-8">
-            <PhoneMockup className="relative z-10" />
-            <FloatingStatCard
-              icon={<Calendar size={18} />}
-              title="24 appointments"
-              subtitle="Today"
-              className="left-0 top-4 z-20 sm:left-4"
-            />
-            <FloatingStatCard
-              icon={<Users size={18} />}
-              title="+38% visibility"
-              subtitle="This month"
-              className="bottom-8 right-0 z-20 sm:right-4"
-            />
-          </div>
-        </div>
+        <HeroVisual />
       </div>
     </section>
   );
@@ -563,12 +543,7 @@ export function DownloadSection() {
             professional growth.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <span className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-3 text-xs font-medium text-white">
-              Download on the App Store
-            </span>
-            <span className="inline-flex items-center rounded-xl bg-slate-900 px-5 py-3 text-xs font-medium text-white">
-              GET IT ON Google Play
-            </span>
+            <StoreBadges />
           </div>
           <p className="mt-4 text-sm text-slate-500">Store links coming soon.</p>
           <div className="mt-6">

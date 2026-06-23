@@ -1,8 +1,15 @@
 /** Simplified MyPractice dashboard mockup for marketing sections */
-export function PhoneMockup({ className = '' }: { className?: string }) {
+export function PhoneMockup({
+  className = '',
+  size = 'md',
+}: {
+  className?: string;
+  size?: 'md' | 'lg';
+}) {
+  const width = size === 'lg' ? 'w-[280px] sm:w-[300px]' : 'w-[260px] sm:w-[280px]';
   return (
     <div
-      className={`relative mx-auto w-[260px] rounded-[2rem] border-[6px] border-slate-900 bg-slate-900 p-1 shadow-2xl shadow-slate-900/30 sm:w-[280px] ${className}`}
+      className={`relative mx-auto ${width} rounded-[2rem] border-[6px] border-slate-900 bg-slate-900 p-1 shadow-2xl shadow-slate-900/30 ${className}`}
     >
       <div className="overflow-hidden rounded-[1.6rem] bg-slate-50">
         <div className="bg-white px-4 pb-3 pt-8">
