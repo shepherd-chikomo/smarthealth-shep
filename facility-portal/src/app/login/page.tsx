@@ -206,7 +206,7 @@ export default function LoginPage() {
       if (portalMode === 'provider' || !hasMemberships) {
         window.location.assign('/provider/facilities');
       } else {
-        router.push('/');
+        router.push('/dashboard');
         router.refresh();
       }
     } catch (err) {

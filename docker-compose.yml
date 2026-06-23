@@ -388,6 +388,7 @@ services:
       PORT: 3001
       HOSTNAME: 0.0.0.0
       API_URL: http://smarthealth-api:3000
+      NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-https://dev.smarthealth.co.zw}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${ANON_KEY}
     depends_on:

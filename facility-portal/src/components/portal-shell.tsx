@@ -13,7 +13,7 @@ import { useFacility } from '@/lib/facility-context';
 import { createClient } from '@/lib/supabase/client';
 
 const NAV = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/facility', label: 'Facility Profile', icon: Building2 },
   { href: '/facility/staff', label: 'Staff', icon: UserCog },
   { href: '/hours', label: 'Operating Hours', icon: Clock },
@@ -29,7 +29,7 @@ const NAV = [
 ];
 
 const BOTTOM_NAV = [
-  { href: '/', label: 'Home', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/facility', label: 'Facility', icon: Building2 },
   { href: '/facility/staff', label: 'Staff', icon: UserCog },
   { href: '/appointments', label: 'Appts', icon: Calendar },

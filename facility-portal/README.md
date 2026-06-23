@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3001
+Open http://localhost:3001 — dashboard at `/dashboard`. Public marketing site is served on `mypractice.smarthealth.co.zw` (see `src/middleware.ts`).
 
 ## Login
 
@@ -51,7 +51,7 @@ Sign in with phone `0771234567` / OTP `123456` (local Supabase).
 
 | Route | Features |
 |-------|----------|
-| `/` | Analytics dashboard (30s refresh) |
+| `/` | Analytics dashboard (`/dashboard`) |
 | `/facility` | Facility profile CRUD |
 | `/doctors` | Manage doctors (create, list, search) |
 | `/hours` | Facility operating hours |

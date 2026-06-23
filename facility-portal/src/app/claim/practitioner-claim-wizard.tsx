@@ -420,7 +420,7 @@ export function PractitionerClaimWizard() {
           <button
             type="button"
             className="btn-primary w-full justify-center"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/dashboard')}
           >
             Open facility portal
           </button>
