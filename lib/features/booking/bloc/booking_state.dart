@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:smarthealth_shep/features/booking/models/booking_confirmation.dart';
+import 'package:smarthealth_shep/features/booking/models/booking_consent_options.dart';
 import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
 import 'package:smarthealth_shep/features/booking/models/time_slot.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
@@ -35,6 +36,7 @@ class BookingState extends Equatable {
     this.confirmation,
     this.pendingSync = false,
     this.errorMessage,
+    this.consent = const BookingConsentOptions(),
   });
 
   final BookingStatus status;
@@ -55,6 +57,7 @@ class BookingState extends Equatable {
   final BookingConfirmation? confirmation;
   final bool pendingSync;
   final String? errorMessage;
+  final BookingConsentOptions consent;
 
   bool get canContinue =>
       selectedDate != null &&
@@ -87,6 +90,7 @@ class BookingState extends Equatable {
     BookingConfirmation? confirmation,
     bool? pendingSync,
     String? errorMessage,
+    BookingConsentOptions? consent,
     bool clearSelectedTime = false,
     bool clearError = false,
     bool clearConfirmation = false,
@@ -112,6 +116,7 @@ class BookingState extends Equatable {
           clearConfirmation ? null : (confirmation ?? this.confirmation),
       pendingSync: pendingSync ?? this.pendingSync,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      consent: consent ?? this.consent,
     );
   }
 
@@ -135,5 +140,6 @@ class BookingState extends Equatable {
         confirmation,
         pendingSync,
         errorMessage,
+        consent,
       ];
 }

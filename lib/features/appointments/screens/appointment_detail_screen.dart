@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
 import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
+import 'package:smarthealth_shep/features/appointments/models/encounter_summary.dart';
+import 'package:smarthealth_shep/features/appointments/utils/disclosure_labels.dart';
 import 'package:smarthealth_shep/features/appointments/widgets/appointment_reminder_widgets.dart';
 import 'package:smarthealth_shep/features/booking/widgets/appointment_summary_card.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
@@ -31,6 +33,7 @@ class AppointmentDetailScreen extends StatefulWidget {
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   final _repository = AppointmentsRepository();
   AppointmentModel? _appointment;
+  EncounterSummary? _encounterSummary;
   bool _loading = true;
   bool _acting = false;
 
@@ -41,10 +44,18 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   Future<void> _load() async {
-    final appointment = await _repository.getById(widget.appointmentId);
+    final appointment =
+        await _repository.getById(widget.appointmentId, fetchRemote: true);
+    EncounterSummary? summary;
+    if (appointment != null &&
+        (appointment.receiveEncounterSummary ||
+            appointment.status == AppointmentOperationalStatus.completed)) {
+      summary = await _repository.getEncounterSummary(widget.appointmentId);
+    }
     if (!mounted) return;
     setState(() {
       _appointment = appointment;
+      _encounterSummary = summary;
       _loading = false;
     });
   }
@@ -107,6 +118,14 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             patientName: appointment.patientName,
             notes: appointment.notes,
           ),
+          if (appointment.hasSharedProfile) ...[
+            const SizedBox(height: 12),
+            _SharedProfilePanel(appointment: appointment),
+          ],
+          if (_encounterSummary != null) ...[
+            const SizedBox(height: 12),
+            _EncounterSummaryPanel(summary: _encounterSummary!),
+          ],
           if (appointment.hasQueueInfo) ...[
             const SizedBox(height: 12),
             _QueuePanel(appointment: appointment),
@@ -332,6 +351,138 @@ class _SectionLabel extends StatelessWidget {
         fontSize: 15,
         fontWeight: FontWeight.w600,
         color: HomeDashboardColors.of(context).textPrimary,
+      ),
+    );
+  }
+}
+
+class _SharedProfilePanel extends StatelessWidget {
+  const _SharedProfilePanel({required this.appointment});
+
+  final AppointmentModel appointment;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+    final labels = formatSharedFieldLabels(appointment.sharedFields);
+    final validUntil = appointment.validUntil;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Symbols.shield, color: colors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Shared for this visit',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            labels.isEmpty
+                ? 'Health profile snapshot shared with ${appointment.facilityName}'
+                : 'You shared: ${labels.join(', ')}',
+            style: TextStyle(fontSize: 13, color: colors.textSecondary),
+          ),
+          if (validUntil != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Access expires ${_formatDate(validUntil)}',
+              style: TextStyle(fontSize: 12, color: colors.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+class _EncounterSummaryPanel extends StatelessWidget {
+  const _EncounterSummaryPanel({required this.summary});
+
+  final EncounterSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E8EE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Visit summary',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (summary.chiefComplaint != null &&
+              summary.chiefComplaint!.trim().isNotEmpty)
+            _SummaryRow('Reason for visit', summary.chiefComplaint!),
+          if (summary.assessment != null && summary.assessment!.trim().isNotEmpty)
+            _SummaryRow('Assessment', summary.assessment!),
+          if (summary.plan != null && summary.plan!.trim().isNotEmpty)
+            _SummaryRow('Plan', summary.plan!),
+          if (summary.prescriptionsSummary != null &&
+              summary.prescriptionsSummary!.trim().isNotEmpty)
+            _SummaryRow('Prescriptions', summary.prescriptionsSummary!),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = HomeDashboardColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: colors.textSecondary,
+            ),
+          ),
+          Text(value, style: TextStyle(color: colors.textPrimary)),
+        ],
       ),
     );
   }

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_bloc.dart';
+import 'package:smarthealth_shep/features/booking/data/booking_providers.dart';
 import 'package:smarthealth_shep/features/booking/data/booking_repository.dart';
 import 'package:smarthealth_shep/features/booking/screens/booking_date_screen.dart';
 import 'package:smarthealth_shep/shared/models/provider_model.dart';
 
 /// Hosts the booking flow [BookingBloc] and starts at the date screen.
-class BookingFlowHost extends StatelessWidget {
+class BookingFlowHost extends ConsumerWidget {
   const BookingFlowHost({
     super.key,
     required this.providerId,
@@ -23,11 +25,11 @@ class BookingFlowHost extends StatelessWidget {
   final String? serviceId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BlocProvider(
       create: (_) => BookingBloc(
         providerId: providerId,
-        repository: repository,
+        repository: repository ?? ref.read(bookingRepositoryProvider),
         facilityId: facilityId,
         serviceId: serviceId,
       ),

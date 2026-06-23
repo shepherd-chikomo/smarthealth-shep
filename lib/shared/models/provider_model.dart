@@ -12,6 +12,7 @@ abstract class ProviderModel with _$ProviderModel {
     required String categoryId,
     String? specialty,
     String? specialtyId,
+    String? facilityId,
     String? facilityName,
     String? address,
     String? phone,

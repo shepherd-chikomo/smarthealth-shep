@@ -231,6 +231,32 @@ class MockApiService extends _i1.Mock implements _i2.ApiService {
           as _i7.Future<_i8.ProviderModel?>);
 
   @override
+  _i7.Future<Map<String, dynamic>> createAppointment({
+    required String? facilityId,
+    required String? providerId,
+    required DateTime? scheduledAt,
+    int? durationMinutes = 30,
+    String? serviceId,
+    String? familyMemberId,
+    String? notes,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#createAppointment, [], {
+              #facilityId: facilityId,
+              #providerId: providerId,
+              #scheduledAt: scheduledAt,
+              #durationMinutes: durationMinutes,
+              #serviceId: serviceId,
+              #familyMemberId: familyMemberId,
+              #notes: notes,
+            }),
+            returnValue: _i7.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+          )
+          as _i7.Future<Map<String, dynamic>>);
+
+  @override
   _i7.Future<List<({int count, String facilityType, String label})>>
   fetchFacilityTypeCatalog() =>
       (super.noSuchMethod(

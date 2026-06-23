@@ -5,6 +5,7 @@ import 'package:smarthealth_shep/core/assets.dart';
 import 'package:smarthealth_shep/core/network/dio_factory.dart';
 import 'package:smarthealth_shep/features/appointments/data/local/appointment_dao.dart';
 import 'package:smarthealth_shep/features/appointments/models/appointment_model.dart';
+import 'package:smarthealth_shep/features/appointments/models/encounter_summary.dart';
 import 'package:smarthealth_shep/features/booking/models/booking_confirmation.dart';
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
 import 'package:smarthealth_shep/shared/data/sync/sync_queue_item.dart';
@@ -77,7 +78,47 @@ class AppointmentsRepository {
     return appointments;
   }
 
-  Future<AppointmentModel?> getById(String id) => _dao.getById(id);
+  Future<AppointmentModel?> getById(String id, {bool fetchRemote = true}) async {
+    if (fetchRemote) {
+      try {
+        final response = await _dio.get<Map<String, dynamic>>('/appointments/$id');
+        final data = response.data?['appointment'];
+        if (data is Map<String, dynamic>) {
+          final appointment = AppointmentModel.fromApiJson(data);
+          await _dao.upsertFromApi(appointment);
+          return appointment;
+        }
+      } catch (error, stackTrace) {
+        developer.log(
+          'Remote appointment fetch failed — using local cache',
+          name: _logName,
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+    return _dao.getById(id);
+  }
+
+  Future<EncounterSummary?> getEncounterSummary(String appointmentId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/appointments/$appointmentId/encounter-summary',
+      );
+      final data = response.data?['summary'];
+      if (data is Map<String, dynamic>) {
+        return EncounterSummary.fromJson(data);
+      }
+    } catch (error, stackTrace) {
+      developer.log(
+        'Encounter summary not available',
+        name: _logName,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    return null;
+  }
 
   Future<AppointmentModel?> getNextUpcoming() async {
     final appointments = await loadAppointments();
@@ -123,6 +164,16 @@ class AppointmentsRepository {
     );
     await _dao.save(appointment);
     return appointment;
+  }
+
+  /// Replaces a provisional local booking row with the server appointment.
+  Future<void> replaceLocalWithServer({
+    required String localId,
+    required Map<String, dynamic> serverAppointment,
+  }) async {
+    final appointment = AppointmentModel.fromApiJson(serverAppointment);
+    await _dao.deleteById(localId);
+    await _dao.upsertFromApi(appointment);
   }
 
   Future<AppointmentModel> updateStatus(

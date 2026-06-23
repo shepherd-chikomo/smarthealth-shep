@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smarthealth_shep/core/auth/patient_profile.dart';
 import 'package:smarthealth_shep/features/appointments/providers/appointments_providers.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_bloc.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_event.dart';
@@ -8,7 +9,12 @@ import 'package:smarthealth_shep/features/booking/bloc/booking_state.dart';
 import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
 import 'package:smarthealth_shep/features/booking/screens/booking_success_screen.dart';
 import 'package:smarthealth_shep/features/booking/widgets/appointment_summary_card.dart';
+import 'package:smarthealth_shep/features/booking/widgets/booking_consent_section.dart';
 import 'package:smarthealth_shep/features/home/home_dashboard_colors.dart';
+import 'package:smarthealth_shep/features/home/providers/home_medical_summary_provider.dart';
+import 'package:smarthealth_shep/features/profile/utils/primary_profile_resolver.dart';
+import 'package:smarthealth_shep/features/profile/widgets/profile_member_switcher.dart';
+import 'package:smarthealth_shep/shared/models/family_member_model.dart';
 
 /// Step 2 — review details, select patient, and confirm.
 class BookingConfirmScreen extends ConsumerStatefulWidget {
@@ -35,10 +41,11 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
       listener: (context, state) {
         if (state.status == BookingStatus.confirmed) {
           invalidateUpcomingAppointment(ref);
+          final bookingBloc = context.read<BookingBloc>();
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
               builder: (_) => BlocProvider.value(
-                value: context.read<BookingBloc>(),
+                value: bookingBloc,
                 child: BookingSuccessScreen(),
               ),
             ),
@@ -147,6 +154,11 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    BookingConsentSection(
+                      state: state,
+                      enabled: !isConfirming,
+                    ),
                   ],
                 ),
               ),
@@ -158,9 +170,25 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
                     onPressed: isConfirming
                         ? null
                         : () {
+                            final members =
+                                ref.read(familyMembersProvider).value ??
+                                    const <FamilyMemberModel>[];
+                            final patientProfile =
+                                ref.read(patientProfileProvider).value;
+                            final selectedPatient = state.selectedPatient;
+                            final member = _resolveMemberForPatient(
+                              members: members,
+                              patient: patientProfile,
+                              selectedPatient: selectedPatient,
+                            );
+                            final snapshot = state.consent.buildProfileSnapshot(
+                              member,
+                            );
                             context.read<BookingBloc>().add(
                                   BookingConfirmed(
                                     notes: _notesController.text,
+                                    consent: state.consent,
+                                    profileSnapshot: snapshot,
                                   ),
                                 );
                           },
@@ -192,6 +220,28 @@ class _BookingConfirmScreenState extends ConsumerState<BookingConfirmScreen> {
           ),
         );
       },
+    );
+  }
+
+  FamilyMemberModel _resolveMemberForPatient({
+    required List<FamilyMemberModel> members,
+    required PatientProfile? patient,
+    required PatientOption? selectedPatient,
+  }) {
+    if (selectedPatient == null || selectedPatient.id == PatientOption.selfId) {
+      return resolveSelectedProfileMember(
+        members: members,
+        patient: patient,
+        selectedMemberId: profilePrimaryLocalId,
+      );
+    }
+    for (final member in members) {
+      if (member.id == selectedPatient.id) return member;
+    }
+    return resolveSelectedProfileMember(
+      members: members,
+      patient: patient,
+      selectedMemberId: profilePrimaryLocalId,
     );
   }
 }

@@ -50,6 +50,13 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () => context.push('/notifications/preferences'),
           ),
           ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Privacy & sharing'),
+            subtitle: const Text('Manage facility access to your health data'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/profile/privacy'),
+          ),
+          ListTile(
             leading: const Icon(Icons.lock_outline),
             title: const Text('Backup & Restore'),
             subtitle: const Text('Encrypted Health Vault (.healthvault)'),

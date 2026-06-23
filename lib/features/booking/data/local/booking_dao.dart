@@ -46,24 +46,28 @@ class BookingDao {
     final db = await _db;
     final id = localId ?? booking.referenceNumber;
     final now = updatedAt ?? DateTime.now().toUtc();
-    await db.insert('bookings', {
-      'id': id,
-      'reference': booking.referenceNumber,
-      'data_json': jsonEncode({
-        'referenceNumber': booking.referenceNumber,
-        'providerId': booking.providerId,
-        'providerName': booking.providerName,
-        'facilityName': booking.facilityName,
-        'date': booking.date.toIso8601String(),
-        'time': booking.time,
-        'durationMinutes': booking.durationMinutes,
-        'patientName': booking.patientName,
-        'notes': booking.notes,
-        'syncStatus': syncStatus,
-        'updatedAt': now.toIso8601String(),
-      }),
-      'created_at': now.toIso8601String(),
-    });
+    await db.insert(
+      'bookings',
+      {
+        'id': id,
+        'reference': booking.referenceNumber,
+        'data_json': jsonEncode({
+          'referenceNumber': booking.referenceNumber,
+          'providerId': booking.providerId,
+          'providerName': booking.providerName,
+          'facilityName': booking.facilityName,
+          'date': booking.date.toIso8601String(),
+          'time': booking.time,
+          'durationMinutes': booking.durationMinutes,
+          'patientName': booking.patientName,
+          'notes': booking.notes,
+          'syncStatus': syncStatus,
+          'updatedAt': now.toIso8601String(),
+        }),
+        'created_at': now.toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     return booking;
   }
 

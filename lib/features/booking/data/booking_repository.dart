@@ -1,12 +1,14 @@
 import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:smarthealth_shep/core/config/app_config.dart';
 import 'package:smarthealth_shep/core/exceptions/network_exception.dart';
 import 'package:smarthealth_shep/features/appointments/data/appointments_repository.dart';
 import 'package:smarthealth_shep/features/booking/data/local/booking_dao.dart';
 import 'package:smarthealth_shep/features/family/data/local/family_member_dao.dart';
 import 'package:smarthealth_shep/features/booking/models/booking_confirmation.dart';
+import 'package:smarthealth_shep/features/booking/models/booking_consent_options.dart';
 import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
 import 'package:smarthealth_shep/features/booking/models/time_slot.dart';
 import 'package:smarthealth_shep/shared/data/local/provider_dao.dart';
@@ -188,7 +190,7 @@ class BookingRepository {
     return null;
   }
 
-  /// Confirms booking offline-first: saves locally, queues sync when offline.
+  /// Confirms booking: saves locally, then POSTs to server when online.
   Future<BookingResult> confirmBooking({
     required ProviderModel provider,
     required DateTime date,
@@ -197,12 +199,25 @@ class BookingRepository {
     String? notes,
     String? facilityId,
     String? serviceId,
+    BookingConsentOptions? consent,
+    Map<String, dynamic>? profileSnapshot,
   }) async {
     final localId = 'appt_${DateTime.now().millisecondsSinceEpoch}';
     final reference = await _bookingDao.nextReferenceNumber();
     final now = DateTime.now().toUtc();
 
     final scheduledAt = _combineDateTime(date, time);
+    final resolvedFacilityId = await _resolveFacilityId(
+      provider: provider,
+      facilityId: facilityId,
+    );
+    if (resolvedFacilityId == null) {
+      throw StateError(
+        'Could not determine the facility for this booking. '
+        'Please go back and try again from the facility page.',
+      );
+    }
+
     final confirmation = BookingConfirmation(
       referenceNumber: reference,
       providerId: provider.id,
@@ -214,18 +229,6 @@ class BookingRepository {
       patientName: patient.name,
       notes: notes?.trim().isEmpty ?? true ? null : notes?.trim(),
     );
-
-    final payload = <String, dynamic>{
-      'facilityId': facilityId ?? provider.id,
-      'providerId': provider.id,
-      'scheduledAt': scheduledAt.toUtc().toIso8601String(),
-      'durationMinutes': _defaultDurationMinutes,
-    };
-    if (serviceId != null) payload['serviceId'] = serviceId;
-    if (patient.id != PatientOption.selfId) {
-      payload['familyMemberId'] = patient.id;
-    }
-    if (confirmation.notes != null) payload['notes'] = confirmation.notes;
 
     await _bookingDao.saveConfirmed(
       confirmation,
@@ -242,27 +245,65 @@ class BookingRepository {
 
     final online = await isOnline();
 
+    final bookingConsent = consent ?? const BookingConsentOptions();
+
     if (online) {
       try {
         developer.log('Submitting booking online', name: _logName);
-        await _syncService.enqueue(
-          mutationType: SyncMutationType.create,
-          entityType: SyncEntityType.appointment,
-          entityId: localId,
-          payload: payload,
-          clientUpdatedAt: now,
+        final serverAppointment = await _api.createAppointment(
+          facilityId: resolvedFacilityId,
+          providerId: provider.id,
+          scheduledAt: scheduledAt,
+          durationMinutes: _defaultDurationMinutes,
+          serviceId: serviceId,
+          familyMemberId:
+              patient.id != PatientOption.selfId ? patient.id : null,
+          notes: confirmation.notes,
+          paymentMethod: bookingConsent.paymentMethod.apiValue,
+          shareProfile: bookingConsent.toShareProfileFlags(),
+          sharedProfileSnapshot: profileSnapshot,
+          receiveEncounterSummary: bookingConsent.receiveEncounterSummary,
+          enableOngoingCare: bookingConsent.enableOngoingCare,
         );
-        final syncResult = await _syncService.syncNow(
-          trigger: SyncTrigger.queueMutation,
-        );
-        final pending = syncResult.failed > 0 || syncResult.needsManualRetry > 0;
-        return BookingResult(
-          confirmation: confirmation,
-          isPendingSync: pending,
+        await _appointmentsRepository.replaceLocalWithServer(
           localId: localId,
+          serverAppointment: serverAppointment,
         );
-      } on NetworkException {
-        developer.log('Online submit failed — queued for retry', name: _logName);
+        final serverReference =
+            serverAppointment['referenceNumber'] as String? ?? reference;
+        final serverId = serverAppointment['id'] as String? ?? localId;
+        return BookingResult(
+          confirmation: BookingConfirmation(
+            referenceNumber: serverReference,
+            providerId: confirmation.providerId,
+            providerName: confirmation.providerName,
+            facilityName: confirmation.facilityName,
+            date: confirmation.date,
+            time: confirmation.time,
+            durationMinutes: confirmation.durationMinutes,
+            patientName: confirmation.patientName,
+            notes: confirmation.notes,
+          ),
+          isPendingSync: false,
+          localId: serverId,
+        );
+      } on NetworkException catch (error) {
+        developer.log(
+          'Online submit failed',
+          name: _logName,
+          error: error,
+        );
+        throw StateError(
+          'Could not confirm booking with the server. Please try again.',
+        );
+      } on DioException catch (error) {
+        final message = _bookingErrorMessage(error);
+        developer.log(
+          'Booking API rejected: $message',
+          name: _logName,
+          error: error,
+        );
+        throw StateError(message);
       } catch (error, stackTrace) {
         developer.log(
           'Booking sync failed',
@@ -272,6 +313,27 @@ class BookingRepository {
         );
         throw StateError('Could not confirm booking with the server. Please try again.');
       }
+    }
+
+    final payload = <String, dynamic>{
+      'facilityId': resolvedFacilityId,
+      'providerId': provider.id,
+      'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+      'durationMinutes': _defaultDurationMinutes,
+    };
+    if (serviceId != null) payload['serviceId'] = serviceId;
+    if (patient.id != PatientOption.selfId) {
+      payload['familyMemberId'] = patient.id;
+    }
+    if (confirmation.notes != null) payload['notes'] = confirmation.notes;
+    payload['paymentMethod'] = bookingConsent.paymentMethod.apiValue;
+    payload['shareProfile'] = bookingConsent.toShareProfileFlags();
+    if (profileSnapshot != null && profileSnapshot.isNotEmpty) {
+      payload['sharedProfileSnapshot'] = profileSnapshot;
+    }
+    payload['receiveEncounterSummary'] = bookingConsent.receiveEncounterSummary;
+    if (bookingConsent.enableOngoingCare) {
+      payload['enableOngoingCare'] = true;
     }
 
     developer.log('Booking saved offline — queued for sync', name: _logName);
@@ -330,5 +392,39 @@ class BookingRepository {
     final hour = int.parse(parts[0]);
     final minute = int.parse(parts[1]);
     return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  Future<String?> _resolveFacilityId({
+    required ProviderModel provider,
+    String? facilityId,
+  }) async {
+    if (facilityId != null && facilityId.isNotEmpty) return facilityId;
+    if (provider.facilityId != null && provider.facilityId!.isNotEmpty) {
+      return provider.facilityId;
+    }
+    if (await isOnline()) {
+      final remote = await _api.getProviderById(provider.id);
+      final remoteFacilityId = remote?.facilityId;
+      if (remoteFacilityId != null && remoteFacilityId.isNotEmpty) {
+        return remoteFacilityId;
+      }
+    }
+    return null;
+  }
+
+  String _bookingErrorMessage(DioException error) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message'] ?? data['error'];
+      if (message is String && message.isNotEmpty) return message;
+    }
+    final status = error.response?.statusCode;
+    if (status == 409) {
+      return 'That time slot is no longer available. Please choose another time.';
+    }
+    if (status == 401 || status == 403) {
+      return 'Please sign in again to complete your booking.';
+    }
+    return 'Could not confirm booking with the server. Please try again.';
   }
 }

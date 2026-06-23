@@ -60,6 +60,15 @@ class AppointmentDao {
     await save(appointment);
   }
 
+  Future<void> deleteById(String id) async {
+    final db = await _db;
+    await db.delete(
+      'bookings',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<bool> isEmpty() async {
     final db = await _db;
     final count = Sqflite.firstIntValue(

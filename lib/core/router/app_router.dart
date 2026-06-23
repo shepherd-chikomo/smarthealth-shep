@@ -27,6 +27,7 @@ import 'package:smarthealth_shep/features/profile/profile_edit_focus.dart';
 import 'package:smarthealth_shep/features/profile/emergency_medical_profile_screen.dart';
 import 'package:smarthealth_shep/features/profile/profile_completion_screen.dart';
 import 'package:smarthealth_shep/features/profile/backup_restore_screen.dart';
+import 'package:smarthealth_shep/features/profile/privacy_sharing_screen.dart';
 import 'package:smarthealth_shep/features/profile/settings_screen.dart';
 import 'package:smarthealth_shep/features/facility/facility_detail_screen.dart';
 import 'package:smarthealth_shep/features/facility/facility_service_picker_screen.dart';
@@ -308,6 +309,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'settings',
                     builder: (context, state) => const SettingsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'privacy',
+                    builder: (context, state) => const PrivacySharingScreen(),
                   ),
                   GoRoute(
                     path: 'backup',

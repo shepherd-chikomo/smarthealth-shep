@@ -93,6 +93,51 @@ class ApiService {
     return ProviderModel.fromJson(data);
   }
 
+  /// Creates an appointment on the server (requires authenticated Dio).
+  Future<Map<String, dynamic>> createAppointment({
+    required String facilityId,
+    required String providerId,
+    required DateTime scheduledAt,
+    int durationMinutes = 30,
+    String? serviceId,
+    String? familyMemberId,
+    String? notes,
+    String? paymentMethod,
+    Map<String, bool>? shareProfile,
+    Map<String, dynamic>? sharedProfileSnapshot,
+    bool? receiveEncounterSummary,
+    bool? enableOngoingCare,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/appointments',
+        data: {
+          'facilityId': facilityId,
+          'providerId': providerId,
+          'scheduledAt': scheduledAt.toUtc().toIso8601String(),
+          'durationMinutes': durationMinutes,
+          if (serviceId != null) 'serviceId': serviceId,
+          if (familyMemberId != null) 'familyMemberId': familyMemberId,
+          if (notes != null) 'notes': notes,
+          if (paymentMethod != null) 'paymentMethod': paymentMethod,
+          if (shareProfile != null) 'shareProfile': shareProfile,
+          if (sharedProfileSnapshot != null && sharedProfileSnapshot.isNotEmpty)
+            'sharedProfileSnapshot': sharedProfileSnapshot,
+          if (receiveEncounterSummary != null)
+            'receiveEncounterSummary': receiveEncounterSummary,
+          if (enableOngoingCare == true) 'enableOngoingCare': true,
+        },
+      );
+      final appointment = response.data?['appointment'];
+      if (appointment is! Map<String, dynamic>) {
+        throw NetworkException('Invalid appointment response from server');
+      }
+      return appointment;
+    } on DioException catch (error) {
+      throw _mapDioException(error);
+    }
+  }
+
   Future<List<({String facilityType, String label, int count})>>
       fetchFacilityTypeCatalog() async {
     final response = await _get<Map<String, dynamic>>(

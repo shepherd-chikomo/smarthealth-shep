@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_event.dart';
 import 'package:smarthealth_shep/features/booking/bloc/booking_state.dart';
 import 'package:smarthealth_shep/features/booking/data/booking_repository.dart';
+import 'package:smarthealth_shep/features/booking/models/booking_consent_options.dart';
 import 'package:smarthealth_shep/features/booking/models/patient_option.dart';
 
 const _logName = 'BookingBloc';
@@ -24,6 +25,10 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<DateSelected>(_onDateSelected);
     on<TimeSelected>(_onTimeSelected);
     on<PatientSelected>(_onPatientSelected);
+    on<ProfileShareToggled>(_onProfileShareToggled);
+    on<PaymentMethodSelected>(_onPaymentMethodSelected);
+    on<EncounterSummaryConsentChanged>(_onEncounterSummaryConsentChanged);
+    on<OngoingCareConsentChanged>(_onOngoingCareConsentChanged);
     on<BookingConfirmed>(_onBookingConfirmed);
 
     add(LoadAvailability(providerId));
@@ -165,6 +170,60 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     );
   }
 
+  void _onProfileShareToggled(
+    ProfileShareToggled event,
+    Emitter<BookingState> emit,
+  ) {
+    final fields = Set<BookingProfileShareField>.from(state.consent.sharedFields);
+    if (event.enabled) {
+      fields.add(event.field);
+    } else {
+      fields.remove(event.field);
+    }
+    emit(
+      state.copyWith(
+        consent: state.consent.copyWith(sharedFields: fields),
+        clearError: true,
+      ),
+    );
+  }
+
+  void _onPaymentMethodSelected(
+    PaymentMethodSelected event,
+    Emitter<BookingState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        consent: state.consent.copyWith(paymentMethod: event.method),
+        clearError: true,
+      ),
+    );
+  }
+
+  void _onEncounterSummaryConsentChanged(
+    EncounterSummaryConsentChanged event,
+    Emitter<BookingState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        consent: state.consent.copyWith(receiveEncounterSummary: event.enabled),
+        clearError: true,
+      ),
+    );
+  }
+
+  void _onOngoingCareConsentChanged(
+    OngoingCareConsentChanged event,
+    Emitter<BookingState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        consent: state.consent.copyWith(enableOngoingCare: event.enabled),
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> _onBookingConfirmed(
     BookingConfirmed event,
     Emitter<BookingState> emit,
@@ -203,6 +262,8 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         notes: notes,
         facilityId: state.facilityId,
         serviceId: state.serviceId,
+        consent: event.consent ?? state.consent,
+        profileSnapshot: event.profileSnapshot,
       );
 
       emit(

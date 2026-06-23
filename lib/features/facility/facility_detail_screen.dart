@@ -291,6 +291,7 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
           days: _availability,
           onSlotTap: (slot) {
             final params = {
+              'facilityId': widget.facilityId,
               if (slot.serviceId != null) 'serviceId': slot.serviceId!,
               'scheduledAt': slot.scheduledAt,
             };

@@ -31,6 +31,10 @@ class AppointmentModel extends Equatable {
     this.checkedInAt,
     this.syncStatus = 'synced',
     this.updatedAt,
+    this.sharedFields = const [],
+    this.validUntil,
+    this.receiveEncounterSummary = false,
+    this.facilityId,
   });
 
   final String id;
@@ -56,6 +60,12 @@ class AppointmentModel extends Equatable {
   final DateTime? checkedInAt;
   final String syncStatus;
   final DateTime? updatedAt;
+  final List<String> sharedFields;
+  final DateTime? validUntil;
+  final bool receiveEncounterSummary;
+  final String? facilityId;
+
+  bool get hasSharedProfile => sharedFields.isNotEmpty;
 
   DateTime get endAt =>
       scheduledAt.add(Duration(minutes: durationMinutes));
@@ -129,6 +139,10 @@ class AppointmentModel extends Equatable {
     DateTime? checkedInAt,
     String? syncStatus,
     DateTime? updatedAt,
+    List<String>? sharedFields,
+    DateTime? validUntil,
+    bool? receiveEncounterSummary,
+    String? facilityId,
     bool clearQueuePosition = false,
     bool clearQueueSessionId = false,
     bool clearCheckedInAt = false,
@@ -162,6 +176,11 @@ class AppointmentModel extends Equatable {
           clearCheckedInAt ? null : (checkedInAt ?? this.checkedInAt),
       syncStatus: syncStatus ?? this.syncStatus,
       updatedAt: updatedAt ?? this.updatedAt,
+      sharedFields: sharedFields ?? this.sharedFields,
+      validUntil: validUntil ?? this.validUntil,
+      receiveEncounterSummary:
+          receiveEncounterSummary ?? this.receiveEncounterSummary,
+      facilityId: facilityId ?? this.facilityId,
     );
   }
 
@@ -189,9 +208,14 @@ class AppointmentModel extends Equatable {
         'checkedInAt': checkedInAt?.toUtc().toIso8601String(),
         'syncStatus': syncStatus,
         'updatedAt': updatedAt?.toUtc().toIso8601String(),
+        'sharedFields': sharedFields,
+        'validUntil': validUntil?.toUtc().toIso8601String(),
+        'receiveEncounterSummary': receiveEncounterSummary,
+        'facilityId': facilityId,
       };
 
   factory AppointmentModel.fromApiJson(Map<String, dynamic> json) {
+    final sharedRaw = json['sharedFields'];
     return AppointmentModel(
       id: json['id'] as String,
       referenceNumber: json['referenceNumber'] as String,
@@ -202,10 +226,16 @@ class AppointmentModel extends Equatable {
       durationMinutes: json['durationMinutes'] as int? ?? 30,
       patientName: json['patientName'] as String? ?? 'Patient',
       patientId: json['patientId'] as String?,
+      facilityId: json['facilityId'] as String?,
       status: _parseApiStatus(json['status'] as String?),
       notes: json['notes'] as String?,
       syncStatus: 'synced',
       updatedAt: _parseOptionalDate(json['updatedAt']),
+      sharedFields: sharedRaw is List
+          ? sharedRaw.map((e) => e.toString()).toList()
+          : const [],
+      validUntil: _parseOptionalDate(json['validUntil']),
+      receiveEncounterSummary: json['receiveEncounterSummary'] == true,
     );
   }
 
@@ -235,6 +265,13 @@ class AppointmentModel extends Equatable {
       checkedInAt: _parseOptionalDate(json['checkedInAt']),
       syncStatus: json['syncStatus'] as String? ?? 'synced',
       updatedAt: _parseOptionalDate(json['updatedAt']),
+      sharedFields: (json['sharedFields'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      validUntil: _parseOptionalDate(json['validUntil']),
+      receiveEncounterSummary: json['receiveEncounterSummary'] == true,
+      facilityId: json['facilityId'] as String?,
     );
   }
 
@@ -321,5 +358,9 @@ class AppointmentModel extends Equatable {
         checkedInAt,
         syncStatus,
         updatedAt,
+        sharedFields,
+        validUntil,
+        receiveEncounterSummary,
+        facilityId,
       ];
 }
