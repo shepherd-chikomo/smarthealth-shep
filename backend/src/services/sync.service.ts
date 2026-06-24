@@ -2,6 +2,38 @@ import { query } from '../lib/db.js';
 import { assertFacilityAccess } from '../lib/facility-access.js';
 import type { AuthenticatedUser } from '../lib/auth.js';
 
+async function patientsForIds(patientIds: string[]) {
+  const unique = [...new Set(patientIds.filter(Boolean))];
+  if (unique.length === 0) return [];
+
+  const rows = await query(
+    `SELECT pr.id, pr.first_name AS "firstName", pr.last_name AS "lastName",
+            pr.phone, pr.email, pr.date_of_birth AS "dateOfBirth", pr.gender,
+            pr.national_id AS "nationalId", pr.metadata
+     FROM public.profiles pr
+     WHERE pr.id = ANY($1::uuid[])`,
+    [unique],
+  );
+
+  return rows.rows.map((r) => {
+    const meta = (r.metadata ?? {}) as Record<string, unknown>;
+    const medicalAid = meta.medicalAid as Record<string, unknown> | undefined;
+    return {
+      id: r.id,
+      firstName: r.firstName,
+      lastName: r.lastName,
+      phone: r.phone,
+      email: r.email,
+      dateOfBirth: r.dateOfBirth,
+      gender: r.gender,
+      nationalId: r.nationalId,
+      smarthealthPatientId: meta.smarthealthPatientId ?? null,
+      insuranceInfo: medicalAid?.provider ?? medicalAid?.scheme ?? null,
+      metadata: meta,
+    };
+  });
+}
+
 const CONSULTATION_FIELDS = [
   'chief_complaint',
   'history_of_present_illness',
@@ -41,9 +73,16 @@ export async function bootstrap(
     [facilityId],
   );
 
+  const patientIds = [
+    ...queue.rows.map((r) => r.patientId as string),
+    ...appointments.rows.map((r) => r.patientId as string),
+  ];
+  const patients = await patientsForIds(patientIds);
+
   return {
     queue: queue.rows,
     appointments: appointments.rows,
+    patients,
     syncedAt: new Date().toISOString(),
   };
 }
@@ -74,9 +113,16 @@ export async function delta(
     [facilityId, since.toISOString()],
   );
 
+  const patientIds = [
+    ...queue.rows.map((r) => r.patientId as string),
+    ...appointments.rows.map((r) => r.patientId as string),
+  ];
+  const patients = await patientsForIds(patientIds);
+
   return {
     appointments: appointments.rows,
     queue: queue.rows,
+    patients,
     cursor: new Date().toISOString(),
   };
 }

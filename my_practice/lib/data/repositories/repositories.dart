@@ -39,9 +39,21 @@ class DashboardRepository {
       try {
         final data = await api!.getDashboard();
         return data['stats'] as Map<String, dynamic>? ?? data;
-      } catch (_) {}
+      } catch (e) {
+        // Fall through to local aggregates but surface the API failure.
+        final local = await _localDashboardStats();
+        return {
+          ...local,
+          'syncStatus': 'degraded',
+          'apiError': e.toString(),
+        };
+      }
     }
 
+    return _localDashboardStats();
+  }
+
+  Future<Map<String, dynamic>> _localDashboardStats() async {
     final appointments = await (db.select(db.appointments)
           ..where((t) => t.facilityId.equals(facilityId)))
         .get();
@@ -67,9 +79,9 @@ class DashboardRepository {
       'appointmentsToday': todayAppts.length,
       'queueSize': queue.where((q) => q.status != 'completed').length,
       'encountersCompleted': completed.length,
-      'revenueToday': 1250.0,
-      'notifications': 3,
-      'syncStatus': MyPracticeConfig.skipAuthForTesting ? 'simulated' : 'online',
+      'revenueToday': null,
+      'notifications': 0,
+      'syncStatus': MyPracticeConfig.skipAuthForTesting ? 'simulated' : 'local',
     };
   }
 }
@@ -124,9 +136,10 @@ class QueueRepository {
   }
 
   Future<void> updateStatus(String id, String status) async {
+    final normalized = _normalizeQueueStatus(status);
     await (db.update(db.queueEntries)..where((t) => t.id.equals(id))).write(
           QueueEntriesCompanion(
-            status: Value(status),
+            status: Value(normalized),
             updatedAt: Value(DateTime.now().toUtc()),
             syncStatus: const Value('pending'),
           ),
@@ -134,7 +147,7 @@ class QueueRepository {
 
     if (api != null) {
       try {
-        await api!.updateQueueStatus(id, status);
+        await api!.updateQueueStatus(id, normalized);
         await (db.update(db.queueEntries)..where((t) => t.id.equals(id))).write(
               const QueueEntriesCompanion(
                 syncStatus: Value('synced'),
@@ -148,8 +161,23 @@ class QueueRepository {
       entityType: 'queue',
       entityId: id,
       operation: 'updateStatus',
-      payload: {'status': status},
+      payload: {'status': normalized},
     );
+  }
+
+  /// Pull queue/appointments from server and hydrate any missing patient rows.
+  Future<void> refreshFromServer() async {
+    if (sync == null) return;
+    await sync!.syncAll(facilityId);
+  }
+
+  static String _normalizeQueueStatus(String status) {
+    switch (status) {
+      case 'investigations':
+        return 'in_progress';
+      default:
+        return status;
+    }
   }
 }
 
@@ -230,6 +258,47 @@ class PatientRepository {
   }
 
   Future<void> purgeSeedPatients() => _purgeSeedPatients();
+
+  /// Fetches charts for queue/appointment patients missing from local cache.
+  Future<void> hydrateMissingQueuePatients() async {
+    if (api == null) return;
+
+    final queue = await (db.select(db.queueEntries)
+          ..where((t) => t.facilityId.equals(facilityId)))
+        .get();
+    final appointments = await (db.select(db.appointments)
+          ..where((t) => t.facilityId.equals(facilityId)))
+        .get();
+
+    final ids = <String>{
+      for (final q in queue)
+        if (q.patientId.isNotEmpty && q.patientId != 'unknown') q.patientId,
+      for (final a in appointments)
+        if (a.patientId.isNotEmpty && a.patientId != 'unknown') a.patientId,
+    };
+    if (ids.isEmpty) return;
+
+    final cached = await (db.select(db.patients)
+          ..where((t) => t.id.isIn(ids.toList())))
+        .get();
+    final cachedIds = cached.map((p) => p.id).toSet();
+    final missing = ids.difference(cachedIds);
+
+    for (final patientId in missing) {
+      try {
+        final chart = await api!.getPatientChart(patientId);
+        await _cacheChart(chart);
+      } catch (_) {
+        // Best-effort — sync bootstrap may have already populated the row.
+      }
+    }
+  }
+
+  Future<void> cacheFromApiMaps(List<Map<String, dynamic>> maps) async {
+    for (final m in maps) {
+      await _cachePatient(_patientFromApi(m));
+    }
+  }
 
   bool _isSeedPatient(Patient p) =>
       p.id.startsWith('seed-patient-') ||
@@ -437,7 +506,9 @@ final facilityRepositoryProvider = Provider<FacilityRepository>((ref) {
   final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
   return FacilityRepository(
     db: db,
-    api: FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
+    api: MyPracticeConfig.skipAuthForTesting
+        ? null
+        : FacilityApiClient(ref.watch(facilityDioProvider), facilityId: facilityId),
     facilityId: facilityId,
   );
 });

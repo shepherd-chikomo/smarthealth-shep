@@ -17,14 +17,13 @@ abstract final class MyPracticeConfig {
     defaultValue: 15,
   );
 
-  static bool get useSeedData => devMode;
+  static bool get useSeedData => skipAuthForTesting;
 
-  /// True only when DEV_MODE or SKIP_AUTH dart-defines are explicitly set.
-  /// Deliberately does NOT include kDebugMode alone so that debug builds
-  /// against a real server (pilot mode) source all data from the backend.
+  /// True only when SKIP_AUTH is set — keeps DEV_MODE=true + real auth (remote/pilot)
+  /// from loading 1000+ local seed patients.
   static bool get useLocalDevSeed {
     if (kReleaseMode) return false;
-    return devMode || skipAuthForTesting;
+    return skipAuthForTesting;
   }
 
   /// True ONLY when the SKIP_AUTH dart-define is set.

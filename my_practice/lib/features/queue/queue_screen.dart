@@ -1,43 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:my_practice/data/local/app_database.dart';
 import 'package:my_practice/data/repositories/repositories.dart';
+import 'package:my_practice/data/sync/sync_notifier.dart';
+import 'package:my_practice/data/sync/sync_state.dart';
 import 'package:my_practice/design_system/tokens/practice_design_tokens.dart';
 import 'package:my_practice/design_system/widgets/practice_design_widgets.dart';
 import 'package:my_practice/shared/utils/patient_formatters.dart';
-import 'package:smarthealth_core/smarthealth_core.dart';
 
 class QueueScreen extends ConsumerWidget {
   const QueueScreen({super.key});
 
   static const _sections = [
     ('waiting', 'Waiting', Icons.schedule),
+    ('called', 'Called', Icons.notifications_active_outlined),
     ('in_progress', 'In Consultation', Icons.medical_services_outlined),
-    ('investigations', 'Investigations', Icons.biotech_outlined),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final queueStream = ref.watch(queueRepositoryProvider).watchEnrichedQueue();
+    final syncState = ref.watch(syncNotifierProvider);
 
     return StreamBuilder<List<QueueEntryWithPatient>>(
       stream: queueStream,
       builder: (context, snapshot) {
         final items = snapshot.data ?? [];
         if (items.isEmpty) {
-          return const PracticeEmptyState(
-            title: 'Queue is empty',
-            message: 'Patients will appear here when they check in.',
-            icon: Icons.people_outline,
+          return Column(
+            children: [
+              if (syncState.phase == SyncPhase.error)
+                _SyncBanner(message: syncState.errorMessage ?? 'Sync failed'),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () => _refreshQueue(ref),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 120),
+                      PracticeEmptyState(
+                        title: 'Queue is empty',
+                        message:
+                            'Patients will appear here when they check in. Pull to refresh.',
+                        icon: Icons.people_outline,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         }
 
         return RefreshIndicator(
-          onRefresh: () async {},
+          onRefresh: () => _refreshQueue(ref),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (syncState.phase == SyncPhase.error)
+                _SyncBanner(message: syncState.errorMessage ?? 'Sync failed'),
+              if (syncState.lastSyncedAt != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Last synced ${PatientFormatters.formatRelativeArrival(syncState.lastSyncedAt!.toLocal())}',
+                    style: PracticeDesignTokens.metadata(context),
+                  ),
+                ),
               Text('Patient Queue', style: PracticeDesignTokens.pageTitle(context)),
               Text(
                 'Live triage and consultation flow',
@@ -82,7 +111,36 @@ class QueueScreen extends ConsumerWidget {
   }
 
   static bool _knownStatus(String status) =>
-      _sections.any((s) => s.$1 == status);
+      _sections.any((s) => s.$1 == status) || status == 'completed';
+}
+
+Future<void> _refreshQueue(WidgetRef ref) async {
+  await ref.read(syncNotifierProvider.notifier).syncNow();
+}
+
+class _SyncBanner extends StatelessWidget {
+  const _SyncBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: PracticeDesignTokens.dangerSoft,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        message,
+        style: PracticeDesignTokens.metadata(context).copyWith(
+          color: PracticeDesignTokens.danger,
+        ),
+      ),
+    );
+  }
 }
 
 class _QueueSection extends StatelessWidget {

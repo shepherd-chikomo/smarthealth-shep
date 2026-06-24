@@ -42,7 +42,7 @@ class SeedDataLoader {
   ];
 
   Future<void> loadIfNeeded() async {
-    if (!MyPracticeConfig.devMode) return;
+    if (!MyPracticeConfig.skipAuthForTesting) return;
 
     final existing = await _db.select(_db.patients).get();
     if (existing.length < 100) {

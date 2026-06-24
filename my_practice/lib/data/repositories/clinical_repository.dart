@@ -10,6 +10,21 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
+final providerIdProvider = Provider<String?>((ref) {
+  if (MyPracticeConfig.skipAuthForTesting) return 'seed-provider-001';
+  final providerId = ref.watch(authStateProvider).profile?.provider?.id;
+  if (providerId == null || providerId.isEmpty) return null;
+  return providerId;
+});
+
+class ProviderProfileRequired implements Exception {
+  const ProviderProfileRequired();
+
+  @override
+  String toString() =>
+      'Link your practitioner profile before starting clinical encounters.';
+}
+
 final clinicalRepositoryProvider = Provider<ClinicalRepository>((ref) {
   final facilityId = ref.watch(facilityIdProvider) ?? 'seed-facility-001';
   final providerId = ref.watch(providerIdProvider);
@@ -22,11 +37,6 @@ final clinicalRepositoryProvider = Provider<ClinicalRepository>((ref) {
     facilityId: facilityId,
     providerId: providerId,
   );
-});
-
-final providerIdProvider = Provider<String>((ref) {
-  final auth = ref.watch(authStateProvider);
-  return auth.profile?.provider?.id ?? auth.profile?.id ?? 'seed-provider-001';
 });
 
 class ClinicalRepository {
@@ -42,7 +52,13 @@ class ClinicalRepository {
   final FacilityApiClient? api;
   final SyncEngine? sync;
   final String facilityId;
-  final String providerId;
+  final String? providerId;
+
+  String get _effectiveProviderId {
+    if (providerId != null && providerId!.isNotEmpty) return providerId!;
+    if (MyPracticeConfig.skipAuthForTesting) return 'seed-provider-001';
+    throw const ProviderProfileRequired();
+  }
 
   Future<String> ensureConsultation({
     String? consultationId,
@@ -60,13 +76,14 @@ class ClinicalRepository {
       }
     }
 
+    final effectiveProviderId = _effectiveProviderId;
     final localId = consultationId ?? _uuid.v4();
     final now = DateTime.now().toUtc();
     await db.into(db.consultations).insert(
           ConsultationsCompanion.insert(
             id: localId,
             facilityId: facilityId,
-            providerId: providerId,
+            providerId: effectiveProviderId,
             patientId: patientId,
             appointmentId: Value(appointmentId),
             startedAt: Value(now),
@@ -89,10 +106,11 @@ class ClinicalRepository {
   ) async {
     if (row.serverId != null || api == null) return;
 
+    final effectiveProviderId = _effectiveProviderId;
     try {
       final res = await api!.createConsultation({
         'patientId': row.patientId,
-        'providerId': providerId,
+        'providerId': effectiveProviderId,
         if (appointmentId != null) 'appointmentId': appointmentId,
         if (walkInSessionId != null) 'walkInSessionId': walkInSessionId,
       });
@@ -113,7 +131,7 @@ class ClinicalRepository {
         operation: 'create',
         payload: {
           'patient_id': row.patientId,
-          'provider_id': providerId,
+          'provider_id': effectiveProviderId,
           if (walkInSessionId != null) 'walk_in_session_id': walkInSessionId,
           if (appointmentId != null) 'appointment_id': appointmentId,
         },
@@ -234,12 +252,13 @@ class ClinicalRepository {
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now().toUtc();
+    final effectiveProviderId = _effectiveProviderId;
     await db.into(db.diagnoses).insert(
           DiagnosesCompanion.insert(
             id: id,
             consultationId: consultationId,
             patientId: patientId,
-            providerId: providerId,
+            providerId: effectiveProviderId,
             facilityId: facilityId,
             icd11Code: Value(icd11Code),
             description: description,
@@ -259,7 +278,7 @@ class ClinicalRepository {
       await api!.createDiagnosis(
         serverId,
         patientId: patientId,
-        providerId: providerId,
+        providerId: effectiveProviderId,
         icd11Code: icd11Code,
         description: description,
         isPrimary: true,

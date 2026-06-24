@@ -52,7 +52,13 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
   }
 
   Future<void> _loadPatient() async {
-    final p = await ref.read(patientRepositoryProvider).findById(widget.patientId);
+    var p = await ref.read(patientRepositoryProvider).findById(widget.patientId);
+    if (p == null && !MyPracticeConfig.skipAuthForTesting) {
+      try {
+        await ref.read(patientRepositoryProvider).getChart(widget.patientId);
+        p = await ref.read(patientRepositoryProvider).findById(widget.patientId);
+      } catch (_) {}
+    }
     if (mounted) setState(() => _patient = p);
   }
 
@@ -82,24 +88,32 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
       }
     }
 
-    final id = await clinical.ensureConsultation(
-      consultationId: _consultationId,
-      patientId: widget.patientId,
-      walkInSessionId: widget.queueEntryId,
-    );
+    try {
+      final id = await clinical.ensureConsultation(
+        consultationId: _consultationId,
+        patientId: widget.patientId,
+        walkInSessionId: widget.queueEntryId,
+      );
 
-    if (widget.queueEntryId != null) {
-      await ref.read(queueRepositoryProvider).updateStatus(
-            widget.queueEntryId!,
-            'in_progress',
-          );
+      if (widget.queueEntryId != null) {
+        await ref.read(queueRepositoryProvider).updateStatus(
+              widget.queueEntryId!,
+              'in_progress',
+            );
+      }
+
+      final row = await (db.select(db.consultations)
+            ..where((t) => t.id.equals(id)))
+          .getSingle();
+      _hydrateFromRow(row);
+      if (mounted) setState(() => _consultationId = id);
+    } on ProviderProfileRequired catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+      context.pop();
     }
-
-    final row = await (db.select(db.consultations)
-          ..where((t) => t.id.equals(id)))
-        .getSingle();
-    _hydrateFromRow(row);
-    setState(() => _consultationId = id);
   }
 
   void _hydrateFromRow(Consultation existing) {

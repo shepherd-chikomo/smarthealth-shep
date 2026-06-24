@@ -28,9 +28,11 @@ Set-Location (Join-Path $RepoRoot "my_practice")
 
 # No DEV_MODE, no SKIP_AUTH, no dev-cert trust — identical to production behaviour
 # in a debug build so you can iterate quickly without a release build.
+# Trust dev TLS when hitting dev.smarthealth.co.zw from a debug build.
 $runArgs = @(
   "run",
-  "--dart-define=API_BASE_URL=$apiUrl"
+  "--dart-define=API_BASE_URL=$apiUrl",
+  "--dart-define=TRUST_DEV_CERTIFICATES=true"
 )
 
 if ($DeviceId) {

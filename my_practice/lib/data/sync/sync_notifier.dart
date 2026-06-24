@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_practice/core/config/my_practice_config.dart';
 import 'package:my_practice/core/providers/app_providers.dart';
+import 'package:my_practice/data/repositories/repositories.dart';
 import 'package:my_practice/data/sync/sync_engine.dart';
 import 'package:my_practice/data/sync/sync_state.dart';
 
@@ -70,6 +71,7 @@ class SyncNotifier extends Notifier<SyncState> {
     state = state.copyWith(phase: SyncPhase.syncing, clearError: true);
     try {
       await engine.syncAll(facilityId);
+      await ref.read(patientRepositoryProvider).hydrateMissingQueuePatients();
       await _refreshPendingCount();
       state = state.copyWith(
         phase: SyncPhase.idle,

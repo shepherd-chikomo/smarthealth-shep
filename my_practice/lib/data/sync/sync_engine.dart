@@ -115,6 +115,7 @@ class SyncEngine {
       facilityId,
       now,
     );
+    await _applyPatients(delta['patients'] as List<dynamic>? ?? [], now);
 
     await _db.into(_db.syncCursors).insertOnConflictUpdate(
           SyncCursorsCompanion.insert(
@@ -136,6 +137,7 @@ class SyncEngine {
       facilityId,
       now,
     );
+    await _applyPatients(data['patients'] as List<dynamic>? ?? [], now);
   }
 
   Future<void> _applyQueue(
@@ -182,6 +184,49 @@ class SyncEngine {
               providerId: Value(m['providerId'] as String?),
               referenceNumber: Value(m['referenceNumber'] as String?),
               appointmentType: Value(m['appointmentType'] as String?),
+              syncStatus: const Value('synced'),
+            ),
+          );
+    }
+  }
+
+  Future<void> _applyPatients(List<dynamic> items, DateTime now) async {
+    for (final raw in items) {
+      if (raw is! Map<String, dynamic>) continue;
+      final m = raw;
+      final id = m['id'] as String?;
+      if (id == null || id.isEmpty) continue;
+      final metadata = m['metadata'];
+      final metaMap = metadata is Map<String, dynamic> ? metadata : null;
+      final insuranceRaw =
+          m['insuranceInfo'] ?? m['insurance_info'] ?? metaMap?['medicalAid'];
+      await _db.into(_db.patients).insertOnConflictUpdate(
+            PatientsCompanion.insert(
+              id: id,
+              serverId: Value(id),
+              firstName:
+                  m['firstName'] as String? ?? m['first_name'] as String? ?? '',
+              lastName:
+                  m['lastName'] as String? ?? m['last_name'] as String? ?? '',
+              phone: Value(m['phone'] as String?),
+              email: Value(m['email'] as String?),
+              nationalId: Value(
+                m['nationalId'] as String? ?? m['national_id'] as String?,
+              ),
+              smarthealthPatientId: Value(
+                m['smarthealthPatientId'] as String? ??
+                    metaMap?['smarthealthPatientId'] as String?,
+              ),
+              gender: Value(m['gender'] as String?),
+              dateOfBirth: Value(
+                m['dateOfBirth'] != null
+                    ? DateTime.tryParse(m['dateOfBirth'] as String)
+                    : m['date_of_birth'] != null
+                        ? DateTime.tryParse(m['date_of_birth'] as String)
+                        : null,
+              ),
+              insuranceInfo: Value(insuranceRaw?.toString()),
+              updatedAt: now,
               syncStatus: const Value('synced'),
             ),
           );
