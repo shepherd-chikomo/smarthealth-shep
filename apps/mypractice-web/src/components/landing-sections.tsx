@@ -222,10 +222,10 @@ export function GrowthSection() {
           </div>
         </div>
         <MarketingImage
-          src="/images/growth-team.jpg"
-          alt="Healthcare professionals discoverable across the MyHealth patient app"
-          width={800}
-          height={600}
+          src="/images/growth-patients.png"
+          alt="Healthcare professional connected to patients through MyPractice and MyHealth"
+          width={1536}
+          height={1024}
           className="h-auto w-full rounded-3xl shadow-xl"
         />
       </div>

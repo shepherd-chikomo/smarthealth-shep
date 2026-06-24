@@ -68,22 +68,26 @@ export function FloatingStatCard({
   title,
   subtitle,
   className = '',
+  iconClassName = 'bg-blue-50',
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   className?: string;
+  iconClassName?: string;
 }) {
   return (
     <div
-      className={`absolute rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-lg shadow-slate-200/60 ${className}`}
+      className={`absolute rounded-2xl border border-slate-100/90 bg-white/95 px-4 py-3 shadow-lg shadow-slate-300/50 backdrop-blur-sm ${className}`}
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#2563eb]">
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconClassName}`}
+        >
           {icon}
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-900">{title}</p>
+          <p className="text-sm font-bold leading-tight text-slate-900">{title}</p>
           <p className="text-xs text-slate-500">{subtitle}</p>
         </div>
       </div>
