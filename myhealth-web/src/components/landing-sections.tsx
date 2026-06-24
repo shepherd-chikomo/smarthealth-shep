@@ -460,7 +460,6 @@ export function DownloadSection() {
           <div className="mt-8">
             <StoreBadges />
           </div>
-          <p className="mt-4 text-sm text-slate-500">Store links coming soon.</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <ArrowLink href="#download">Download for Android</ArrowLink>
             <a href="#download" className="btn-secondary">
