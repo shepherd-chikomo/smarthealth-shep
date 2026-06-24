@@ -24,7 +24,7 @@ import {
   Users,
   WifiOff,
 } from 'lucide-react';
-import { ArrowLink, FeatureIconCard, SectionBadge } from '@/components/ui';
+import { ArrowLink, FeatureIconCard, IosDownloadLink, SectionBadge } from '@/components/ui';
 import { StoreBadges } from '@/components/store-badges';
 
 const features = [
@@ -200,55 +200,63 @@ const testimonials = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-sky-50 via-white to-teal-50">
-      <div className="section-pad grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+    <section className="hero-mesh">
+      <div className="hero-mesh-content section-pad grid items-center gap-14 lg:grid-cols-2 lg:gap-20 xl:gap-24">
         <div>
-          <div className="badge-pill mb-6">Powered by SmartHealth Africa</div>
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+          <div className="badge-pill mb-8">
+            <span className="text-[#0ea5e9]">•</span>
+            Powered by SmartHealth Africa
+          </div>
+          <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.25rem] xl:text-[4.75rem]">
             Take Control of Your{' '}
-            <span className="text-[#0ea5e9]">Healthcare Journey</span>
+            <span className="text-gradient-brand">Healthcare Journey</span>
           </h1>
-          <p className="mt-5 text-lg leading-relaxed text-slate-600">
+          <p className="mt-6 text-lg leading-relaxed text-slate-600 sm:text-xl lg:max-w-xl">
             MyHealth helps you find healthcare providers, manage appointments, store your health
             profile securely on your device, and access healthcare services wherever you are.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-10 flex flex-wrap gap-4">
             <ArrowLink href="#download">Download for Android</ArrowLink>
-            <a href="#download" className="btn-secondary">
-              Download for iPhone
-            </a>
+            <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
           </div>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-wrap gap-4">
             <a href="#features" className="btn-secondary">
-              <MapPin size={16} /> Find Healthcare Providers
+              <MapPin size={18} /> Find Healthcare Providers
             </a>
             <a href="#privacy" className="btn-secondary">
-              <Shield size={16} /> How We Protect Privacy
+              <Shield size={18} /> How We Protect Privacy
             </a>
           </div>
-          <div className="mt-6">
+          <div className="mt-8">
             <StoreBadges />
           </div>
-          <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
-            <span className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-[#0d9488]" /> Privacy-first
+          <div className="mt-10 flex flex-wrap gap-8 text-sm font-medium text-slate-600 sm:text-base">
+            <span className="flex items-center gap-2.5">
+              <ShieldCheck size={18} className="text-[#0d9488]" /> Privacy-first
             </span>
-            <span className="flex items-center gap-2">
-              <WifiOff size={16} className="text-[#0d9488]" /> Works offline
+            <span className="flex items-center gap-2.5">
+              <WifiOff size={18} className="text-[#0d9488]" /> Works offline
             </span>
-            <span className="flex items-center gap-2">
-              <Check size={16} className="text-[#0d9488]" /> Free for patients
+            <span className="flex items-center gap-2.5">
+              <Check size={18} className="text-[#0d9488]" /> Free for patients
             </span>
           </div>
         </div>
-        <div className="relative mx-auto w-full max-w-lg">
+        <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
           <Image
             src="/images/hero-family.jpg"
             alt="A diverse African family using the MyHealth app together"
             width={1920}
             height={1080}
             priority
-            className="h-auto w-full rounded-[2rem] shadow-xl shadow-slate-300/40"
+            className="h-auto w-full rounded-[2.5rem] shadow-2xl shadow-slate-300/50"
+          />
+          <Image
+            src="/images/phone-mockup.png"
+            alt="MyHealth app on a smartphone"
+            width={1024}
+            height={1536}
+            className="absolute -bottom-6 -right-4 w-[44%] drop-shadow-2xl sm:-right-6 lg:-bottom-8 lg:-right-10 lg:w-[42%]"
           />
         </div>
       </div>
@@ -449,32 +457,32 @@ export function TestimonialsSection() {
 
 export function DownloadSection() {
   return (
-    <section id="download" className="section-pad bg-gradient-to-br from-sky-50 to-white">
-      <div className="grid items-center gap-12 lg:grid-cols-2">
-        <div>
-          <SectionBadge>Get started today</SectionBadge>
-          <h2 className="section-title mt-4">Start managing your healthcare smarter today.</h2>
-          <p className="section-desc">
-            Download MyHealth for free and take control of your healthcare journey.
-          </p>
-          <div className="mt-8">
-            <StoreBadges />
+    <section id="download" className="hero-mesh border-t border-slate-100/80">
+      <div className="hero-mesh-content section-pad">
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+          <div>
+            <SectionBadge>Get started today</SectionBadge>
+            <h2 className="section-title mt-5">Start managing your healthcare smarter today.</h2>
+            <p className="section-desc">
+              Download MyHealth for free and take control of your healthcare journey.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-4">
+              <ArrowLink href="#download">Download for Android</ArrowLink>
+              <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
+            </div>
+            <div className="mt-8">
+              <StoreBadges />
+            </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <ArrowLink href="#download">Download for Android</ArrowLink>
-            <a href="#download" className="btn-secondary">
-              Download for iPhone
-            </a>
+          <div className="flex justify-center lg:justify-end">
+            <Image
+              src="/images/phone-mockup.png"
+              alt="MyHealth app screens"
+              width={1024}
+              height={1536}
+              className="h-auto w-full max-w-sm drop-shadow-2xl lg:max-w-md"
+            />
           </div>
-        </div>
-        <div className="flex justify-center">
-          <Image
-            src="/images/phone-mockup.png"
-            alt="MyHealth app screens"
-            width={1024}
-            height={1536}
-            className="h-auto w-full max-w-xs drop-shadow-2xl"
-          />
         </div>
       </div>
     </section>

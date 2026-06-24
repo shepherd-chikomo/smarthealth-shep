@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
-import { Heart, Menu, X } from 'lucide-react';
-import { site } from '@/lib/site';
+import { Download, Menu, X } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
 
 const nav = [
   { href: '#features', label: 'Features' },
@@ -16,14 +15,9 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0ea5e9] text-white shadow-md shadow-sky-500/30">
-            <Heart size={20} fill="currentColor" />
-          </span>
-          <div className="text-base font-bold text-slate-900">{site.name}</div>
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-slate-100/80 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8 lg:px-10">
+        <BrandLogo size={44} />
 
         <nav className="hidden items-center gap-8 md:flex">
           {nav.map((item) => (
@@ -39,6 +33,7 @@ export function SiteHeader() {
 
         <div className="hidden md:block">
           <a href="#download" className="btn-primary">
+            <Download size={18} />
             Get the App
           </a>
         </div>
@@ -54,7 +49,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-slate-100 bg-white px-4 py-4 md:hidden">
+        <div className="border-t border-slate-100 bg-white px-5 py-4 md:hidden">
           <div className="flex flex-col gap-3">
             {nav.map((item) => (
               <a
@@ -67,6 +62,7 @@ export function SiteHeader() {
               </a>
             ))}
             <a href="#download" className="btn-primary w-full" onClick={() => setOpen(false)}>
+              <Download size={18} />
               Get the App
             </a>
           </div>

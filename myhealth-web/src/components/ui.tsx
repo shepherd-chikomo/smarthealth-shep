@@ -34,9 +34,17 @@ export function FeatureIconCard({
 
 export function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
   return (
-    <a href={href} className="btn-primary">
+    <a href={href} className="btn-android">
       {children}
       <span aria-hidden>→</span>
+    </a>
+  );
+}
+
+export function IosDownloadLink({ children, href }: { children: React.ReactNode; href: string }) {
+  return (
+    <a href={href} className="btn-ios">
+      {children}
     </a>
   );
 }

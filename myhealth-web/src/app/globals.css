@@ -17,29 +17,40 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 70% 55% at 100% 0%, rgba(224, 247, 250, 0.65), transparent 55%),
+    radial-gradient(ellipse 65% 50% at 0% 100%, rgba(227, 242, 253, 0.6), transparent 55%),
+    var(--bg);
   color: var(--text);
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
 .section-pad {
-  @apply mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20;
+  @apply mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28;
 }
 
 .section-title {
-  @apply text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem] lg:leading-tight;
+  @apply text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl lg:leading-tight;
 }
 
 .section-desc {
-  @apply mt-4 max-w-2xl text-base text-slate-600 sm:text-lg;
+  @apply mt-5 max-w-2xl text-base text-slate-600 sm:text-lg lg:text-xl;
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#0ea5e9] px-6 py-3 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition hover:bg-[#0284c7];
+  @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#0ea5e9] px-7 py-3.5 text-sm font-semibold text-white shadow-md shadow-sky-500/25 transition hover:bg-[#0284c7] sm:px-8 sm:py-4 sm:text-base;
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-7 py-3.5 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 sm:px-8 sm:py-4 sm:text-base;
+}
+
+.btn-android {
+  @apply inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-sky-500/30 transition hover:brightness-105;
+}
+
+.btn-ios {
+  @apply inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#2dd4bf] to-[#0d9488] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-teal-500/30 transition hover:brightness-105;
 }
 
 .card {
@@ -47,7 +58,7 @@ body {
 }
 
 .badge-pill {
-  @apply inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#0284c7];
+  @apply inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50/80 px-4 py-2 text-xs font-medium tracking-wide text-[#0284c7];
 }
 
 .icon-box {
@@ -56,4 +67,30 @@ body {
 
 .icon-box-teal {
   @apply flex h-11 w-11 items-center justify-center rounded-full bg-teal-50 text-[#0d9488];
+}
+
+.hero-mesh {
+  position: relative;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.hero-mesh::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 58% 48% at 94% 6%, rgba(45, 212, 191, 0.24), transparent 72%),
+    radial-gradient(ellipse 52% 42% at 4% 96%, rgba(14, 165, 233, 0.2), transparent 70%),
+    radial-gradient(ellipse 45% 38% at 48% 42%, rgba(255, 255, 255, 0.95), transparent);
+  pointer-events: none;
+}
+
+.hero-mesh > .hero-mesh-content {
+  position: relative;
+  z-index: 1;
+}
+
+.text-gradient-brand {
+  @apply bg-gradient-to-r from-[#0ea5e9] via-[#06b6d4] to-[#14b8a6] bg-clip-text text-transparent;
 }

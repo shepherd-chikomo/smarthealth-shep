@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: 'MyHealth App — Your Health. Your Records. Your Control.',
   description:
     'MyHealth by SmartHealth Africa helps patients find healthcare providers, book appointments, and securely manage health records on their device.',
+  icons: {
+    icon: '/myhealth-icon.png',
+    apple: '/myhealth-icon.png',
+  },
   openGraph: {
     title: 'MyHealth by SmartHealth',
     description: 'Take control of your healthcare journey.',

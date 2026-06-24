@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Facebook, Heart, Instagram, Linkedin, Mail, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Mail, MapPin } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
 import { site } from '@/lib/site';
 
 function XIcon({ size = 16 }: { size?: number }) {
@@ -13,14 +14,9 @@ function XIcon({ size = 16 }: { size?: number }) {
 export function SiteFooter() {
   return (
     <footer className="bg-[#0f172a] text-slate-300">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-4 lg:px-8">
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-4 lg:px-10">
         <div className="lg:col-span-1">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0ea5e9] text-white">
-              <Heart size={20} fill="currentColor" />
-            </span>
-            <div className="font-bold text-white">{site.name}</div>
-          </div>
+          <BrandLogo variant="dark" size={44} />
           <p className="mt-4 text-sm leading-relaxed text-slate-400">
             Your Health. Your Records. Your Control. The patient-facing healthcare companion by
             SmartHealth Africa.
@@ -83,7 +79,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-5 py-6 text-xs text-slate-500 sm:flex-row sm:px-8 lg:px-10">
           <span>© {site.year} SmartHealth Africa. All rights reserved.</span>
           <Link href="https://smarthealth.africa" className="hover:text-slate-300">
             SmartHealth.africa
