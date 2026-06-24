@@ -5,7 +5,7 @@ export function HeroVisual() {
   return (
     <div className="relative mx-auto w-full max-w-[520px] lg:max-w-none">
       <MarketingImage
-        src="/images/hero-visual.png"
+        src="/images/hero-visual.jpg"
         alt="Healthcare professional using the MyPractice mobile app"
         width={512}
         height={382}

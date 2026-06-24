@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Facebook, Instagram, Linkedin, Mail, MapPin, Stethoscope } from 'lucide-react';
+import { Facebook, Instagram, Linkedin, Mail, MapPin } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
 import { site } from '@/lib/site';
 
 function XIcon({ size = 16 }: { size?: number }) {
@@ -15,17 +16,7 @@ export function SiteFooter() {
     <footer className="bg-[#0f172a] text-slate-300">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div className="lg:col-span-1">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563eb] text-white">
-              <Stethoscope size={20} />
-            </span>
-            <div>
-              <div className="font-bold text-white">{site.name}</div>
-              <div className="text-[10px] font-semibold tracking-widest text-slate-400">
-                BY SMARTHEALTH
-              </div>
-            </div>
-          </div>
+          <BrandLogo variant="dark" size={44} />
           <p className="mt-4 text-sm leading-relaxed text-slate-400">
             Your practice. Anywhere. Anytime. The practitioner companion app for healthcare
             professionals across Zimbabwe and Africa.
@@ -80,7 +71,7 @@ export function SiteFooter() {
             </li>
           </ul>
           <a
-            href="https://wa.me/"
+            href={site.whatsappUrl}
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#0d9488] px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-600"
           >
             WhatsApp us

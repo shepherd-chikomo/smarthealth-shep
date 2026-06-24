@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, Stethoscope, X } from 'lucide-react';
-import { portalLoginUrl, site } from '@/lib/site';
+import { Menu, X } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
+import { portalLoginUrl } from '@/lib/site';
 
 const nav = [
   { href: '#features', label: 'Features' },
@@ -18,17 +18,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2563eb] text-white shadow-md shadow-blue-500/30">
-            <Stethoscope size={20} />
-          </span>
-          <div className="leading-tight">
-            <div className="text-base font-bold text-slate-900">{site.name}</div>
-            <div className="text-[10px] font-semibold tracking-widest text-slate-500">
-              BY SMARTHEALTH
-            </div>
-          </div>
-        </Link>
+        <BrandLogo size={44} />
 
         <nav className="hidden items-center gap-8 md:flex">
           {nav.map((item) => (

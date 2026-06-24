@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image
 
 ASSETS = Path('/mnt/c/Users/sheph/.cursor/projects/c-Users-sheph-Projects-smarthealth-shep/assets')
-OUT = Path('/mnt/c/Users/sheph/Projects/smarthealth-shep/mypractice-web/public/images')
+OUT = Path(__file__).resolve().parent.parent / 'public' / 'images'
 
 # (source filename suffix, output name, crop box as % of width/height: left, top, right, bottom)
 CROPS: list[tuple[str, str, tuple[float, float, float, float]]] = [

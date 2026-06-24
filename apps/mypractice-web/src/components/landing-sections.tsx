@@ -222,10 +222,10 @@ export function GrowthSection() {
           </div>
         </div>
         <MarketingImage
-          src="/images/growth-team.png"
+          src="/images/growth-team.jpg"
           alt="Healthcare professionals discoverable across the MyHealth patient app"
-          width={461}
-          height={585}
+          width={800}
+          height={600}
           className="h-auto w-full rounded-3xl shadow-xl"
         />
       </div>
@@ -375,8 +375,8 @@ export function AfricaSection() {
     <section className="relative min-h-[320px] overflow-hidden sm:min-h-[380px]">
       <div className="absolute inset-0">
         <MarketingImage
-          src="/images/africa-hero.png"
-          alt=""
+          src="/images/africa-hero.jpg"
+          alt="Healthcare professionals across Zimbabwe and Africa"
           className="object-cover"
         />
       </div>
@@ -554,7 +554,6 @@ export function DownloadSection() {
           <div className="mt-8 flex flex-wrap gap-3">
             <StoreBadges />
           </div>
-          <p className="mt-4 text-sm text-slate-500">Store links coming soon.</p>
           <div className="mt-6">
             <ArrowLink href={portalLoginUrl}>Get started on the web</ArrowLink>
           </div>
