@@ -24,7 +24,7 @@ import {
   Users,
   WifiOff,
 } from 'lucide-react';
-import { ArrowLink, FeatureIconCard, IosDownloadLink, SectionBadge } from '@/components/ui';
+import { FeatureIconCard, SectionBadge } from '@/components/ui';
 import { StoreBadges } from '@/components/store-badges';
 
 const features = [
@@ -215,19 +215,15 @@ export function HeroSection() {
             MyHealth helps you find healthcare providers, manage appointments, store your health
             profile securely on your device, and access healthcare services wherever you are.
           </p>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <ArrowLink href="#download">Download for Android</ArrowLink>
-            <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
-          </div>
-          <div className="mt-4 flex flex-nowrap gap-2.5 sm:gap-3">
-            <a href="#features" className="btn-secondary-sm">
-              <MapPin size={15} className="shrink-0" /> Find Healthcare Providers
-            </a>
-            <a href="#privacy" className="btn-secondary-sm">
-              <Shield size={15} className="shrink-0" /> How We Protect Privacy
-            </a>
-          </div>
-          <div className="mt-6">
+          <div className="mt-8 flex flex-col gap-4">
+            <div className="flex gap-4">
+              <a href="#features" className="btn-secondary-badge">
+                <MapPin size={14} className="shrink-0" /> Find Healthcare Providers
+              </a>
+              <a href="#privacy" className="btn-secondary-badge">
+                <Shield size={14} className="shrink-0" /> How We Protect Privacy
+              </a>
+            </div>
             <StoreBadges />
           </div>
           <div className="mt-8 flex flex-wrap gap-8 text-sm font-medium text-slate-600 sm:text-base">
@@ -243,7 +239,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
+        <div className="relative mx-auto w-full max-w-lg overflow-visible lg:mx-0 lg:max-w-none">
           <Image
             src="/images/hero-family.jpg"
             alt="A diverse African family using the MyHealth app together"
@@ -258,7 +254,7 @@ export function HeroSection() {
             width={1024}
             height={1536}
             priority
-            className="absolute left-[-5%] top-[40%] z-20 h-auto w-[38%] max-w-[11.5rem] drop-shadow-2xl sm:left-[-3%] sm:max-w-[12.5rem] lg:left-[1%] lg:top-[38%] lg:max-w-[14.5rem] xl:max-w-[15.5rem]"
+            className="absolute left-[-24%] top-[44%] z-20 h-auto w-[32%] max-w-[10rem] drop-shadow-2xl sm:left-[-22%] sm:max-w-[10.5rem] lg:left-[-18%] lg:top-[42%] lg:max-w-[11.5rem] xl:left-[-15%] xl:max-w-[12rem]"
           />
         </div>
       </div>
@@ -457,10 +453,6 @@ export function DownloadSection() {
             <p className="section-desc">
               Download MyHealth for free and take control of your healthcare journey.
             </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <ArrowLink href="#download">Download for Android</ArrowLink>
-              <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
-            </div>
             <div className="mt-8">
               <StoreBadges />
             </div>
