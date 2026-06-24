@@ -219,12 +219,12 @@ export function HeroSection() {
             <ArrowLink href="#download">Download for Android</ArrowLink>
             <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
           </div>
-          <div className="mt-4 flex flex-wrap gap-4">
-            <a href="#features" className="btn-secondary">
-              <MapPin size={18} /> Find Healthcare Providers
+          <div className="mt-4 flex flex-nowrap gap-2.5 sm:gap-3">
+            <a href="#features" className="btn-secondary-sm">
+              <MapPin size={15} className="shrink-0" /> Find Healthcare Providers
             </a>
-            <a href="#privacy" className="btn-secondary">
-              <Shield size={18} /> How We Protect Privacy
+            <a href="#privacy" className="btn-secondary-sm">
+              <Shield size={15} className="shrink-0" /> How We Protect Privacy
             </a>
           </div>
           <div className="mt-6">
@@ -243,15 +243,7 @@ export function HeroSection() {
           </div>
         </div>
 
-        <div className="relative mx-auto flex w-full max-w-lg items-center justify-center sm:max-w-xl lg:mx-0 lg:max-w-none lg:justify-end">
-          <Image
-            src="/images/phone-mockup.png"
-            alt="MyHealth app on a smartphone"
-            width={1024}
-            height={1536}
-            priority
-            className="relative z-20 h-auto w-[38%] max-w-[11rem] shrink-0 -mr-10 drop-shadow-2xl sm:max-w-[12.5rem] sm:-mr-12 lg:max-w-[14rem] lg:-mr-14 xl:max-w-[15rem] xl:-mr-16"
-          />
+        <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:max-w-none">
           <Image
             src="/images/hero-family.jpg"
             alt="A diverse African family using the MyHealth app together"
@@ -259,6 +251,14 @@ export function HeroSection() {
             height={1080}
             priority
             className="relative z-10 h-auto w-full rounded-[2.5rem] shadow-2xl shadow-slate-300/50"
+          />
+          <Image
+            src="/images/phone-mockup.png"
+            alt="MyHealth app on a smartphone"
+            width={1024}
+            height={1536}
+            priority
+            className="absolute left-[-5%] top-[40%] z-20 h-auto w-[38%] max-w-[11.5rem] drop-shadow-2xl sm:left-[-3%] sm:max-w-[12.5rem] lg:left-[1%] lg:top-[38%] lg:max-w-[14.5rem] xl:max-w-[15.5rem]"
           />
         </div>
       </div>
@@ -289,26 +289,15 @@ export function PrivacySection() {
   return (
     <section id="privacy" className="border-y border-slate-100 bg-slate-50">
       <div className="section-pad">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <SectionBadge>Privacy-first healthcare</SectionBadge>
-            <h2 className="section-title mt-4">
-              Your medical information belongs to <span className="text-[#0ea5e9]">you</span>.
-            </h2>
-            <p className="section-desc">
-              Unlike many healthcare apps, MyHealth is designed with privacy at its core — so you
-              stay in control of what&apos;s shared, with whom, and when.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <Image
-              src="/images/phone-mockup.png"
-              alt="MyHealth app interface on a smartphone"
-              width={1024}
-              height={1536}
-              className="h-auto w-full max-w-xs drop-shadow-2xl"
-            />
-          </div>
+        <div className="max-w-3xl">
+          <SectionBadge>Privacy-first healthcare</SectionBadge>
+          <h2 className="section-title mt-4">
+            Your medical information belongs to <span className="text-[#0ea5e9]">you</span>.
+          </h2>
+          <p className="section-desc">
+            Unlike many healthcare apps, MyHealth is designed with privacy at its core — so you
+            stay in control of what&apos;s shared, with whom, and when.
+          </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {privacyCards.map(({ icon: Icon, title, description }) => (
