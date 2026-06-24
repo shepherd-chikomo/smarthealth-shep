@@ -1,15 +1,27 @@
-# SmartHealth Patient App
+# SmartHealth platform
 
-Production-quality Flutter patient app for Zimbabwe and across Africa — healthcare directory, emergency hub, and future booking, payments, and tele-consult.
+Monorepo for **MyHealth** (patient), **MyPractice** (provider), facility & staff web portals, marketing sites, and the shared API/database stack for Zimbabwe and across Africa.
 
-## Stack
+**Repository layout:** see [STRUCTURE.md](STRUCTURE.md).
 
-- Flutter 3.22+ / Dart 3.4+
-- Material 3, Riverpod, go_router
-- Offline-first (Hive + Dio cache)
-- Localisation: English, Shona, Ndebele, French, Portuguese, Swahili
+## Products
 
-## Setup
+| Product | Type | Location | Local dev |
+|---------|------|----------|-----------|
+| **MyHealth** | Flutter patient app | Repo root (`lib/`) | `flutter run` or `./scripts/run-patient-device.ps1` |
+| **MyPractice** | Flutter provider app | `my_practice/` | `./scripts/run-mypractice-device.ps1` |
+| **MyHealth marketing** | Next.js | `apps/myhealth-web/` | `cd apps/myhealth-web && npm run dev` → :3004 |
+| **MyPractice marketing** | Next.js | `apps/mypractice-web/` | `cd apps/mypractice-web && npm run dev` → :3003 |
+| **Facility portal** | Next.js | `apps/facility-portal/` | `cd apps/facility-portal && npm run dev` → :3001 |
+| **Admin dashboard** | Vite + React | `apps/admin/` | `cd apps/admin && npm run dev` → :5173 |
+| **REST API** | Fastify / Node | `backend/` | `cd backend && npm run dev` → :3000 |
+| **Database** | PostgreSQL / Supabase | `supabase/` | `./scripts/supabase/start.ps1` |
+
+Shared Flutter code: `packages/smarthealth_core/`.
+
+## MyHealth patient app
+
+Production-quality Flutter app — healthcare directory, emergency hub, booking, health vault.
 
 ```bash
 flutter pub get
@@ -21,101 +33,86 @@ flutter run
 
 ### Patient app → main database (local API)
 
-By default the app talks to `http://localhost:3000/v1` and does **not** seed mock providers
-(`USE_MAIN_DATABASE=true`). Start the Docker API first:
-
 ```powershell
 docker compose up -d db smarthealth-migrate smarthealth-api
+./scripts/run-patient-device.ps1
 ```
 
-On a **physical phone**, `localhost` is the phone itself — use your PC's LAN IP:
+On a physical phone, use `./scripts/run-patient-device.ps1` (USB adb reverse) or `./scripts/run-patient-remote.ps1 -ServerUrl https://dev.smarthealth.co.zw`.
 
-```powershell
-./scripts/run-patient-device.ps1 -DeviceId <your-device-id>
-```
-
-Or pass defines manually:
-
-```powershell
-flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000/v1 --dart-define=USE_MAIN_DATABASE=true
-```
-
-For offline demos only: `--dart-define=USE_MAIN_DATABASE=false --dart-define=ALLOW_MOCK_DATA=true`
-
-Catalog endpoints used by home tiles and search filters: `/v1/catalog/facility-types`, `/v1/catalog/specialties`, `/v1/catalog/conditions`, `/v1/catalog/age-groups`.
-
-## Android release (low-end devices)
-
-```bash
-flutter build apk --release --split-per-abi
-```
-
-- `minSdk` 26, `targetSdk` 34, MultiDex, R8 minify enabled in release.
-
-## Project layout
+Catalog endpoints: `/v1/catalog/facility-types`, `/v1/catalog/specialties`, `/v1/catalog/conditions`, `/v1/catalog/age-groups`.
 
 See `lib/` — `core/`, `features/`, `shared/`, `l10n/`.
 
-## Supabase backend
+## MyPractice provider app
 
-PostgreSQL backend with multi-tenant healthcare schema, auth, storage, RLS, and audit logging.
+See [my_practice/README.md](my_practice/README.md).
+
+## Platform services
+
+### Supabase / PostgreSQL
 
 ```powershell
-# Prerequisites: Docker Desktop + Supabase CLI
 ./scripts/supabase/start.ps1 -Reset
 ./scripts/supabase/verify.ps1
 ```
 
-See [supabase/README.md](supabase/README.md) for full setup, environments, and self-host migration.
+See [supabase/README.md](supabase/README.md).
 
-## REST API
-
-Node.js/Fastify REST layer over Supabase — JWT auth, OpenAPI docs, pagination, search, and rate limiting.
+### REST API
 
 ```powershell
 cd backend
 npm install
-cp .env.example .env   # keys from `supabase status`
+cp .env.example .env
 npm run dev
 ```
 
-- API: http://localhost:3000/v1
-- Swagger: http://localhost:3000/docs
+- API: http://localhost:3000/v1  
+- Swagger: http://localhost:3000/docs  
 
-See [backend/README.md](backend/README.md) for endpoints and integration.
+See [backend/README.md](backend/README.md).
 
-## Admin Dashboard
+## Web apps
 
-Staff web portal — queue management, providers, appointments, reporting, security.
+### Admin dashboard
 
 ```powershell
-cd admin
+cd apps/admin
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173 — see [admin/README.md](admin/README.md).
+Open http://localhost:5173 — see [apps/admin/README.md](apps/admin/README.md).
 
-## Facility Portal
-
-Next.js tenant-scoped portal for facility admins — doctors, patients, queue, inventory, reporting.
+### Facility portal
 
 ```powershell
-cd facility-portal
+cd apps/facility-portal
 npm install
 cp .env.local.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3001 — see [facility-portal/README.md](facility-portal/README.md).
+Open http://localhost:3001 — see [apps/facility-portal/README.md](apps/facility-portal/README.md).
 
-## Notifications
+### Marketing sites
 
-FCM push + Supabase triggers + SMS/email fallbacks. See [docs/notifications/README.md](docs/notifications/README.md).
+- **MyHealth:** [apps/myhealth-web/README.md](apps/myhealth-web/README.md) — https://myhealth.smarthealth.co.zw  
+- **MyPractice:** [apps/mypractice-web/README.md](apps/mypractice-web/README.md) — https://mypractice.smarthealth.co.zw  
 
-## Analytics
+## Docker full stack
 
-Materialized views, aggregation tables, hourly refresh worker. See [docs/analytics/README.md](docs/analytics/README.md).
+```bash
+cp docker/.env.example .env
+docker compose up -d
+./docker/scripts/healthcheck.sh
+```
+
+## Notifications & analytics
+
+- [docs/notifications/README.md](docs/notifications/README.md)  
+- [docs/analytics/README.md](docs/analytics/README.md)  
 
 ## License
 

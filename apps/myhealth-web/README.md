@@ -5,7 +5,7 @@ Standalone patient-app marketing site served at **myhealth.smarthealth.co.zw**.
 ## Local dev
 
 ```bash
-cd myhealth-web
+cd apps/myhealth-web
 npm install
 npm run dev
 ```

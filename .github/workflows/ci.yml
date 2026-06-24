@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: admin
+        working-directory: apps/admin
 
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: facility-portal
+        working-directory: apps/facility-portal
 
     steps:
       - uses: actions/checkout@v4
@@ -124,7 +124,7 @@ jobs:
       - name: Build Admin image
         uses: docker/build-push-action@v6
         with:
-          context: ./admin
+          context: ./apps/admin
           push: false
           tags: smarthealth-admin:ci
           build-args: VITE_API_BASE=/v1
@@ -132,7 +132,7 @@ jobs:
       - name: Build Facility Portal image
         uses: docker/build-push-action@v6
         with:
-          context: ./facility-portal
+          context: ./apps/facility-portal
           push: false
           tags: smarthealth-facility-portal:ci
           build-args: |

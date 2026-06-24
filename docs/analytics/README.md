@@ -47,8 +47,8 @@ curl -X POST http://localhost:3000/v1/analytics/refresh \
 ## UI dashboards
 
 - **Super admin** — `admin/` → Analytics (reads materialized views)
-- **Facility admin** — `facility-portal/` → Analytics
-- **Provider** — `facility-portal/` → My Performance
+- **Facility admin** — `apps/facility-portal/` → Analytics
+- **Provider** — `apps/facility-portal/` → My Performance
 
 ## Performance
 

@@ -351,7 +351,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   smarthealth-admin:
     build:
-      context: ./admin
+      context: ./apps/admin
       dockerfile: Dockerfile
       args:
         VITE_API_BASE: ${VITE_API_BASE:-/v1}
@@ -375,7 +375,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   smarthealth-facility-portal:
     build:
-      context: ./facility-portal
+      context: ./apps/facility-portal
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
@@ -409,7 +409,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   smarthealth-mypractice-web:
     build:
-      context: ./mypractice-web
+      context: ./apps/mypractice-web
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_PORTAL_URL: ${NEXT_PUBLIC_PORTAL_URL:-https://dev.smarthealth.co.zw}
@@ -434,7 +434,7 @@ services:
   # ═══════════════════════════════════════════════════════════════════════════
   smarthealth-myhealth-web:
     build:
-      context: ./myhealth-web
+      context: ./apps/myhealth-web
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://dev.smarthealth.co.zw}

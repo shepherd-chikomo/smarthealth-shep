@@ -5,7 +5,7 @@ Standalone public marketing site for the MyPractice practitioner app. Served at 
 ## Local dev
 
 ```bash
-cd mypractice-web
+cd apps/mypractice-web
 npm install
 npm run dev
 ```

@@ -44,12 +44,12 @@ jobs:
             context: .
             dockerfile: ./backend/Dockerfile
           - service: admin
-            context: ./admin
-            dockerfile: ./admin/Dockerfile
+            context: ./apps/admin
+            dockerfile: ./apps/admin/Dockerfile
             build_args: VITE_API_BASE=/v1
           - service: facility-portal
-            context: ./facility-portal
-            dockerfile: ./facility-portal/Dockerfile
+            context: ./apps/facility-portal
+            dockerfile: ./apps/facility-portal/Dockerfile
 
     steps:
       - uses: actions/checkout@v4

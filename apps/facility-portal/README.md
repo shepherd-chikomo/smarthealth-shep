@@ -19,7 +19,7 @@ npm install
 npm run dev
 
 # Terminal 2 — Facility portal
-cd facility-portal
+cd apps/facility-portal
 cp .env.local.example .env.local
 npm install
 npm run dev

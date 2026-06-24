@@ -18,7 +18,7 @@ npm install
 npm run dev
 
 # Terminal 2 — Admin UI
-cd admin
+cd apps/admin
 npm install
 npm run dev
 ```

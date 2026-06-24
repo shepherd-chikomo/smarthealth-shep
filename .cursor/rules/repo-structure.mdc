@@ -1,0 +1,79 @@
+---
+description: Monorepo layout, migration phases, and per-phase test checklists. Complete pending phases when user asks or during planned repo work.
+alwaysApply: true
+---
+
+# SmartHealth monorepo structure
+
+Read [STRUCTURE.md](../../STRUCTURE.md) for the full map. **Put new code in the right product folder** — do not add features at repo root unless they belong to the MyHealth Flutter app (until Phase 3).
+
+## Current layout (after Phase 1–2)
+
+- **Web apps:** `apps/myhealth-web`, `apps/mypractice-web`, `apps/facility-portal`, `apps/admin`
+- **Flutter:** MyHealth at repo root (`lib/`), MyPractice at `my_practice/`, shared `packages/smarthealth_core/`
+- **Platform:** `backend/`, `supabase/`, `docker/`
+- **Scripts:** `scripts/myhealth/`, `scripts/mypractice/`, `scripts/platform/`, `scripts/supabase/`
+- Legacy script paths (`scripts/run-patient-device.ps1`, etc.) are thin wrappers — prefer `scripts/<product>/` for new scripts
+
+## Pending migration — agent reminder
+
+Complete these when the user requests repo cleanup, or proactively suggest if a task touches moved paths:
+
+### Phase 3 — Flutter apps (~2–3 days) — **PENDING**
+
+1. `git mv` repo-root Flutter project → `apps/myhealth/` (`lib/`, `android/`, `ios/`, `test/`, `assets/`, `pubspec.yaml`, etc.)
+2. `git mv my_practice` → `apps/mypractice`
+3. Update `smarthealth_core` path in both `pubspec.yaml`: `path: ../../packages/smarthealth_core`
+4. Update `scripts/myhealth/*`, `scripts/mypractice/*`, CI `flutter` job `working-directory`, `.github/workflows/ci.yml`
+5. Optional: add `melos.yaml` for `melos analyze` / `melos test`
+6. Update `STRUCTURE.md` Phase 3 status to Done
+
+**Test after Phase 3:**
+- `cd apps/myhealth && flutter pub get && flutter analyze && flutter test`
+- `cd apps/mypractice && flutter pub get && flutter analyze`
+- `./scripts/run-patient-device.ps1` (or remote) — app launches, API health OK
+- `./scripts/run-mypractice-device.ps1` — app launches against dev API
+- CI Flutter job green on PR
+
+### Phase 4 — Platform folder (~½ day) — **PENDING** (after Phase 3)
+
+1. `git mv backend` → `platform/backend`, `supabase` → `platform/supabase`
+2. Update `docker-compose.yml` API `dockerfile`/`context`, all docs `cd backend` → `cd platform/backend`
+3. Update `STRUCTURE.md` Phase 4 status to Done
+
+**Test after Phase 4:**
+- `cd platform/backend && npm test && npm run lint`
+- `docker compose build smarthealth-api smarthealth-migrate`
+- `docker compose up -d smarthealth-api` + `curl http://localhost:3000/health`
+- `docker compose --profile migrate run --rm smarthealth-migrate` (if migrations changed)
+- Deploy dev + `docker/scripts/healthcheck.sh`
+
+## Test checklists (completed phases)
+
+### Phase 1 — Docs & scripts
+
+- [ ] `STRUCTURE.md` and root `README.md` list correct paths
+- [ ] `./scripts/run-patient-device.ps1` still works (wrapper → `scripts/myhealth/`)
+- [ ] `./scripts/run-mypractice-device.ps1` still works
+- [ ] `./scripts/supabase/verify.ps1` unchanged
+
+### Phase 2 — Web apps under `apps/`
+
+- [ ] `cd apps/myhealth-web && npm run build`
+- [ ] `cd apps/mypractice-web && npm run build`
+- [ ] `cd apps/facility-portal && npm run build`
+- [ ] `cd apps/admin && npm run build`
+- [ ] `docker compose build smarthealth-admin smarthealth-facility-portal smarthealth-mypractice-web smarthealth-myhealth-web`
+- [ ] `docker compose up -d` + `docker/scripts/healthcheck.sh`
+- [ ] Nginx: `dev.smarthealth.co.zw/admin/`, facility portal, `myhealth.smarthealth.co.zw`, `mypractice.smarthealth.co.zw` return 200
+- [ ] GitHub CI `admin`, `facility-portal`, `docker-build` jobs pass
+
+## Deploy path updates
+
+When editing deploy docs, use new contexts:
+
+- Facility portal build: `apps/facility-portal`
+- Marketing: `apps/myhealth-web`, `apps/mypractice-web`
+- Admin: `apps/admin`
+
+Docker **service names** are unchanged (`smarthealth-facility-portal`, etc.).
