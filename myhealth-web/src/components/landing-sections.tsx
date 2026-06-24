@@ -201,25 +201,25 @@ const testimonials = [
 export function HeroSection() {
   return (
     <section className="hero-mesh">
-      <div className="hero-mesh-content section-pad grid items-center gap-14 lg:grid-cols-2 lg:gap-20 xl:gap-24">
+      <div className="hero-mesh-content section-pad grid items-center gap-12 lg:grid-cols-2 lg:gap-14 xl:gap-16">
         <div>
-          <div className="badge-pill mb-8">
+          <div className="badge-pill mb-6">
             <span className="text-[#0ea5e9]">•</span>
             Powered by SmartHealth Africa
           </div>
-          <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-slate-900 sm:text-6xl lg:text-[4.25rem] xl:text-[4.75rem]">
+          <h1 className="text-4xl font-bold leading-[1.12] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.35rem] lg:leading-[1.1]">
             Take Control of Your{' '}
             <span className="text-gradient-brand">Healthcare Journey</span>
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-slate-600 sm:text-xl lg:max-w-xl">
+          <p className="mt-5 text-lg leading-relaxed text-slate-600 sm:text-xl lg:max-w-xl">
             MyHealth helps you find healthcare providers, manage appointments, store your health
             profile securely on your device, and access healthcare services wherever you are.
           </p>
-          <div className="mt-10 flex flex-wrap gap-4">
+          <div className="mt-8 flex flex-wrap gap-4">
             <ArrowLink href="#download">Download for Android</ArrowLink>
             <IosDownloadLink href="#download">Download for iPhone</IosDownloadLink>
           </div>
-          <div className="mt-5 flex flex-wrap gap-4">
+          <div className="mt-4 flex flex-wrap gap-4">
             <a href="#features" className="btn-secondary">
               <MapPin size={18} /> Find Healthcare Providers
             </a>
@@ -227,10 +227,10 @@ export function HeroSection() {
               <Shield size={18} /> How We Protect Privacy
             </a>
           </div>
-          <div className="mt-8">
+          <div className="mt-6">
             <StoreBadges />
           </div>
-          <div className="mt-10 flex flex-wrap gap-8 text-sm font-medium text-slate-600 sm:text-base">
+          <div className="mt-8 flex flex-wrap gap-8 text-sm font-medium text-slate-600 sm:text-base">
             <span className="flex items-center gap-2.5">
               <ShieldCheck size={18} className="text-[#0d9488]" /> Privacy-first
             </span>
@@ -242,21 +242,23 @@ export function HeroSection() {
             </span>
           </div>
         </div>
-        <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
+
+        <div className="relative mx-auto flex w-full max-w-lg items-center justify-center sm:max-w-xl lg:mx-0 lg:max-w-none lg:justify-end">
+          <Image
+            src="/images/phone-mockup.png"
+            alt="MyHealth app on a smartphone"
+            width={1024}
+            height={1536}
+            priority
+            className="relative z-20 h-auto w-[38%] max-w-[11rem] shrink-0 -mr-10 drop-shadow-2xl sm:max-w-[12.5rem] sm:-mr-12 lg:max-w-[14rem] lg:-mr-14 xl:max-w-[15rem] xl:-mr-16"
+          />
           <Image
             src="/images/hero-family.jpg"
             alt="A diverse African family using the MyHealth app together"
             width={1920}
             height={1080}
             priority
-            className="h-auto w-full rounded-[2.5rem] shadow-2xl shadow-slate-300/50"
-          />
-          <Image
-            src="/images/phone-mockup.png"
-            alt="MyHealth app on a smartphone"
-            width={1024}
-            height={1536}
-            className="absolute -bottom-6 -right-4 w-[44%] drop-shadow-2xl sm:-right-6 lg:-bottom-8 lg:-right-10 lg:w-[42%]"
+            className="relative z-10 h-auto w-full rounded-[2.5rem] shadow-2xl shadow-slate-300/50"
           />
         </div>
       </div>
